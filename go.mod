@@ -18,6 +18,8 @@ require (
 	google.golang.org/grpc v1.30.0
 	google.golang.org/protobuf v1.23.0
 	gopkg.in/ini.v1 v1.57.0 // indirect
-	k8s.io/client-go v0.17.0 // indirect
+	k8s.io/api v0.17.0
+	k8s.io/apimachinery v0.17.0
+	k8s.io/client-go v0.17.0
 
 )
