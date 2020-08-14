@@ -24,10 +24,11 @@ func createContainerSpec(name string, image string, env map[string]string) (cont
 	return []v1.Container{container}
 }
 
-func createPodConfig(name string, image string, env map[string]string) (podConfig *v1.Pod, err error) {
+func createPodConfig(name string, image string, env map[string]string, labels map[string]string) (podConfig *v1.Pod, err error) {
 	pod := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:   name,
+			Labels: labels,
 		},
 
 		Spec: v1.PodSpec{

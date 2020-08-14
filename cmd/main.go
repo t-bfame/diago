@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/t-bfame/diago/internal/manager"
 	"github.com/t-bfame/diago/internal/scheduler"
@@ -23,6 +24,20 @@ func main() {
 	}
 
 	s := scheduler.NewScheduler()
-	s.Schedule(ti)
+	id, err := s.Schedule(ti)
 
+	if err != nil {
+		panic(err)
+	}
+
+	i := 0
+
+	for {
+		time.Sleep(10 * time.Second)
+		i++
+
+		if i == 3 {
+			s.Unschedule(ti, id)
+		}
+	}
 }

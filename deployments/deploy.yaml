@@ -22,3 +22,4 @@ spec:
         ports:
         - name: master
           containerPort: 8000
+      terminationGracePeriodSeconds: 0

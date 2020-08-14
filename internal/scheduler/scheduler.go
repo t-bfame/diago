@@ -1,8 +1,6 @@
 package scheduler
 
 import (
-	"fmt"
-
 	mgr "github.com/t-bfame/diago/internal/manager"
 )
 
@@ -12,16 +10,13 @@ type Scheduler struct {
 }
 
 // Schedule dingdingi
-func (s Scheduler) Schedule(ti mgr.TestInstance) (err error) {
+func (s Scheduler) Schedule(ti mgr.TestInstance) (id int, err error) {
+	return s.pm.schedule(ti)
+}
 
-	err = s.pm.schedule(ti)
-
-	if err != nil {
-		fmt.Println(err)
-		panic(err)
-	}
-
-	return nil
+// Unschedule dongdongdong
+func (s Scheduler) Unschedule(ti mgr.TestInstance, id int) (err error) {
+	return s.pm.unschedule(ti, id)
 }
 
 // NewScheduler laalala
