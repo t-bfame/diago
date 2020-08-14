@@ -21,7 +21,6 @@
 .PHONY:	build run
 
 build:
-	rm main 
 	GOOS=linux go build cmd/main.go
 	docker build -f build/package/Dockerfile -t diago .
 	kubectl delete sts diago

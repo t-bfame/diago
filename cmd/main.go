@@ -2,19 +2,27 @@ package main
 
 import (
 	"fmt"
-	"time"
 
+	"github.com/t-bfame/diago/internal/manager"
 	"github.com/t-bfame/diago/internal/scheduler"
 )
 
 func main() {
 	fmt.Println("hello world 3")
 
-	s := scheduler.NewScheduler()
-
-	for {
-		s.Schedule()
-
-		time.Sleep(10 * time.Second)
+	envs := map[string]string{
+		"rsc": "a",
 	}
+
+	ti := manager.TestInstance{
+		Id:       "1",
+		Name:     "alpha",
+		Image:    "hello-world",
+		Priority: 0,
+		Env:      envs,
+	}
+
+	s := scheduler.NewScheduler()
+	s.Schedule(ti)
+
 }

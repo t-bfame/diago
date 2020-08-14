@@ -1,14 +1,25 @@
 package scheduler
 
+import (
+	"fmt"
+
+	mgr "github.com/t-bfame/diago/internal/manager"
+)
+
 // Scheduler lalalal
 type Scheduler struct {
 	pm *PodManager
 }
 
 // Schedule dingdingi
-func (s Scheduler) Schedule() (err error) {
+func (s Scheduler) Schedule(ti mgr.TestInstance) (err error) {
 
-	s.pm.schedule()
+	err = s.pm.schedule(ti)
+
+	if err != nil {
+		fmt.Println(err)
+		panic(err)
+	}
 
 	return nil
 }
