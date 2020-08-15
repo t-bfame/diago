@@ -15,21 +15,39 @@ type PodManager struct {
 	podGroups map[string]*PodGroup
 }
 
-func (pm PodManager) schedule(ti mgr.TestInstance) (id int, err error) {
-	groupName := ti.Name + "-" + ti.Id
+func (pm PodManager) register(group string, instance int) (events <-chan Event, err error) {
+	pg, ok := pm.podGroups[group]
+
+	if !ok {
+		return nil, errors.New("Could not find specified group")
+	}
+
+	// Add test channel for multiplexing
+	events, err = pg.registerPod(instance)
+
+	return events, err
+}
+
+func (pm PodManager) schedule(j mgr.Job, events chan Event) (err error) {
+	groupName := j.Group
 	var pg PodGroup
 
 	if pg, ok := pm.podGroups[groupName]; !ok {
-		pg = NewPodGroup(ti)
+		pg = NewPodGroup(groupName)
 		pm.podGroups[groupName] = pg
-
 	}
 
-	return pg.addInstance(pm.clientset)
+	// Add channel for receiving events
+	pg.addChannel(j.ID, events)
+
+	// TODO: Check capacity and add instance
+	// defer pg.addInstance(pm.clientset)
+
+	return nil
 }
 
-func (pm PodManager) unschedule(ti mgr.TestInstance, instance int) (err error) {
-	groupName := ti.Name + "-" + ti.Id
+func (pm PodManager) unschedule(j mgr.Job, instance int) (err error) {
+	groupName := j.Group
 	pg, ok := pm.podGroups[groupName]
 
 	if !ok {

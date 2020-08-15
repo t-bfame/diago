@@ -29,3 +29,6 @@ run:
 	kubectl apply -f deployments/deploy.yaml
 	kubectl get po -w
 	kubectl logs diago-0 -f
+
+local:
+	go build cmd/main.go

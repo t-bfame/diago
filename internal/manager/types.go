@@ -1,9 +1,14 @@
 package manager
 
-type TestInstance struct {
-	Id       string
+// JobId Unique job identifier
+type JobID string
+
+// Job configuration to be passed to scheduler
+type Job struct {
+	ID       JobID
 	Name     string
-	Image    string
+	Group    string
 	Priority int
 	Env      map[string]string
+	Config   []string
 }

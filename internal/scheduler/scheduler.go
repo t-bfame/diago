@@ -9,14 +9,18 @@ type Scheduler struct {
 	pm *PodManager
 }
 
-// Schedule dingdingi
-func (s Scheduler) Schedule(ti mgr.TestInstance) (id int, err error) {
-	return s.pm.schedule(ti)
+// Submit dingdingi
+func (s Scheduler) Submit(j mgr.Job) (events chan Event, err error) {
+	events = make(chan Event)
+
+	err = s.pm.schedule(j, events)
+
+	return events, err
 }
 
-// Unschedule dongdongdong
-func (s Scheduler) Unschedule(ti mgr.TestInstance, id int) (err error) {
-	return s.pm.unschedule(ti, id)
+// Stop dongdongdong
+func (s Scheduler) Stop(j mgr.Job, id int) (err error) {
+	return s.pm.unschedule(j, id)
 }
 
 // NewScheduler laalala

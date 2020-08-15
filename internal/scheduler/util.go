@@ -24,7 +24,36 @@ func createContainerSpec(name string, image string, env map[string]string) (cont
 	return []v1.Container{container}
 }
 
-func createPodConfig(name string, image string, env map[string]string, labels map[string]string) (podConfig *v1.Pod, err error) {
+func getEnvs(group string, instanceCount int) map[string]string {
+	// TODO: Use configs to get the correct IP addresses for master
+	envs := map[string]string{
+		"DIAGO_IMAGE_GROUP":    group,
+		"DIAGO_IMAGE_GROUP_ID": string(instanceCount),
+	}
+
+	return envs
+}
+
+func getLabels(group string, instanceCount int) map[string]string {
+	labels := map[string]string{
+		"group":    group,
+		"instance": string(instanceCount),
+	}
+
+	return labels
+}
+
+func getConfigs(group string, instanceCount int) (image string, env map[string]string, labels map[string]string) {
+	image = "hello-world"
+
+	return image, getEnvs(group, instanceCount), getLabels(group, instanceCount)
+}
+
+func createPodConfig(group string, instanceCount int) (podConfig *v1.Pod, err error) {
+	// TODO: Talk to storage to get configs
+	name := group + "-" + string(instanceCount)
+	image, env, labels := getConfigs(group, instanceCount)
+
 	pod := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name,
