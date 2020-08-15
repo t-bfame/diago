@@ -4,56 +4,51 @@ import (
 	"errors"
 
 	mgr "github.com/t-bfame/diago/internal/manager"
+	utils "github.com/t-bfame/diago/pkg/utils"
 
 	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
+const hashSize = 6
+
 // PodGroup indicates kind of pod
 type PodGroup struct {
 	group         string
+	clientset     *kubernetes.Clientset
 	scheduledPods map[string]string
-	instanceIndex int
 	instanceCount int
 
 	outputChannels map[mgr.JobID]chan Event
 }
 
 // Instances are 0 indexed
-func (pg PodGroup) addInstance(clientset *kubernetes.Clientset) (instance int, err error) {
-	name := pg.group + "-" + string(pg.instanceIndex)
-	count := pg.instanceIndex
+func (pg PodGroup) addInstance() (instance InstanceID, err error) {
+	id := InstanceID(utils.RandHash(hashSize))
 
-	pod, err := createPodConfig(pg.group, count)
+	pod, err := createPodConfig(pg.group, id)
 
 	if err != nil {
-		return 0, err
+		return InstanceID(""), err
 	}
 
-	result, err := clientset.CoreV1().Pods("default").Create(pod)
+	result, err := pg.clientset.CoreV1().Pods("default").Create(pod)
 	if err != nil {
-		return 0, err
+		return InstanceID(""), err
 	}
 
-	pg.scheduledPods[name] = "created"
 	log.WithField("podName", result.GetObjectMeta().GetName()).WithField("podGroup", pg.group).Info("Created pod")
 	pg.instanceCount++
-	pg.instanceIndex++
 
-	return count, nil
+	return id, nil
 }
 
-func (pg PodGroup) removeInstance(clientset *kubernetes.Clientset, instance int) (err error) {
-
-	if instance >= pg.instanceCount {
-		return errors.New("Cannot remove nonexitent instance")
-	}
-
+func (pg PodGroup) removeInstance(instance InstanceID) (err error) {
 	name := pg.group + "-" + string(instance)
 
 	deletePolicy := metav1.DeletePropagationForeground
-	if err := clientset.CoreV1().Pods("default").Delete(name, &metav1.DeleteOptions{
+	if err := pg.clientset.CoreV1().Pods("default").Delete(name, &metav1.DeleteOptions{
 		PropagationPolicy: &deletePolicy,
 	}); err != nil {
 		return err
@@ -72,10 +67,25 @@ func (pg PodGroup) addChannel(id mgr.JobID, events chan Event) (err error) {
 	return nil
 }
 
-func (pg PodGroup) registerPod(instance int) (events chan Event, err error) {
+func (pg PodGroup) removeChannel(id mgr.JobID) (err error) {
+	events, ok := pg.outputChannels[id]
+
+	if !ok {
+		return errors.New("PodGroup does not contain specified JobID")
+	}
+
+	delete(pg.outputChannels, id)
+	close(events)
+
+	return nil
+}
+
+// TODO: still need to send data back to pods so need to record each channel with id
+// TODO: Hash verification?
+func (pg PodGroup) registerPod(instance InstanceID) (events chan Event, err error) {
 	events = make(chan Event)
 
-	// Fan-out events from pod to correct job channel
+	// Mux events from pod to correct job channels
 	go func() {
 		for msg := range events {
 
@@ -90,18 +100,21 @@ func (pg PodGroup) registerPod(instance int) (events chan Event, err error) {
 			// Send event to respective output channel
 			output <- msg
 		}
+
+		// If channel is closed then communication with pod has stopped
+		pg.removeInstance(instance)
 	}()
 
 	return events, nil
 }
 
 // NewPodGroup Allocates a new podGroup
-func NewPodGroup(group string) (pg *PodGroup) {
+func NewPodGroup(group string, clientset *kubernetes.Clientset) (pg *PodGroup) {
 	pg = new(PodGroup)
 
+	pg.clientset = clientset
 	pg.group = group
 	pg.scheduledPods = make(map[string]string)
-	pg.instanceIndex = 0
 	pg.instanceCount = 0
 
 	pg.outputChannels = make(map[mgr.JobID]chan Event)

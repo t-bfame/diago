@@ -15,7 +15,7 @@ type PodManager struct {
 	podGroups map[string]*PodGroup
 }
 
-func (pm PodManager) register(group string, instance int) (events <-chan Event, err error) {
+func (pm PodManager) register(group string, instance InstanceID) (events chan Event, err error) {
 	pg, ok := pm.podGroups[group]
 
 	if !ok {
@@ -30,10 +30,10 @@ func (pm PodManager) register(group string, instance int) (events <-chan Event, 
 
 func (pm PodManager) schedule(j mgr.Job, events chan Event) (err error) {
 	groupName := j.Group
-	var pg PodGroup
+	pg, ok := pm.podGroups[groupName]
 
-	if pg, ok := pm.podGroups[groupName]; !ok {
-		pg = NewPodGroup(groupName)
+	if !ok {
+		pg = NewPodGroup(groupName, pm.clientset)
 		pm.podGroups[groupName] = pg
 	}
 
@@ -41,12 +41,12 @@ func (pm PodManager) schedule(j mgr.Job, events chan Event) (err error) {
 	pg.addChannel(j.ID, events)
 
 	// TODO: Check capacity and add instance
-	// defer pg.addInstance(pm.clientset)
+	defer pg.addInstance()
 
 	return nil
 }
 
-func (pm PodManager) unschedule(j mgr.Job, instance int) (err error) {
+func (pm PodManager) unschedule(j mgr.Job) (err error) {
 	groupName := j.Group
 	pg, ok := pm.podGroups[groupName]
 
@@ -54,7 +54,9 @@ func (pm PodManager) unschedule(j mgr.Job, instance int) (err error) {
 		return errors.New("Could not find specified groupName")
 	}
 
-	return pg.removeInstance(pm.clientset, instance)
+	pg.removeChannel(j.ID)
+
+	return nil
 }
 
 // NewPodManager Creates a new PodManager

@@ -19,8 +19,13 @@ func (s Scheduler) Submit(j mgr.Job) (events chan Event, err error) {
 }
 
 // Stop dongdongdong
-func (s Scheduler) Stop(j mgr.Job, id int) (err error) {
-	return s.pm.unschedule(j, id)
+func (s Scheduler) Stop(j mgr.Job) (err error) {
+	return s.pm.unschedule(j)
+}
+
+// Register something
+func (s Scheduler) Register(group string, instance InstanceID) (chan Event, error) {
+	return s.pm.register(group, instance)
 }
 
 // NewScheduler laalala
