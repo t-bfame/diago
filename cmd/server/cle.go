@@ -1,3 +1,4 @@
+/*
 package main
 
 import (
@@ -76,3 +77,4 @@ func main() {
 	// RouteChat
 	runRouteChat(client)
 }
+*/

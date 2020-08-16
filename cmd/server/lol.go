@@ -1,3 +1,4 @@
+/*
 package main
 
 import (
@@ -65,3 +66,4 @@ func main() {
 	pb.RegisterRouteGuideServer(grpcServer, newServer())
 	grpcServer.Serve(lis)
 }
+*/

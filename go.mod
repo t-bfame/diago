@@ -13,6 +13,7 @@ require (
 	github.com/spf13/cobra v1.0.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.7.0 // indirect
+	github.com/t-bfame/diago-worker v0.0.0-20200817033222-012e66f959c3
 	golang.org/x/sys v0.0.0-20200724161237-0e2f3a69832c // indirect
 	golang.org/x/text v0.3.3 // indirect
 	google.golang.org/grpc v1.30.0
