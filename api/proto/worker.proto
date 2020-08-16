@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option go_package = "proto-gen/worker";
+
+service Worker {
+    rpc Register(stream Message) returns (stream Message) {}
+}
+
+
+message Message {
+
+    enum Type {
+        START = 0;
+        FINISH = 1;
+        METRIC = 2;
+        EVENT = 3;
+        STOP = 4;
+        REGISTER = 5;
+    }
+
+}
