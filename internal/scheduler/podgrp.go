@@ -1,0 +1,194 @@
+package scheduler
+
+import (
+	"errors"
+
+	mgr "github.com/t-bfame/diago/internal/manager"
+	utils "github.com/t-bfame/diago/pkg/utils"
+
+	log "github.com/sirupsen/logrus"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+)
+
+const hashSize = 6
+
+// PodGroup indicates kind of pod
+type PodGroup struct {
+	group         string
+	clientset     *kubernetes.Clientset
+	instanceCount int
+
+	scheduledPods     map[InstanceID]chan Outgoing
+	capacities        map[InstanceID]uint64
+	currentCapacities map[InstanceID]uint64
+
+	outputChannels map[mgr.JobID]chan Event
+	workloadCount  map[mgr.JobID]uint32
+}
+
+// Instances are 0 indexed
+func (pg PodGroup) addInstances(frequency uint64) (instance InstanceID, err error) {
+	id := InstanceID(utils.RandHash(hashSize))
+
+	pod, err := createPodConfig(pg.group, id)
+
+	if err != nil {
+		return InstanceID(""), err
+	}
+
+	result, err := pg.clientset.CoreV1().Pods("default").Create(pod)
+	if err != nil {
+		return InstanceID(""), err
+	}
+
+	log.WithField("podName", result.GetObjectMeta().GetName()).WithField("podGroup", pg.group).Info("Created pod")
+	pg.instanceCount++
+
+	return id, nil
+}
+
+func (pg PodGroup) removeInstance(instance InstanceID) (err error) {
+	name := pg.group + "-" + string(instance)
+
+	deletePolicy := metav1.DeletePropagationForeground
+	if err := pg.clientset.CoreV1().Pods("default").Delete(name, &metav1.DeleteOptions{
+		PropagationPolicy: &deletePolicy,
+	}); err != nil {
+		return err
+	}
+
+	log.WithField("podName", name).WithField("podGroup", pg.group).Info("Removed pod")
+	delete(pg.scheduledPods, instance)
+	pg.instanceCount--
+
+	return nil
+}
+
+func (pg PodGroup) addChannel(id mgr.JobID, events chan Event) (err error) {
+	pg.outputChannels[id] = events
+
+	return nil
+}
+
+func (pg PodGroup) removeChannel(id mgr.JobID) (err error) {
+	events, ok := pg.outputChannels[id]
+
+	if !ok {
+		return errors.New("PodGroup does not contain specified JobID")
+	}
+
+	delete(pg.outputChannels, id)
+	close(events)
+
+	return nil
+}
+
+func (pg PodGroup) registerPod(instance InstanceID, frequency uint64) (leader chan Incoming, worker chan Outgoing, err error) {
+	leader = make(chan Incoming) // messages for leader
+	worker = make(chan Outgoing) // messages for worker
+
+	pg.scheduledPods[instance] = worker
+	pg.capacities[instance] = frequency
+	pg.currentCapacities[instance] = frequency
+
+	// Mux events from pod to correct job channels
+	go func() {
+		for msg := range leader {
+
+			jobID := msg.getJobID()
+
+			output, ok := pg.outputChannels[jobID]
+			if !ok {
+				log.WithField("jobID", jobID).Error("Could not find registered channel for job, discarding event")
+				continue
+			}
+
+			switch msg.(type) {
+			case Finish:
+				pg.workloadCount[jobID]--
+
+				// Since no more remaining workloads, output channel can be closed
+				if pg.workloadCount[jobID] == 0 {
+					close(output)
+				}
+
+			default:
+				// Send event to respective output channel
+				output <- msg
+			}
+		}
+
+		// If channel is closed then communication with pod has stopped
+		pg.removeInstance(instance)
+	}()
+
+	return leader, worker, nil
+}
+
+func (pg PodGroup) currentCapacity() uint64 {
+	var sum uint64 = 0
+	for _, freq := range pg.currentCapacities {
+		sum += freq
+	}
+
+	return sum
+}
+
+// TODO: for every jobID, keep track of which pod has been assigned what frequency
+// and cleanup this information when finish event from that pod is received
+func (pg PodGroup) distribute(j mgr.Job) {
+	frequency := j.Frequency
+
+	for instance, out := range pg.scheduledPods {
+
+		if pg.currentCapacities[instance] == 0 {
+			continue
+		}
+
+		var workload uint64
+
+		if frequency < pg.currentCapacities[instance] {
+			workload = frequency
+			pg.currentCapacities[instance] -= frequency
+			frequency = 0
+		} else {
+			workload = pg.currentCapacities[instance]
+			frequency -= pg.currentCapacities[instance]
+			pg.currentCapacities[instance] = 0
+		}
+
+		// Increment the worload count
+		pg.workloadCount[j.ID]++
+		out <- Start{
+			ID:         j.ID,
+			Frequency:  workload,
+			Duration:   j.Duration,
+			HTTPMethod: j.HTTPMethod,
+			HTTPUrl:    j.HTTPUrl,
+		}
+
+		if frequency == 0 {
+			break
+		}
+	}
+
+}
+
+// NewPodGroup Allocates a new podGroup
+func NewPodGroup(group string, clientset *kubernetes.Clientset) (pg *PodGroup) {
+	pg = new(PodGroup)
+
+	pg.clientset = clientset
+	pg.group = group
+	pg.instanceCount = 0
+
+	pg.scheduledPods = make(map[InstanceID]chan Outgoing)
+	pg.capacities = make(map[InstanceID]uint64)
+	pg.currentCapacities = make(map[InstanceID]uint64)
+
+	pg.outputChannels = make(map[mgr.JobID]chan Event)
+	pg.workloadCount = make(map[mgr.JobID]uint32)
+
+	return pg
+}

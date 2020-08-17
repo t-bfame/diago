@@ -1,25 +1,32 @@
-proto:
-	@ if ! which protoc > /dev/null; then \
-		echo "error: protoc not installed" >&2; \
-		exit 1; \
-	fi
-	@ if ! which protoc-gen-go > /dev/null; then \
-		echo "error: protoc-gen-go not installed" >&2; \
-		exit 1; \
-	fi
-
-	@ echo Compiling Protobufs
-	@ for file in $$(git ls-files '*.proto'); do \
-		protoc \
-		--go_out=Mgrpc/service_config/service_config.proto=/internal/proto/grpc_service_config:. \
-		--go-grpc_out=Mgrpc/service_config/service_config.proto=/internal/proto/grpc_service_config:. \
-		--go_opt=paths=source_relative \
-		--go-grpc_opt=paths=source_relative \
-		$$file; \
-	done
+.PHONY:	build run
 
 build:
-	@ go install .
+	GOOS=linux go build cmd/main.go
+	docker build -f build/package/Dockerfile -t diago .
+	kubectl delete sts diago
+
+remove:
+	kubectl delete sts diago
+	kubectl delete po diago-worker-6fbbd7
 
 run:
-	@ go run main
+	kubectl apply -f deployments/deploy.yaml
+	kubectl get po
+
+logs:
+	kubectl logs diago-0 -f
+
+
+.PHONY: local
+local:
+	go build cmd/main.go
+
+PROTOC := protoc
+
+.PHONY: proto
+proto:
+
+	$(PROTOC) \
+		--go_out=Mgrpc/service_config/service_config.proto=/proto-gen/api:. \
+		--go-grpc_out=Mgrpc/service_config/service_config.proto=/proto-gen/api:. \
+		api/proto/worker.proto

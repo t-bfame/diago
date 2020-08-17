@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: diago
+  labels:
+    app: diago
+spec:
+  replicas: 1
+  serviceName: diago-service
+  selector:
+    matchLabels:
+      app: diago
+  template:
+    metadata:
+      labels:
+        app: diago
+    spec:
+      containers:
+      - name: master
+        image: diago
+        imagePullPolicy: Never
+        ports:
+        - name: master
+          protocol: TCP
+          containerPort: 5000
+        env:
+        - name: "GRPC_HOST"
+          valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        - name: "GRPC_PORT"
+          value: "5000"
+      terminationGracePeriodSeconds: 0
