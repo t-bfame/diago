@@ -2,6 +2,8 @@ syntax = "proto3";
 
 option go_package = "proto-gen/worker";
 
+import "google/protobuf/timestamp.proto";
+
 service Worker {
     rpc Coordinate(stream Message) returns (stream Message) {}
 }
@@ -55,6 +57,8 @@ message Metrics {
     uint64 latency = 5;
 
     string error = 6;
+
+    google.protobuf.Timestamp timestamp = 7;
 }
 
 message Stop {
