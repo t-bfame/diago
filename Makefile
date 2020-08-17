@@ -12,8 +12,7 @@ run:
 
 .PHONY: local
 local:
-	go build -o ser cmd/server/lol.go
-	go build -o cle cmd/server/cle.go
+	go build cmd/main.go
 
 PROTOC := protoc
 

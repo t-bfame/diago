@@ -15,17 +15,15 @@ type PodManager struct {
 	podGroups map[string]*PodGroup
 }
 
-func (pm PodManager) register(group string, instance InstanceID) (events chan Event, err error) {
+func (pm PodManager) register(group string, instance InstanceID) (leader chan Incoming, worker chan Outgoing, err error) {
 	pg, ok := pm.podGroups[group]
 
 	if !ok {
-		return nil, errors.New("Could not find specified group")
+		return nil, nil, errors.New("Could not find specified group")
 	}
 
 	// Add test channel for multiplexing
-	events, err = pg.registerPod(instance)
-
-	return events, err
+	return pg.registerPod(instance)
 }
 
 func (pm PodManager) schedule(j mgr.Job, events chan Event) (err error) {

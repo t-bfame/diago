@@ -17,7 +17,7 @@ const hashSize = 6
 type PodGroup struct {
 	group         string
 	clientset     *kubernetes.Clientset
-	scheduledPods map[string]string
+	scheduledPods map[InstanceID]chan Outgoing
 	instanceCount int
 
 	outputChannels map[mgr.JobID]chan Event
@@ -55,7 +55,7 @@ func (pg PodGroup) removeInstance(instance InstanceID) (err error) {
 	}
 
 	log.WithField("podName", name).WithField("podGroup", pg.group).Info("Removed pod")
-	delete(pg.scheduledPods, name)
+	delete(pg.scheduledPods, instance)
 	pg.instanceCount--
 
 	return nil
@@ -80,14 +80,15 @@ func (pg PodGroup) removeChannel(id mgr.JobID) (err error) {
 	return nil
 }
 
-// TODO: still need to send data back to pods so need to record each channel with id
-// TODO: Hash verification?
-func (pg PodGroup) registerPod(instance InstanceID) (events chan Event, err error) {
-	events = make(chan Event)
+func (pg PodGroup) registerPod(instance InstanceID) (leader chan Incoming, worker chan Outgoing, err error) {
+	leader = make(chan Incoming) // messages for leader
+	worker = make(chan Outgoing) // messages for worker
+
+	pg.scheduledPods[instance] = worker
 
 	// Mux events from pod to correct job channels
 	go func() {
-		for msg := range events {
+		for msg := range leader {
 
 			jobID := msg.getJobID()
 
@@ -105,7 +106,7 @@ func (pg PodGroup) registerPod(instance InstanceID) (events chan Event, err erro
 		pg.removeInstance(instance)
 	}()
 
-	return events, nil
+	return leader, worker, nil
 }
 
 // NewPodGroup Allocates a new podGroup
@@ -114,7 +115,7 @@ func NewPodGroup(group string, clientset *kubernetes.Clientset) (pg *PodGroup) {
 
 	pg.clientset = clientset
 	pg.group = group
-	pg.scheduledPods = make(map[string]string)
+	pg.scheduledPods = make(map[InstanceID]chan Outgoing)
 	pg.instanceCount = 0
 
 	pg.outputChannels = make(map[mgr.JobID]chan Event)

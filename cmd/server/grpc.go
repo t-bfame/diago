@@ -26,42 +26,52 @@ func (s *workerServer) Coordinate(stream pb.Worker_CoordinateServer) error {
 	msg, err := stream.Recv()
 
 	if err != nil {
-		log.Error("Encountered error: %v", err)
+		log.WithError(err).Error("Encountered error during registration")
 		return err
 	}
 
-	if msg.Payload.(type) != *pb.Message_Register {
-		log.WithField("recvdType", fmt.Sprintf("%T", msg.Payload.(type))).Error("Expected first message to be REGISTER, terminating connection")
+	if reg := msg.GetRegister(); reg == nil {
+		log.WithField("recvdType", fmt.Sprintf("%T", msg.Payload)).Error("Expected first message to be Register, terminating connection")
 		return errors.New("Expected first message to be Register, terminating connection")
 	}
 
-	// TODO: figure out proper way of extracing message
-	group := msg.Payload.Group
-	instance := scheduler.InstanceID(msg.Payload.Group.Instance)
+	reg := msg.GetRegister()
+	group := reg.GetGroup()
+	instance := scheduler.InstanceID(reg.GetInstance())
 
-	ch, err := s.sched.Register(group, instance)
+	log.WithField("group", group).WithField("instance", instance).Info("Received registration for pod")
+
+	leaderMsgs, workerMsgs, err := s.sched.Register(group, instance)
 
 	// Sending routine
 	go func() {
-		for {
-			if err := stream.Send(nil); err != nil {
-				break
+		for event := range workerMsgs {
+			if err := stream.Send(event.ToProto()); err != nil {
+				log.WithError(err).Error("Error sending message to worker")
 			}
 		}
-
 	}()
 
 	// Receiving routine
 	for {
+		msg, err := stream.Recv()
+
 		if err == io.EOF {
-			return nil
+			break
 		}
 		if err != nil {
 			return err
 		}
 
-		fmt.Println(in)
+		inc, err := scheduler.ProtoToIncoming(msg)
+		if err != nil {
+			log.WithField("recvdType", fmt.Sprintf("%T", msg.Payload)).Error("Enountered messsage with unexpected type, discarding message")
+		}
+
+		leaderMsgs <- inc
 	}
+
+	return nil
 }
 
 func newServer(s *scheduler.Scheduler) *workerServer {

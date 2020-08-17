@@ -1,6 +1,8 @@
 package scheduler
 
 import (
+	"fmt"
+
 	mgr "github.com/t-bfame/diago/internal/manager"
 )
 
@@ -24,8 +26,29 @@ func (s Scheduler) Stop(j mgr.Job) (err error) {
 }
 
 // Register something
-func (s Scheduler) Register(group string, instance InstanceID) (chan Event, error) {
-	return s.pm.register(group, instance)
+func (s Scheduler) Register(group string, instance InstanceID) (chan Incoming, chan Outgoing, error) {
+	// return s.pm.register(group, instance)
+
+	inc := make(chan Incoming)
+	out := make(chan Outgoing)
+
+	go func() {
+		out <- Start{
+			ID:         "inst",
+			Frequency:  1,
+			Duration:   3,
+			HTTPMethod: "GET",
+			HTTPUrl:    "localhost:3000",
+		}
+	}()
+
+	go func() {
+		for lol := range inc {
+			fmt.Println("Incoming:", lol)
+		}
+	}()
+
+	return inc, out, nil
 }
 
 // NewScheduler laalala

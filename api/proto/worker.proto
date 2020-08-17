@@ -20,6 +20,7 @@ message Message {
 message Register {
     string group = 1;
     string instance = 2;
+    uint64 frequency = 3;
 }
 
 message HTTPRequest {
@@ -29,20 +30,20 @@ message HTTPRequest {
 
 message Start {
     // Each job is split into multiple workloads, each workload with the same job id
-    uint64 jobid = 1;
+    string job_id = 1;
     // requests / second
-    int64 frequency = 2;
+    uint64 frequency = 2;
     // seconds
-    int64 duration = 3;
+    uint64 duration = 3;
     HTTPRequest request = 4;
 }
 
 message Finish {
-    uint64 job_id = 1;
+    string job_id = 1;
 }
 
 message Metrics {
-    uint64 job_id = 1;
+    string job_id = 1;
 
     uint32 code = 2;
 
@@ -57,7 +58,7 @@ message Metrics {
 }
 
 message Stop {
-    uint64 job_id = 1;
+    string job_id = 1;
 }
 
 message Ack {
