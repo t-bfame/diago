@@ -4,9 +4,11 @@ build:
 	GOOS=linux go build cmd/main.go
 	docker build -f build/package/Dockerfile -t diago .
 	kubectl delete sts diago
+	kubectl delete svc diago-0
 
 remove:
 	kubectl delete sts diago
+	kubectl delete svc diago-0
 	kubectl delete po diago-worker-6fbbd7
 
 run:

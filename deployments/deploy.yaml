@@ -1,3 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: diago-0
+spec:
+  type: NodePort
+  selector:
+    statefulset.kubernetes.io/pod-name: diago-0
+  ports:
+  - protocol: TCP
+    port: 9001
+    targetPort: 9001
+    nodePort: 30007
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -30,4 +44,6 @@ spec:
                 fieldPath: status.podIP
         - name: "GRPC_PORT"
           value: "5000"
+        - name: "API_PORT"
+          value: "9001"
       terminationGracePeriodSeconds: 0

@@ -16,3 +16,21 @@ type Job struct {
 	HTTPMethod string
 	HTTPUrl    string
 }
+
+type TestID string
+
+type Test struct {
+	ID		TestID
+	Name	string
+	Jobs 	[]Job
+}
+
+type TestInstanceID string
+
+type TestInstance struct {
+	ID			TestInstanceID
+	TestID		TestID
+	Type		string
+	Status		string
+	CreatedAt 	int64
+}
