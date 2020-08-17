@@ -3,19 +3,62 @@ syntax = "proto3";
 option go_package = "proto-gen/worker";
 
 service Worker {
-    rpc Register(stream Message) returns (stream Message) {}
+    rpc Coordinate(stream Message) returns (stream Message) {}
 }
 
-
 message Message {
-
-    enum Type {
-        START = 0;
-        FINISH = 1;
-        METRIC = 2;
-        EVENT = 3;
-        STOP = 4;
-        REGISTER = 5;
+    oneof payload {
+        Register register = 1;
+        Start start = 2;
+        Metrics metrics = 3;
+        Finish finish = 4;
+        Stop stop = 5;
+        Ack ack = 6;
     }
+}
+
+message Register {
+
+}
+
+message HTTPRequest {
+    string method = 1;
+    string url = 2;
+}
+
+message Start {
+    // Each job is split into multiple workloads, each workload with the same job id
+    uint64 jobid = 1;
+    // requests / second
+    int64 frequency = 2;
+    // seconds
+    int64 duration = 3;
+    HTTPRequest request = 4;
+}
+
+message Finish {
+    uint64 job_id = 1;
+}
+
+message Metrics {
+    uint64 job_id = 1;
+
+    uint32 code = 2;
+
+    uint64 bytes_in = 3;
+
+    uint64 bytes_out = 4;
+
+    // Nanoseconds
+    uint64 latency = 5;
+
+    string error = 6;
+}
+
+message Stop {
+    uint64 job_id = 1;
+}
+
+message Ack {
 
 }
