@@ -72,6 +72,8 @@ func (s *workerServer) Coordinate(stream pb.Worker_CoordinateServer) error {
 		leaderMsgs <- inc
 	}
 
+	close(leaderMsgs)
+
 	return nil
 }
 

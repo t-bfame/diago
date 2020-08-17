@@ -24,6 +24,7 @@ type PodGroup struct {
 	currentCapacities map[InstanceID]uint64
 
 	outputChannels map[mgr.JobID]chan Event
+	workloadCount  map[mgr.JobID]uint32
 }
 
 // Instances are 0 indexed
@@ -103,8 +104,19 @@ func (pg PodGroup) registerPod(instance InstanceID, frequency uint64) (leader ch
 				continue
 			}
 
-			// Send event to respective output channel
-			output <- msg
+			switch msg.(type) {
+			case Finish:
+				pg.workloadCount[jobID]--
+
+				// Since no more remaining workloads, output channel can be closed
+				if pg.workloadCount[jobID] == 0 {
+					close(output)
+				}
+
+			default:
+				// Send event to respective output channel
+				output <- msg
+			}
 		}
 
 		// If channel is closed then communication with pod has stopped
@@ -146,6 +158,8 @@ func (pg PodGroup) distribute(j mgr.Job) {
 			pg.currentCapacities[instance] = 0
 		}
 
+		// Increment the worload count
+		pg.workloadCount[j.ID]++
 		out <- Start{
 			ID:         j.ID,
 			Frequency:  workload,
@@ -154,6 +168,9 @@ func (pg PodGroup) distribute(j mgr.Job) {
 			HTTPUrl:    j.HTTPUrl,
 		}
 
+		if frequency == 0 {
+			break
+		}
 	}
 
 }
@@ -171,6 +188,7 @@ func NewPodGroup(group string, clientset *kubernetes.Clientset) (pg *PodGroup) {
 	pg.currentCapacities = make(map[InstanceID]uint64)
 
 	pg.outputChannels = make(map[mgr.JobID]chan Event)
+	pg.workloadCount = make(map[mgr.JobID]uint32)
 
 	return pg
 }

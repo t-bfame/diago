@@ -36,7 +36,10 @@ func main() {
 
 		for msg := range ch {
 			fmt.Println(msg)
+			fmt.Println(fmt.Sprintf("%T", msg))
 		}
+
+		fmt.Println("DONE")
 
 	}()
 
