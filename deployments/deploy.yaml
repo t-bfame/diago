@@ -21,5 +21,13 @@ spec:
         imagePullPolicy: Never
         ports:
         - name: master
-          containerPort: 8000
+          protocol: TCP
+          containerPort: 5000
+        env:
+        - name: "GRPC_HOST"
+          valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        - name: "GRPC_PORT"
+          value: "5000"
       terminationGracePeriodSeconds: 0

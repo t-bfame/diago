@@ -38,10 +38,11 @@ func (s *workerServer) Coordinate(stream pb.Worker_CoordinateServer) error {
 	reg := msg.GetRegister()
 	group := reg.GetGroup()
 	instance := scheduler.InstanceID(reg.GetInstance())
+	freq := reg.GetFrequency()
 
-	log.WithField("group", group).WithField("instance", instance).Info("Received registration for pod")
+	log.WithField("group", group).WithField("instance", instance).WithField("frequency", freq).Info("Received registration for pod")
 
-	leaderMsgs, workerMsgs, err := s.sched.Register(group, instance)
+	leaderMsgs, workerMsgs, err := s.sched.Register(group, instance, freq)
 
 	// Sending routine
 	go func() {
@@ -79,9 +80,9 @@ func newServer(s *scheduler.Scheduler) *workerServer {
 }
 
 // InitGRPCServer Initializes the gRPC server for diago
-func InitGRPCServer(protocol string, host string, port uint16, opts []grpc.ServerOption, s *scheduler.Scheduler) {
+func InitGRPCServer(protocol string, host string, port string, opts []grpc.ServerOption, s *scheduler.Scheduler) {
 
-	lis, err := net.Listen(protocol, fmt.Sprintf("%s:%d", host, port))
+	lis, err := net.Listen(protocol, fmt.Sprintf("%s:%s", host, port))
 
 	if err != nil {
 		log.Fatalf("gRPC server failed to listen: %v", err)

@@ -17,14 +17,17 @@ const hashSize = 6
 type PodGroup struct {
 	group         string
 	clientset     *kubernetes.Clientset
-	scheduledPods map[InstanceID]chan Outgoing
 	instanceCount int
+
+	scheduledPods     map[InstanceID]chan Outgoing
+	capacities        map[InstanceID]uint64
+	currentCapacities map[InstanceID]uint64
 
 	outputChannels map[mgr.JobID]chan Event
 }
 
 // Instances are 0 indexed
-func (pg PodGroup) addInstance() (instance InstanceID, err error) {
+func (pg PodGroup) addInstances(frequency uint64) (instance InstanceID, err error) {
 	id := InstanceID(utils.RandHash(hashSize))
 
 	pod, err := createPodConfig(pg.group, id)
@@ -80,11 +83,13 @@ func (pg PodGroup) removeChannel(id mgr.JobID) (err error) {
 	return nil
 }
 
-func (pg PodGroup) registerPod(instance InstanceID) (leader chan Incoming, worker chan Outgoing, err error) {
+func (pg PodGroup) registerPod(instance InstanceID, frequency uint64) (leader chan Incoming, worker chan Outgoing, err error) {
 	leader = make(chan Incoming) // messages for leader
 	worker = make(chan Outgoing) // messages for worker
 
 	pg.scheduledPods[instance] = worker
+	pg.capacities[instance] = frequency
+	pg.currentCapacities[instance] = frequency
 
 	// Mux events from pod to correct job channels
 	go func() {
@@ -109,14 +114,61 @@ func (pg PodGroup) registerPod(instance InstanceID) (leader chan Incoming, worke
 	return leader, worker, nil
 }
 
+func (pg PodGroup) currentCapacity() uint64 {
+	var sum uint64 = 0
+	for _, freq := range pg.currentCapacities {
+		sum += freq
+	}
+
+	return sum
+}
+
+// TODO: for every jobID, keep track of which pod has been assigned what frequency
+// and cleanup this information when finish event from that pod is received
+func (pg PodGroup) distribute(j mgr.Job) {
+	frequency := j.Frequency
+
+	for instance, out := range pg.scheduledPods {
+
+		if pg.currentCapacities[instance] == 0 {
+			continue
+		}
+
+		var workload uint64
+
+		if frequency < pg.currentCapacities[instance] {
+			workload = frequency
+			pg.currentCapacities[instance] -= frequency
+			frequency = 0
+		} else {
+			workload = pg.currentCapacities[instance]
+			frequency -= pg.currentCapacities[instance]
+			pg.currentCapacities[instance] = 0
+		}
+
+		out <- Start{
+			ID:         j.ID,
+			Frequency:  workload,
+			Duration:   j.Duration,
+			HTTPMethod: j.HTTPMethod,
+			HTTPUrl:    j.HTTPUrl,
+		}
+
+	}
+
+}
+
 // NewPodGroup Allocates a new podGroup
 func NewPodGroup(group string, clientset *kubernetes.Clientset) (pg *PodGroup) {
 	pg = new(PodGroup)
 
 	pg.clientset = clientset
 	pg.group = group
-	pg.scheduledPods = make(map[InstanceID]chan Outgoing)
 	pg.instanceCount = 0
+
+	pg.scheduledPods = make(map[InstanceID]chan Outgoing)
+	pg.capacities = make(map[InstanceID]uint64)
+	pg.currentCapacities = make(map[InstanceID]uint64)
 
 	pg.outputChannels = make(map[mgr.JobID]chan Event)
 
