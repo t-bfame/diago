@@ -20,29 +20,34 @@ type workerServer struct {
 	sched *scheduler.Scheduler
 }
 
-func (s *workerServer) Register(stream pb.Worker_RegisterServer) error {
+func (s *workerServer) Coordinate(stream pb.Worker_CoordinateServer) error {
 
 	// Expect Register message
-	in, err := stream.Recv()
+	msg, err := stream.Recv()
 
 	if err != nil {
 		log.Error("Encountered error: %v", err)
 		return err
 	}
 
-	if in.Type != pb.Message_REGISTER {
-		log.WithField("recvdType", fmt.Sprintf("%T", in.Type)).Error("Expected first message to be REGISTER, terminating connection")
-		return errors.New("Expected first message to be REGISTER, terminating connection")
+	if msg.Payload.(type) != *pb.Message_Register {
+		log.WithField("recvdType", fmt.Sprintf("%T", msg.Payload.(type))).Error("Expected first message to be REGISTER, terminating connection")
+		return errors.New("Expected first message to be Register, terminating connection")
 	}
 
 	// TODO: figure out proper way of extracing message
-	group := in.Group
-	instance := scheduler.InstanceID(in.Instance)
+	group := msg.Payload.Group
+	instance := scheduler.InstanceID(msg.Payload.Group.Instance)
 
 	ch, err := s.sched.Register(group, instance)
 
 	// Sending routine
 	go func() {
+		for {
+			if err := stream.Send(nil); err != nil {
+				break
+			}
+		}
 
 	}()
 
@@ -57,14 +62,6 @@ func (s *workerServer) Register(stream pb.Worker_RegisterServer) error {
 
 		fmt.Println(in)
 	}
-
-	go func() {
-		for {
-			if err := stream.Send(nil); err != nil {
-				break
-			}
-		}
-	}()
 }
 
 func newServer(s *scheduler.Scheduler) *workerServer {

@@ -18,7 +18,8 @@ message Message {
 }
 
 message Register {
-
+    string group = 1;
+    string instance = 2;
 }
 
 message HTTPRequest {
