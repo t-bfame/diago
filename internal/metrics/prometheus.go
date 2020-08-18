@@ -45,6 +45,16 @@ func (pc *PrometheusCollection) update(m *Metrics) {
 	pc.success.Set(success)
 }
 
+func (pc *PrometheusCollection) clear() {
+	pc.latencyMean.Set(0)
+	pc.latencyMin.Set(0)
+	pc.latencyMax.Set(0)
+	pc.bytesIn.Set(0)
+	pc.bytesOut.Set(0)
+	pc.requests.Set(0)
+	pc.success.Set(0)
+}
+
 // NewPrometheusCollector returns a new prometheus metric collection
 func NewPrometheusCollector(labels map[string]string) *PrometheusCollection {
 

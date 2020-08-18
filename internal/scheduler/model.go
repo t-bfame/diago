@@ -1,11 +1,22 @@
 package scheduler
 
 import (
+	"errors"
 	"os"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+// PodConfig TODO: Move out to Storage later
+type PodConfig struct {
+	Image    string
+	Capacity uint64
+}
+
+var storage map[string]PodConfig = map[string]PodConfig{
+	"diago-worker": PodConfig{Image: "diago-worker", Capacity: 100},
+}
 
 func createContainerSpec(name string, image string, env map[string]string) (containers []v1.Container) {
 	envVars := []v1.EnvVar{}
@@ -28,7 +39,6 @@ func createContainerSpec(name string, image string, env map[string]string) (cont
 }
 
 func getEnvs(group string, instance InstanceID) map[string]string {
-	// TODO: Use configs to get the correct IP addresses for leader
 	envs := map[string]string{
 		"DIAGO_WORKER_GROUP":          group,
 		"DIAGO_WORKER_GROUP_INSTANCE": string(instance),
@@ -48,18 +58,25 @@ func getLabels(group string, instance InstanceID) map[string]string {
 	return labels
 }
 
-// TODO: Get image from storage based on InstanceID
-func getConfigs(group string, instance InstanceID) (image string, env map[string]string, labels map[string]string) {
-	image = "diago-worker"
+func getConfigs(group string, instance InstanceID) (image string, env map[string]string, labels map[string]string, err error) {
+	dat, ok := storage[group]
+	if !ok {
+		return "", nil, nil, errors.New("Could not find image for specified group")
+	}
 
-	return image, getEnvs(group, instance), getLabels(group, instance)
+	image = dat.Image
+	return image, getEnvs(group, instance), getLabels(group, instance), nil
 }
 
 func createPodConfig(group string, instance InstanceID) (podConfig *v1.Pod, err error) {
 	// TODO: Talk to storage to get configs
 	name := group + "-" + string(instance)
-	image, env, labels := getConfigs(group, instance)
+	image, env, labels, err := getConfigs(group, instance)
 	var gracePeriod int64 = 0
+
+	if err != nil {
+		return nil, err
+	}
 
 	pod := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -75,4 +92,13 @@ func createPodConfig(group string, instance InstanceID) (podConfig *v1.Pod, err 
 	}
 
 	return pod, nil
+}
+
+func getCapacity(group string) (uint64, error) {
+	dat, ok := storage[group]
+	if !ok {
+		return 0, errors.New("Could not find capacity for specified group")
+	}
+
+	return dat.Capacity, nil
 }
