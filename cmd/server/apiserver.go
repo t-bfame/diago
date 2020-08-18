@@ -86,6 +86,10 @@ func (server *ApiServer) Start() {
 		test.ID = mgr.TestID(uid)
 		server.dummyTests[uid] = test
 
+		for i := range test.Jobs {
+			test.Jobs[i].ID = mgr.JobID(fmt.Sprintf("%s-%d", test.ID, i))
+		}
+
 		w.Write(
 			buildSuccess(
 				map[string]string{

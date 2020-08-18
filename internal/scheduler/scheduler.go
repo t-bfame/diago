@@ -11,7 +11,7 @@ type Scheduler struct {
 
 // Submit dingdingi
 func (s Scheduler) Submit(j mgr.Job) (events chan Event, err error) {
-	events = make(chan Event)
+	events = make(chan Event, 2)
 
 	// Put job in queue for pod group
 	err = s.pm.schedule(j, events)

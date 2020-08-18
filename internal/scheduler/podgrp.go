@@ -113,9 +113,6 @@ func (pg *PodGroup) removeInstance(instance InstanceID) (err error) {
 }
 
 func (pg *PodGroup) addJob(j mgr.Job, events chan Event) (err error) {
-	// Distribute defer should be stacked on top of unlock
-	defer pg.distribute()
-
 	pg.qmux.Lock()
 	defer pg.qmux.Unlock()
 
@@ -123,7 +120,9 @@ func (pg *PodGroup) addJob(j mgr.Job, events chan Event) (err error) {
 
 	// Queue job
 	*pg.jobQueue = append(*pg.jobQueue, j)
+	go pg.addInstances(j.Frequency)
 
+	pg.distribute()
 	return nil
 }
 
@@ -141,10 +140,11 @@ func (pg *PodGroup) removeChannel(id mgr.JobID) (err error) {
 }
 
 func (pg *PodGroup) registerPod(group string, instance InstanceID) (leader chan Incoming, worker chan Outgoing, err error) {
-	defer pg.distribute()
+	pg.qmux.Lock()
+	defer pg.qmux.Unlock()
 
-	leader = make(chan Incoming) // messages for leader
-	worker = make(chan Outgoing) // messages for worker
+	leader = make(chan Incoming)    // messages for leader
+	worker = make(chan Outgoing, 2) // messages for worker
 
 	pg.scheduledPods[instance] = worker
 	pg.capmgr.addInstance(group, instance)
@@ -166,10 +166,10 @@ func (pg *PodGroup) registerPod(group string, instance InstanceID) (leader chan 
 				pg.workloadCount[jobID]--
 
 				pg.capmgr.reclaimCapacity(instance, jobID)
+				pg.distribute()
 
 				// Since no more remaining workloads, output channel can be closed
 				if pg.workloadCount[jobID] == 0 {
-					go pg.distribute()
 					close(output)
 				}
 
@@ -183,17 +183,21 @@ func (pg *PodGroup) registerPod(group string, instance InstanceID) (leader chan 
 		pg.removeInstance(instance)
 	}()
 
+	pg.distribute()
 	return leader, worker, nil
 }
 
 // TODO: for every jobID, keep track of which pod has been assigned what frequency
 // and cleanup this information when finish event from that pod is received
 func (pg *PodGroup) distribute() {
-	pg.qmux.Lock()
-	defer pg.qmux.Unlock()
+	if len(*pg.jobQueue) == 0 {
+		return
+	}
 
 	j := (*pg.jobQueue)[0]
 	frequency := j.Frequency
+	var workload uint64
+	var err error
 
 	// Cannot start since there is not enough capacity
 	if frequency > pg.capmgr.currentCapacity() {
@@ -205,7 +209,7 @@ func (pg *PodGroup) distribute() {
 
 	for instance, out := range pg.scheduledPods {
 
-		workload, frequency, err := pg.capmgr.assignCapacity(instance, j.ID, frequency)
+		workload, frequency, err = pg.capmgr.assignCapacity(instance, j.ID, frequency)
 
 		if err != nil {
 			continue

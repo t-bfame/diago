@@ -44,7 +44,7 @@ func (cm *CapacityManager) calculateInstanceCount(group string, frequency uint64
 		count = (remaining / capacity) + 1
 	}
 
-	currentCapacity += count
+	cm.instanceCount += count
 	return int(count), nil
 }
 
@@ -130,8 +130,12 @@ func (cm *CapacityManager) addInstance(group string, instance InstanceID) error 
 	return nil
 }
 
+// NewCapacityManager returns a new capacity manager
 func NewCapacityManager() *CapacityManager {
 	var capmgr CapacityManager
+
+	capmgr.currentCapacities = make(map[InstanceID]uint64)
+	capmgr.workloadDistribution = make(map[InstanceID]*map[mgr.JobID]uint64)
 
 	return &capmgr
 }

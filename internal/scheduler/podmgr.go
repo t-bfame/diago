@@ -38,10 +38,6 @@ func (pm PodManager) schedule(j mgr.Job, events chan Event) (err error) {
 	// Add channel for receiving events
 	pg.addJob(j, events)
 
-	if j.Frequency > pg.capmgr.currentCapacity() {
-		defer pg.addInstances(j.Frequency)
-	}
-
 	return nil
 }
 

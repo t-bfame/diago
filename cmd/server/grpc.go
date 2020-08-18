@@ -65,7 +65,8 @@ func (s *workerServer) Coordinate(stream pb.Worker_CoordinateServer) error {
 			break
 		}
 		if err != nil {
-			return err
+			log.WithError(err).WithField("group", group).WithField("instance", instance).Error("Encountered receiver stream error")
+			break
 		}
 
 		inc, err := scheduler.ProtoToIncoming(msg)
@@ -76,6 +77,7 @@ func (s *workerServer) Coordinate(stream pb.Worker_CoordinateServer) error {
 		leaderMsgs <- inc
 	}
 
+	log.WithField("group", group).WithField("instance", instance).Info("Closing pod")
 	close(leaderMsgs)
 
 	return nil

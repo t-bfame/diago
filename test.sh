@@ -11,12 +11,32 @@ make_dummy_test() {
             \"Name\": \"Test1\",
             \"Jobs\": [
               {
+                \"Name\": \"alpha\",
+                \"Group\": \"diago-worker\",
+                \"Priority\": 0,
+                \"Frequency\":  12,
+			          \"Duration\":   20,
+			          \"HTTPMethod\": \"GET\",
+			          \"HTTPUrl\":    \"https://www.google.com\"
+              }
+            ]
+          }")
+  testid=$(echo $output | python3 -c "import sys, json; print(json.load(sys.stdin)['payload']['testid'])")
+}
+
+make_dummy_test2() {
+  output=$(curl "$base:30007/tests"\
+        -H "Content-Type: application/json"\
+        -d "{
+            \"Name\": \"Test1\",
+            \"Jobs\": [
+              {
                 \"ID\": \"1\",
                 \"Name\": \"alpha\",
                 \"Group\": \"diago-worker\",
                 \"Priority\": 0,
-                \"Frequency\":  20,
-			          \"Duration\":   300,
+                \"Frequency\":  5,
+			          \"Duration\":   5,
 			          \"HTTPMethod\": \"GET\",
 			          \"HTTPUrl\":    \"https://www.google.com\"
               }
@@ -47,7 +67,7 @@ get_instance() {
 
 testid=""
 pad
-make_dummy_test
+make_dummy_test2
 
 # strip quotes from id
 testid=$(echo $testid | tr -d '"')
