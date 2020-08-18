@@ -61,6 +61,8 @@ type Metrics struct {
 	// Used for fast lookup of errors in Errors
 	errors  map[string]struct{}
 	success uint64
+
+	collector *PrometheusCollection
 }
 
 // Add implements the Add method of the Report interface by adding the given
@@ -103,6 +105,8 @@ func (m *Metrics) Add(r *scheduler.Metrics) {
 			m.Histogram.Add(r)
 		}
 	*/
+
+	m.collector.update(m)
 }
 
 // Close implements the Close method of the Report interface by computing
@@ -217,4 +221,14 @@ func newTdigestEstimator(compression float64) *tdigestEstimator {
 func (e *tdigestEstimator) Add(s float64) { e.TDigest.Add(s, 1) }
 func (e *tdigestEstimator) Get(q float64) float64 {
 	return e.TDigest.Quantile(q)
+}
+
+func NewMetricAggregator(testid string) *Metrics {
+	var magg Metrics
+
+	labels := map[string]string{"testid": testid}
+
+	magg.collector = NewPrometheusCollector(labels)
+
+	return &magg
 }

@@ -44,6 +44,11 @@ func (s *workerServer) Coordinate(stream pb.Worker_CoordinateServer) error {
 
 	leaderMsgs, workerMsgs, err := s.sched.Register(group, instance, freq)
 
+	if err != nil {
+		log.WithError(err).Error("Encountered error during registeration")
+		return err
+	}
+
 	// Sending routine
 	go func() {
 		for event := range workerMsgs {

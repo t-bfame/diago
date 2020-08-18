@@ -7,10 +7,16 @@ spec:
   selector:
     statefulset.kubernetes.io/pod-name: diago-0
   ports:
-  - protocol: TCP
+  - name: api
+    protocol: TCP
     port: 9001
     targetPort: 9001
     nodePort: 30007
+  - name: prom
+    protocol: TCP
+    port: 2112
+    targetPort: 2112
+    nodePort: 30017
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -46,4 +52,6 @@ spec:
           value: "5000"
         - name: "API_PORT"
           value: "9001"
+        - name: "PROMETHEUS_PORT"
+          value: "2112"
       terminationGracePeriodSeconds: 0
