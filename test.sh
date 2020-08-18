@@ -5,7 +5,7 @@ pad() {
 }
 
 make_dummy_test() {
-  output=$(curl  -v "$base:30007/tests"\
+  output=$(curl "$base:30007/tests"\
         -H "Content-Type: application/json"\
         -d "{
             \"Name\": \"Test1\",
@@ -15,34 +15,33 @@ make_dummy_test() {
                 \"Name\": \"alpha\",
                 \"Group\": \"diago-worker\",
                 \"Priority\": 0,
-                \"Frequency\":  10,
-			          \"Duration\":   10,
+                \"Frequency\":  20,
+			          \"Duration\":   300,
 			          \"HTTPMethod\": \"GET\",
 			          \"HTTPUrl\":    \"https://www.google.com\"
               }
             ]
           }")
-  echo $output
-  testid=$(echo $output | jq '.payload.testid')
+  testid=$(echo $output | python3 -c "import sys, json; print(json.load(sys.stdin)['payload']['testid'])")
 }
 
 get_test() {
-  curl  -v "$base:30007/tests/$testid"
+  curl "$base:30007/tests/$testid" | python3 -m json.tool
   pad
 }
 
 submit_test() {
-  curl  -v "$base:30007/start-test/$testid"
+  curl "$base:30007/start-test/$testid" | python3 -m json.tool
   pad
 }
 
 stop_test() {
-  curl -v "$base:30007/stop-test/$testid"
+  curl "$base:30007/stop-test/$testid" | python3 -m json.tool
   pad
 }
 
 get_instance() {
-  curl  -v "$base:30007/test-instances/$testid"
+  curl "$base:30007/test-instances/$testid" | python3 -m json.tool
   pad
 }
 
@@ -58,5 +57,5 @@ pad
 get_test
 submit_test
 get_instance
-stop_test
+# stop_test
 get_instance

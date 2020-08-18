@@ -15,6 +15,7 @@ import (
 	"github.com/t-bfame/diago/internal/metrics"
 	"github.com/t-bfame/diago/internal/scheduler"
 	sch "github.com/t-bfame/diago/internal/scheduler"
+	"github.com/t-bfame/diago/pkg/utils"
 )
 
 type ApiServer struct {
@@ -79,8 +80,9 @@ func (server *ApiServer) Start() {
 			return
 		}
 
-		// For now, make id by concatenating test name to timestamp
-		uid := test.Name + "-" + strconv.FormatInt(time.Now().Unix(), 10)
+		// For now, make id by using random hash of length 5
+		// TODO: Maybe use a counter for every group for better UX?
+		uid := fmt.Sprintf("%s-%s", test.Name, utils.RandHash(5))
 		test.ID = mgr.TestID(uid)
 		server.dummyTests[uid] = test
 
@@ -205,7 +207,7 @@ func (server *ApiServer) Start() {
 
 			// monitor the channel
 			go func() {
-				var maggregator metrics.Metrics
+				maggregator := metrics.NewMetricAggregator(testid)
 
 				for msg := range ch {
 					switch x := msg.(type) {
@@ -286,10 +288,9 @@ func (server *ApiServer) Start() {
 	log.WithField("port", port).Info("Api server listening")
 }
 
-func NewApiServer() *ApiServer {
-	scheduler := sch.NewScheduler()
+func NewApiServer(sched *scheduler.Scheduler) *ApiServer {
 	return &ApiServer{
-		&scheduler,
+		sched,
 		make(map[string]mgr.Test),
 		make(map[string][]*mgr.TestInstance),
 		make(map[string]bool),

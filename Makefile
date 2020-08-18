@@ -1,15 +1,13 @@
 .PHONY:	build run
 
-build:
+build: remove
 	GOOS=linux go build cmd/main.go
 	docker build -f build/package/Dockerfile -t diago .
-	kubectl delete sts diago
-	kubectl delete svc diago-0
 
 remove:
-	kubectl delete sts diago
-	kubectl delete svc diago-0
-	kubectl delete po diago-worker-6fbbd7
+	- kubectl delete sts diago
+	- kubectl delete svc diago-0
+	- kubectl delete po -l group=diago-worker
 
 run:
 	kubectl apply -f deployments/deploy.yaml
@@ -18,6 +16,9 @@ run:
 logs:
 	kubectl logs diago-0 -f
 
+
+test:
+	./test.sh
 
 .PHONY: local
 local:
