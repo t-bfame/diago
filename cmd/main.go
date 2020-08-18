@@ -3,7 +3,6 @@ package main
 import (
 	"os"
 
-	"github.com/t-bfame/diago/api/apiserver"
 	"github.com/t-bfame/diago/cmd/server"
 	"github.com/t-bfame/diago/internal/scheduler"
 
@@ -15,7 +14,7 @@ func main() {
 	var opts []grpc.ServerOption
 
 	go func() {
-		apiServer := apiserver.NewApiServer()
+		apiServer := server.NewApiServer()
 		apiServer.Start()
 	}()
 
