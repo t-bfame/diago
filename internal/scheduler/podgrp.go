@@ -93,6 +93,10 @@ func (pg *PodGroup) removeInstance(instance InstanceID) (err error) {
 
 	name := pg.group + "-" + string(instance)
 
+	delete(pg.scheduledPods, instance)
+	pg.instanceCount--
+	pg.capmgr.removeInstance(instance)
+
 	deletePolicy := metav1.DeletePropagationForeground
 
 	// TODO: Use namespace from env variable
@@ -100,15 +104,11 @@ func (pg *PodGroup) removeInstance(instance InstanceID) (err error) {
 	if err := pg.clientset.CoreV1().Pods("default").Delete(name, &metav1.DeleteOptions{
 		PropagationPolicy: &deletePolicy,
 	}); err != nil {
+		log.WithError(err).WithField("podName", name).WithField("podGroup", pg.group).Error("Encountered error while pod deletion")
 		return err
 	}
 
 	log.WithField("podName", name).WithField("podGroup", pg.group).Info("Removed pod")
-	delete(pg.scheduledPods, instance)
-
-	pg.instanceCount--
-	pg.capmgr.removeInstance(instance)
-
 	return nil
 }
 
