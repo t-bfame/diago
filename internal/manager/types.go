@@ -33,4 +33,5 @@ type TestInstance struct {
 	Type		string
 	Status		string
 	CreatedAt 	int64
+	Metrics		interface{} // TODO: decide how to store metrics long-term
 }

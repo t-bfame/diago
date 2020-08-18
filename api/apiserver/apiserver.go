@@ -217,8 +217,10 @@ func (server *ApiServer) Start() {
 				}
 				maggregator.Close() // Can now access aggregated metrics through fields of maggregator
 
-				// TODO: write aggregated metrics to TestInstance
+				// write aggregated metrics to TestInstance
 				testInstance.Status = "done"
+				testInstance.Metrics = maggregator
+
 				// Remove from ongoingTests when channel closes
 				delete(server.ongoingTests, testid)
 				log.
