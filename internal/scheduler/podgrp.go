@@ -2,9 +2,10 @@ package scheduler
 
 import (
 	"errors"
+	"sync"
 
 	mgr "github.com/t-bfame/diago/internal/manager"
-	utils "github.com/t-bfame/diago/pkg/utils"
+	"github.com/t-bfame/diago/pkg/utils"
 
 	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,59 +20,113 @@ type PodGroup struct {
 	clientset     *kubernetes.Clientset
 	instanceCount int
 
-	scheduledPods     map[InstanceID]chan Outgoing
-	capacities        map[InstanceID]uint64
-	currentCapacities map[InstanceID]uint64
+	scheduledPods map[InstanceID]chan Outgoing
+	podmux        sync.Mutex
 
 	outputChannels map[mgr.JobID]chan Event
 	workloadCount  map[mgr.JobID]uint32
+
+	qmux     sync.Mutex
+	jobQueue *[]mgr.Job
+
+	capmgr *CapacityManager
 }
 
 // Instances are 0 indexed
-func (pg PodGroup) addInstances(frequency uint64) (instance InstanceID, err error) {
-	id := InstanceID(utils.RandHash(hashSize))
+func (pg *PodGroup) addInstances(frequency uint64) (err error) {
+	pg.podmux.Lock()
+	defer pg.podmux.Unlock()
 
-	pod, err := createPodConfig(pg.group, id)
+	count, err := pg.capmgr.calculateInstanceCount(pg.group, frequency)
 
 	if err != nil {
-		return InstanceID(""), err
+		log.WithField("group", pg.group).WithError(err).Error("Unable to add instances for pod group")
+		return err
 	}
 
-	result, err := pg.clientset.CoreV1().Pods("default").Create(pod)
-	if err != nil {
-		return InstanceID(""), err
+	var wg sync.WaitGroup
+	wgErr := make(chan error)
+	wg.Add(count)
+
+	for i := 0; i < count; i++ {
+		go func() {
+			defer wg.Done()
+
+			id := InstanceID(utils.RandHash(hashSize))
+
+			// Assumption: Pod configuration is correct and it will always come up
+			// TODO: Add listener that listens whether pod was initialized
+			pod, err := createPodConfig(pg.group, id)
+			if err != nil {
+				log.WithField("group", pg.group).WithError(err).Error("Unable to add instances for pod group")
+				wgErr <- err
+				return
+			}
+
+			// TODO: Use namespace from env variables
+			result, err := pg.clientset.CoreV1().Pods("default").Create(pod)
+			if err != nil {
+				log.WithField("group", pg.group).WithError(err).Error("Unable to add instances for pod group")
+				wgErr <- err
+				return
+			}
+
+			log.WithField("pod", result.GetObjectMeta().GetName()).WithField("podGroup", pg.group).Info("Created pod")
+		}()
 	}
 
-	log.WithField("podName", result.GetObjectMeta().GetName()).WithField("podGroup", pg.group).Info("Created pod")
-	pg.instanceCount++
+	wg.Wait()
 
-	return id, nil
+	select {
+	case <-wgErr:
+		return err
+	default:
+		pg.instanceCount += count
+	}
+
+	return nil
 }
 
-func (pg PodGroup) removeInstance(instance InstanceID) (err error) {
+func (pg *PodGroup) removeInstance(instance InstanceID) (err error) {
+	pg.podmux.Lock()
+	defer pg.podmux.Unlock()
+
 	name := pg.group + "-" + string(instance)
 
+	delete(pg.scheduledPods, instance)
+	pg.instanceCount--
+	pg.capmgr.removeInstance(instance)
+
 	deletePolicy := metav1.DeletePropagationForeground
+
+	// TODO: Use namespace from env variable
+	// Add listeners for detecting deletion
 	if err := pg.clientset.CoreV1().Pods("default").Delete(name, &metav1.DeleteOptions{
 		PropagationPolicy: &deletePolicy,
 	}); err != nil {
+		log.WithError(err).WithField("podName", name).WithField("podGroup", pg.group).Error("Encountered error while pod deletion")
 		return err
 	}
 
 	log.WithField("podName", name).WithField("podGroup", pg.group).Info("Removed pod")
-	delete(pg.scheduledPods, instance)
-	pg.instanceCount--
-
 	return nil
 }
 
-func (pg PodGroup) addChannel(id mgr.JobID, events chan Event) (err error) {
-	pg.outputChannels[id] = events
+func (pg *PodGroup) addJob(j mgr.Job, events chan Event) (err error) {
+	pg.qmux.Lock()
+	defer pg.qmux.Unlock()
 
+	pg.outputChannels[j.ID] = events
+
+	// Queue job
+	*pg.jobQueue = append(*pg.jobQueue, j)
+	go pg.addInstances(j.Frequency)
+
+	pg.distribute()
 	return nil
 }
 
-func (pg PodGroup) removeChannel(id mgr.JobID) (err error) {
+func (pg *PodGroup) removeChannel(id mgr.JobID) (err error) {
 	events, ok := pg.outputChannels[id]
 
 	if !ok {
@@ -84,13 +139,15 @@ func (pg PodGroup) removeChannel(id mgr.JobID) (err error) {
 	return nil
 }
 
-func (pg PodGroup) registerPod(instance InstanceID, frequency uint64) (leader chan Incoming, worker chan Outgoing, err error) {
-	leader = make(chan Incoming) // messages for leader
-	worker = make(chan Outgoing) // messages for worker
+func (pg *PodGroup) registerPod(group string, instance InstanceID) (leader chan Incoming, worker chan Outgoing, err error) {
+	pg.qmux.Lock()
+	defer pg.qmux.Unlock()
+
+	leader = make(chan Incoming)    // messages for leader
+	worker = make(chan Outgoing, 2) // messages for worker
 
 	pg.scheduledPods[instance] = worker
-	pg.capacities[instance] = frequency
-	pg.currentCapacities[instance] = frequency
+	pg.capmgr.addInstance(group, instance)
 
 	// Mux events from pod to correct job channels
 	go func() {
@@ -108,6 +165,9 @@ func (pg PodGroup) registerPod(instance InstanceID, frequency uint64) (leader ch
 			case Finish:
 				pg.workloadCount[jobID]--
 
+				pg.capmgr.reclaimCapacity(instance, jobID)
+				pg.distribute()
+
 				// Since no more remaining workloads, output channel can be closed
 				if pg.workloadCount[jobID] == 0 {
 					close(output)
@@ -123,39 +183,41 @@ func (pg PodGroup) registerPod(instance InstanceID, frequency uint64) (leader ch
 		pg.removeInstance(instance)
 	}()
 
+	pg.distribute()
 	return leader, worker, nil
-}
-
-func (pg PodGroup) currentCapacity() uint64 {
-	var sum uint64 = 0
-	for _, freq := range pg.currentCapacities {
-		sum += freq
-	}
-
-	return sum
 }
 
 // TODO: for every jobID, keep track of which pod has been assigned what frequency
 // and cleanup this information when finish event from that pod is received
-func (pg PodGroup) distribute(j mgr.Job) {
+func (pg *PodGroup) distribute() {
+	if len(*pg.jobQueue) == 0 {
+		return
+	}
+
+	j := (*pg.jobQueue)[0]
 	frequency := j.Frequency
+	var workload uint64
+	var err error
+
+	// Cannot start since there is not enough capacity
+	if frequency > pg.capmgr.currentCapacity() {
+		return
+	}
+
+	// Remove next job from queue
+	(*pg.jobQueue) = (*pg.jobQueue)[1:]
 
 	for instance, out := range pg.scheduledPods {
 
-		if pg.currentCapacities[instance] == 0 {
+		workload, frequency, err = pg.capmgr.assignCapacity(instance, j.ID, frequency)
+
+		if err != nil {
 			continue
 		}
 
-		var workload uint64
-
-		if frequency < pg.currentCapacities[instance] {
-			workload = frequency
-			pg.currentCapacities[instance] -= frequency
-			frequency = 0
-		} else {
-			workload = pg.currentCapacities[instance]
-			frequency -= pg.currentCapacities[instance]
-			pg.currentCapacities[instance] = 0
+		// This instance was not used
+		if workload == 0 {
+			continue
 		}
 
 		// Increment the worload count
@@ -173,6 +235,24 @@ func (pg PodGroup) distribute(j mgr.Job) {
 		}
 	}
 
+	if frequency > 0 {
+		log.WithField("jobID", j.ID).Warning("Assigned partial workload, continuing test")
+	}
+
+	// Send start event on events channel
+	output, ok := pg.outputChannels[j.ID]
+	if !ok {
+		log.WithField("jobID", j.ID).Error("Could not find registered channel for job, discarding start event")
+		return
+	}
+
+	output <- Start{
+		ID:         j.ID,
+		Frequency:  j.Frequency - frequency,
+		Duration:   j.Duration,
+		HTTPMethod: j.HTTPMethod,
+		HTTPUrl:    j.HTTPUrl,
+	}
 }
 
 // NewPodGroup Allocates a new podGroup
@@ -184,11 +264,11 @@ func NewPodGroup(group string, clientset *kubernetes.Clientset) (pg *PodGroup) {
 	pg.instanceCount = 0
 
 	pg.scheduledPods = make(map[InstanceID]chan Outgoing)
-	pg.capacities = make(map[InstanceID]uint64)
-	pg.currentCapacities = make(map[InstanceID]uint64)
-
 	pg.outputChannels = make(map[mgr.JobID]chan Event)
 	pg.workloadCount = make(map[mgr.JobID]uint32)
+
+	pg.jobQueue = new([]mgr.Job)
+	pg.capmgr = NewCapacityManager()
 
 	return pg
 }

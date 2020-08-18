@@ -135,6 +135,8 @@ func (m *Metrics) Close() {
 	m.Latencies.P90 = m.Latencies.Quantile(0.90)
 	m.Latencies.P95 = m.Latencies.Quantile(0.95)
 	m.Latencies.P99 = m.Latencies.Quantile(0.99)
+
+	m.collector.clear()
 }
 
 func (m *Metrics) init() {

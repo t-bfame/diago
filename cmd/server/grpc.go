@@ -38,11 +38,10 @@ func (s *workerServer) Coordinate(stream pb.Worker_CoordinateServer) error {
 	reg := msg.GetRegister()
 	group := reg.GetGroup()
 	instance := scheduler.InstanceID(reg.GetInstance())
-	freq := reg.GetFrequency()
 
-	log.WithField("group", group).WithField("instance", instance).WithField("frequency", freq).Info("Received registration for pod")
+	log.WithField("group", group).WithField("instance", instance).Info("Received registration for pod")
 
-	leaderMsgs, workerMsgs, err := s.sched.Register(group, instance, freq)
+	leaderMsgs, workerMsgs, err := s.sched.Register(group, instance)
 
 	if err != nil {
 		log.WithError(err).Error("Encountered error during registeration")
@@ -66,7 +65,8 @@ func (s *workerServer) Coordinate(stream pb.Worker_CoordinateServer) error {
 			break
 		}
 		if err != nil {
-			return err
+			log.WithError(err).WithField("group", group).WithField("instance", instance).Error("Encountered receiver stream error")
+			break
 		}
 
 		inc, err := scheduler.ProtoToIncoming(msg)
@@ -77,6 +77,7 @@ func (s *workerServer) Coordinate(stream pb.Worker_CoordinateServer) error {
 		leaderMsgs <- inc
 	}
 
+	log.WithField("group", group).WithField("instance", instance).Info("Closing pod")
 	close(leaderMsgs)
 
 	return nil

@@ -15,7 +15,7 @@ type PodManager struct {
 	podGroups map[string]*PodGroup
 }
 
-func (pm PodManager) register(group string, instance InstanceID, frequency uint64) (leader chan Incoming, worker chan Outgoing, err error) {
+func (pm PodManager) register(group string, instance InstanceID) (leader chan Incoming, worker chan Outgoing, err error) {
 	pg, ok := pm.podGroups[group]
 
 	if !ok {
@@ -23,7 +23,7 @@ func (pm PodManager) register(group string, instance InstanceID, frequency uint6
 	}
 
 	// Add test channel for multiplexing
-	return pg.registerPod(instance, frequency)
+	return pg.registerPod(group, instance)
 }
 
 func (pm PodManager) schedule(j mgr.Job, events chan Event) (err error) {
@@ -36,22 +36,7 @@ func (pm PodManager) schedule(j mgr.Job, events chan Event) (err error) {
 	}
 
 	// Add channel for receiving events
-	pg.addChannel(j.ID, events)
-
-	// TODO: Check capacity and add instance
-	if j.Frequency > pg.currentCapacity() {
-		defer pg.addInstances(j.Frequency)
-	}
-
-	return nil
-}
-
-func (pm PodManager) distribute(j mgr.Job) (err error) {
-	groupName := j.Group
-	pg, _ := pm.podGroups[groupName]
-
-	// Add channel for receiving events
-	pg.distribute(j)
+	pg.addJob(j, events)
 
 	return nil
 }
