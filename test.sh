@@ -14,8 +14,8 @@ make_dummy_test() {
                 \"Name\": \"alpha\",
                 \"Group\": \"diago-worker\",
                 \"Priority\": 0,
-                \"Frequency\":  12,
-			          \"Duration\":   20,
+                \"Frequency\":  5,
+			          \"Duration\":   30,
 			          \"HTTPMethod\": \"GET\",
 			          \"HTTPUrl\":    \"https://www.google.com\"
               }
@@ -65,9 +65,26 @@ get_instance() {
   pad
 }
 
+# testid=""
+# pad
+# make_dummy_test2
+
+# # strip quotes from id
+# testid=$(echo $testid | tr -d '"')
+# echo "created test with id: $testid"
+# pad
+
+# get_test
+# submit_test
+# get_instance
+# # stop_test
+# get_instance
+
+# sleep 5
+
 testid=""
 pad
-make_dummy_test2
+make_dummy_test
 
 # strip quotes from id
 testid=$(echo $testid | tr -d '"')
@@ -77,5 +94,8 @@ pad
 get_test
 submit_test
 get_instance
+
+# sleep 5
+
 # stop_test
 get_instance

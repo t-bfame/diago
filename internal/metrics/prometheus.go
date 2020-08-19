@@ -7,8 +7,8 @@ import (
 
 // TODO: Add the all the other useful metrics like rate, tput etc
 
-// PrometheusCollection maintains prometheus metric collectors
-type PrometheusCollection struct {
+// LoadTestCollection maintains prometheus metric collectors
+type LoadTestCollection struct {
 	latencyMean prometheus.Gauge
 	latencyMin  prometheus.Gauge
 	latencyMax  prometheus.Gauge
@@ -22,7 +22,7 @@ type PrometheusCollection struct {
 	success prometheus.Gauge
 }
 
-func (pc *PrometheusCollection) update(m *Metrics) {
+func (pc *LoadTestCollection) update(m *Metrics) {
 
 	latencyMean := float64((*m).Latencies.Total) / float64((*m).Requests)
 	latencyMin := float64((*m).Latencies.Min)
@@ -45,7 +45,7 @@ func (pc *PrometheusCollection) update(m *Metrics) {
 	pc.success.Set(success)
 }
 
-func (pc *PrometheusCollection) clear() {
+func (pc *LoadTestCollection) clear() {
 	pc.latencyMean.Set(0)
 	pc.latencyMin.Set(0)
 	pc.latencyMax.Set(0)
@@ -55,10 +55,10 @@ func (pc *PrometheusCollection) clear() {
 	pc.success.Set(0)
 }
 
-// NewPrometheusCollector returns a new prometheus metric collection
-func NewPrometheusCollector(labels map[string]string) *PrometheusCollection {
+// NewLoadTestCollection returns a new prometheus metric collection
+func NewLoadTestCollection(labels map[string]string) *LoadTestCollection {
 
-	pc := PrometheusCollection{
+	pc := LoadTestCollection{
 		latencyMean: promauto.NewGauge(prometheus.GaugeOpts{
 			Name:        "diago_latency_mean",
 			Help:        "Mean is the mean request latency",

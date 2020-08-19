@@ -49,7 +49,7 @@ func (pm PodManager) unschedule(j mgr.Job) (err error) {
 		return errors.New("Could not find specified groupName")
 	}
 
-	pg.removeChannel(j.ID)
+	pg.removeJob(j.ID)
 
 	return nil
 }

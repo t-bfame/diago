@@ -62,7 +62,7 @@ type Metrics struct {
 	errors  map[string]struct{}
 	success uint64
 
-	collector *PrometheusCollection
+	collector *LoadTestCollection
 }
 
 // Add implements the Add method of the Report interface by adding the given
@@ -230,7 +230,7 @@ func NewMetricAggregator(testid string) *Metrics {
 
 	labels := map[string]string{"testid": testid}
 
-	magg.collector = NewPrometheusCollector(labels)
+	magg.collector = NewLoadTestCollection(labels)
 
 	return &magg
 }

@@ -58,6 +58,7 @@ message Metrics {
 
     string error = 6;
 
+    // https://godoc.org/github.com/golang/protobuf/ptypes#TimestampProto
     google.protobuf.Timestamp timestamp = 7;
 }
 
