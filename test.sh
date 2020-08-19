@@ -95,7 +95,7 @@ get_test
 submit_test
 get_instance
 
-sleep 5
+# sleep 5
 
-stop_test
+# stop_test
 get_instance

@@ -14,20 +14,18 @@ type CapacityManager struct {
 	capmux               sync.Mutex
 	currentCapacities    map[InstanceID]uint64
 	workloadDistribution map[InstanceID]*map[mgr.JobID]uint64
+	pdcol                *PodCollection
+	capacity             uint64
 }
 
 // Calculate the number of instances that should be spun up
 // TODO: Maxes out at a certain number
-func (cm *CapacityManager) calculateInstanceCount(group string, frequency uint64) (int, error) {
+func (cm *CapacityManager) calculateInstanceCount(frequency uint64) (int, error) {
 	cm.capmux.Lock()
 	defer cm.capmux.Unlock()
 
-	capacity, err := getCapacity(group)
+	capacity := cm.capacity
 	currentCapacity := capacity * cm.instanceCount
-
-	if err != nil {
-		return 0, err
-	}
 
 	// All pods running right now can satisfy capacity
 	if frequency <= currentCapacity {
@@ -45,6 +43,9 @@ func (cm *CapacityManager) calculateInstanceCount(group string, frequency uint64
 	}
 
 	cm.instanceCount += count
+	cm.pdcol.updateTotalCapacity(cm.instanceCount * capacity)
+	cm.pdcol.updateWorkerCount(cm.instanceCount)
+
 	return int(count), nil
 }
 
@@ -72,6 +73,7 @@ func (cm *CapacityManager) assignCapacity(instance InstanceID, jobID mgr.JobID, 
 	}
 
 	workDis[jobID] = workload
+	cm.pdcol.updateCurrentCapacity(cm.nonBlockingCurrentCapacity())
 	return workload, required, nil
 }
 
@@ -89,19 +91,24 @@ func (cm *CapacityManager) reclaimCapacity(instance InstanceID, jobID mgr.JobID)
 
 	delete(workDis, jobID)
 	cm.currentCapacities[instance] += capacity
+	cm.pdcol.updateCurrentCapacity(cm.nonBlockingCurrentCapacity())
 	return nil
 }
 
-func (cm *CapacityManager) currentCapacity() uint64 {
-	cm.capmux.Lock()
-	defer cm.capmux.Unlock()
-
+func (cm *CapacityManager) nonBlockingCurrentCapacity() uint64 {
 	var sum uint64 = 0
 	for _, freq := range cm.currentCapacities {
 		sum += freq
 	}
 
 	return sum
+}
+
+func (cm *CapacityManager) currentCapacity() uint64 {
+	cm.capmux.Lock()
+	defer cm.capmux.Unlock()
+
+	return cm.nonBlockingCurrentCapacity()
 }
 
 func (cm *CapacityManager) removeInstance(instance InstanceID) {
@@ -111,17 +118,17 @@ func (cm *CapacityManager) removeInstance(instance InstanceID) {
 	delete(cm.currentCapacities, instance)
 	delete(cm.workloadDistribution, instance)
 	cm.instanceCount--
+
+	cm.pdcol.updateTotalCapacity(cm.instanceCount * cm.capacity)
+	cm.pdcol.updateWorkerCount(cm.instanceCount)
+	cm.pdcol.updateCurrentCapacity(cm.nonBlockingCurrentCapacity())
 }
 
-func (cm *CapacityManager) addInstance(group string, instance InstanceID) error {
+func (cm *CapacityManager) addInstance(instance InstanceID) error {
 	cm.capmux.Lock()
 	defer cm.capmux.Unlock()
 
-	capacity, err := getCapacity(group)
-	if err != nil {
-		return err
-	}
-
+	capacity := cm.capacity
 	workloadDistribution := make(map[mgr.JobID]uint64)
 
 	cm.currentCapacities[instance] = capacity
@@ -146,11 +153,14 @@ func (cm *CapacityManager) getPodAssignment(jobID mgr.JobID) *[]InstanceID {
 }
 
 // NewCapacityManager returns a new capacity manager
-func NewCapacityManager() *CapacityManager {
+func NewCapacityManager(group string) *CapacityManager {
 	var capmgr CapacityManager
 
 	capmgr.currentCapacities = make(map[InstanceID]uint64)
 	capmgr.workloadDistribution = make(map[InstanceID]*map[mgr.JobID]uint64)
+	capmgr.capacity, _ = getCapacity(group)
+
+	capmgr.pdcol = NewPodCollection(map[string]string{"group": group})
 
 	return &capmgr
 }

@@ -15,9 +15,8 @@ const hashSize = 6
 
 // PodGroup indicates kind of pod
 type PodGroup struct {
-	group         string
-	clientset     *kubernetes.Clientset
-	instanceCount int
+	group     string
+	clientset *kubernetes.Clientset
 
 	scheduledPods map[InstanceID]chan Outgoing
 	podmux        sync.Mutex
@@ -36,7 +35,7 @@ func (pg *PodGroup) addInstances(frequency uint64) (err error) {
 	pg.podmux.Lock()
 	defer pg.podmux.Unlock()
 
-	count, err := pg.capmgr.calculateInstanceCount(pg.group, frequency)
+	count, err := pg.capmgr.calculateInstanceCount(frequency)
 
 	if err != nil {
 		log.WithField("group", pg.group).WithError(err).Error("Unable to add instances for pod group")
@@ -80,10 +79,8 @@ func (pg *PodGroup) addInstances(frequency uint64) (err error) {
 	case <-wgErr:
 		return err
 	default:
-		pg.instanceCount += count
+		return nil
 	}
-
-	return nil
 }
 
 func (pg *PodGroup) removeInstance(instance InstanceID) (err error) {
@@ -93,7 +90,6 @@ func (pg *PodGroup) removeInstance(instance InstanceID) (err error) {
 	name := pg.group + "-" + string(instance)
 
 	delete(pg.scheduledPods, instance)
-	pg.instanceCount--
 	pg.capmgr.removeInstance(instance)
 
 	deletePolicy := metav1.DeletePropagationForeground
@@ -142,7 +138,7 @@ func (pg *PodGroup) registerPod(group string, instance InstanceID) (leader chan 
 	worker = make(chan Outgoing, 2) // messages for worker
 
 	pg.scheduledPods[instance] = worker
-	pg.capmgr.addInstance(group, instance)
+	pg.capmgr.addInstance(instance)
 
 	// Mux events from pod to correct job channels
 	go func() {
@@ -258,14 +254,13 @@ func NewPodGroup(group string, clientset *kubernetes.Clientset) (pg *PodGroup) {
 
 	pg.clientset = clientset
 	pg.group = group
-	pg.instanceCount = 0
 
 	pg.scheduledPods = make(map[InstanceID]chan Outgoing)
 	pg.outputChannels = make(map[mgr.JobID]chan Event)
 	pg.workloadCount = make(map[mgr.JobID]uint32)
 
 	pg.jobQueue = new([]mgr.Job)
-	pg.capmgr = NewCapacityManager()
+	pg.capmgr = NewCapacityManager(group)
 
 	return pg
 }
