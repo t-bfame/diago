@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"errors"
+	"fmt"
 	"os"
 
 	v1 "k8s.io/api/core/v1"
@@ -10,12 +11,13 @@ import (
 
 // PodConfig TODO: Move out to Storage later
 type PodConfig struct {
-	Image    string
-	Capacity uint64
+	Image                         string
+	Capacity                      uint64
+	TerminationGracePeriodSeconds float32
 }
 
 var storage map[string]PodConfig = map[string]PodConfig{
-	"diago-worker": PodConfig{Image: "diago-worker", Capacity: 5},
+	"diago-worker": PodConfig{Image: "diago-worker", Capacity: 5, TerminationGracePeriodSeconds: 30},
 }
 
 func createContainerSpec(name string, image string, env map[string]string) (containers []v1.Container) {
@@ -39,11 +41,17 @@ func createContainerSpec(name string, image string, env map[string]string) (cont
 }
 
 func getEnvs(group string, instance InstanceID) map[string]string {
+	dat, ok := storage[group]
+	if !ok {
+		return nil
+	}
+
 	envs := map[string]string{
-		"DIAGO_WORKER_GROUP":          group,
-		"DIAGO_WORKER_GROUP_INSTANCE": string(instance),
-		"DIAGO_LEADER_HOST":           os.Getenv("GRPC_HOST"),
-		"DIAGO_LEADER_PORT":           os.Getenv("GRPC_PORT"),
+		"DIAGO_WORKER_GROUP":               group,
+		"DIAGO_WORKER_GROUP_INSTANCE":      string(instance),
+		"DIAGO_LEADER_HOST":                os.Getenv("GRPC_HOST"),
+		"DIAGO_LEADER_PORT":                os.Getenv("GRPC_PORT"),
+		"TERMINATION_GRACE_PERIOD_SECONDS": fmt.Sprintf("%f", dat.TerminationGracePeriodSeconds),
 	}
 
 	return envs

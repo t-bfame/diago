@@ -130,6 +130,21 @@ func (cm *CapacityManager) addInstance(group string, instance InstanceID) error 
 	return nil
 }
 
+func (cm *CapacityManager) getPodAssignment(jobID mgr.JobID) *[]InstanceID {
+	cm.capmux.Lock()
+	defer cm.capmux.Unlock()
+
+	var arr []InstanceID
+
+	for ins, dis := range cm.workloadDistribution {
+		if _, ok := (*dis)[jobID]; ok {
+			arr = append(arr, ins)
+		}
+	}
+
+	return &arr
+}
+
 // NewCapacityManager returns a new capacity manager
 func NewCapacityManager() *CapacityManager {
 	var capmgr CapacityManager

@@ -1,7 +1,6 @@
 package scheduler
 
 import (
-	"errors"
 	"sync"
 
 	mgr "github.com/t-bfame/diago/internal/manager"
@@ -126,15 +125,11 @@ func (pg *PodGroup) addJob(j mgr.Job, events chan Event) (err error) {
 	return nil
 }
 
-func (pg *PodGroup) removeChannel(id mgr.JobID) (err error) {
-	events, ok := pg.outputChannels[id]
+func (pg *PodGroup) removeJob(id mgr.JobID) (err error) {
 
-	if !ok {
-		return errors.New("PodGroup does not contain specified JobID")
+	for _, instance := range *(pg.capmgr.getPodAssignment(id)) {
+		pg.scheduledPods[instance] <- Stop{id}
 	}
-
-	delete(pg.outputChannels, id)
-	close(events)
 
 	return nil
 }
@@ -170,6 +165,8 @@ func (pg *PodGroup) registerPod(group string, instance InstanceID) (leader chan 
 
 				// Since no more remaining workloads, output channel can be closed
 				if pg.workloadCount[jobID] == 0 {
+					delete(pg.workloadCount, jobID)
+					delete(pg.outputChannels, jobID)
 					close(output)
 				}
 
