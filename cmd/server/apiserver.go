@@ -217,8 +217,9 @@ func (server *ApiServer) Start() {
 					switch x := msg.(type) {
 					case scheduler.Metrics:
 						maggregator.Add(&x)
+					case scheduler.Start:
+						log.WithField("Start event", msg).Info("Starting test")
 					default:
-						fmt.Println(msg)
 					}
 				}
 				maggregator.Close() // Can now access aggregated metrics through fields of maggregator

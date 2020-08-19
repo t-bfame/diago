@@ -17,7 +17,7 @@ type PodConfig struct {
 }
 
 var storage map[string]PodConfig = map[string]PodConfig{
-	"diago-worker": PodConfig{Image: "diago-worker", Capacity: 5, TerminationGracePeriodSeconds: 30},
+	"diago-worker": PodConfig{Image: "diago-worker", Capacity: 20, TerminationGracePeriodSeconds: 30},
 }
 
 func createContainerSpec(name string, image string, env map[string]string) (containers []v1.Container) {

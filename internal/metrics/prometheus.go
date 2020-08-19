@@ -39,7 +39,7 @@ func (pc *LoadTestCollection) update(m *Metrics) {
 	pc.bytesOut.Set(bytesOut)
 
 	requests := float64((*m).Requests)
-	success := float64((*m).success) / float64((*m).Requests)
+	success := float64((*m).success)
 
 	pc.requests.Set(requests)
 	pc.success.Set(success)
