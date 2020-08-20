@@ -1,6 +1,6 @@
 .PHONY:	build run
 
-build: remove
+build: remove proto
 	GOOS=linux go build cmd/main.go
 	docker build -f build/package/Dockerfile -t diago .
 	kubectl apply -f deployments/deploy.yaml

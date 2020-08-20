@@ -82,9 +82,9 @@ func (server *ApiServer) Start() {
 
 		// For now, make id by using random hash of length 5
 		// TODO: Maybe use a counter for every group for better UX?
-		uid := fmt.Sprintf("%s-%s", test.Name, utils.RandHash(5))
-		test.ID = mgr.TestID(uid)
-		server.dummyTests[uid] = test
+		testid := fmt.Sprintf("%s-%s", test.Name, utils.RandHash(5))
+		test.ID = mgr.TestID(testid)
+		server.dummyTests[testid] = test
 
 		for i := range test.Jobs {
 			test.Jobs[i].ID = mgr.JobID(fmt.Sprintf("%s-%d", test.ID, i))
@@ -93,21 +93,21 @@ func (server *ApiServer) Start() {
 		w.Write(
 			buildSuccess(
 				map[string]string{
-					"testid": uid,
+					"testid": testid,
 				},
 				w,
 			),
 		)
 
-		log.WithField("TestID", uid).Info("Test created")
+		log.WithField("TestID", testid).Info("Test created")
 
 	}).Methods(http.MethodPost)
 
 	// Test RUD
 	router.HandleFunc("/tests/{id}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		id := vars["id"]
-		test, found := server.dummyTests[id]
+		testid := vars["id"]
+		test, found := server.dummyTests[testid]
 		if !found {
 			w.Write(buildFailure("Test not found", http.StatusNotFound, w))
 			return
@@ -117,7 +117,7 @@ func (server *ApiServer) Start() {
 		case http.MethodGet:
 			w.Write(buildSuccess(test, w))
 
-			log.WithField("TestID", id).Info("Test retrieved")
+			log.WithField("TestID", testid).Info("Test retrieved")
 		case http.MethodPut:
 			bodyContent, err := ioutil.ReadAll(r.Body)
 			if err != nil {
@@ -130,22 +130,22 @@ func (server *ApiServer) Start() {
 				w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
 				return
 			}
-			server.dummyTests[id] = updatedTest
+			server.dummyTests[testid] = updatedTest
 			w.Write(buildSuccess(updatedTest, w))
 
-			log.WithField("TestID", id).Info("Test updated")
+			log.WithField("TestID", testid).Info("Test updated")
 		case http.MethodDelete:
-			delete(server.dummyTests, id)
+			delete(server.dummyTests, testid)
 			w.Write(
 				buildSuccess(
 					map[string]string{
-						"testid": id,
+						"testid": testid,
 					},
 					w,
 				),
 			)
 
-			log.WithField("TestID", id).Info("Test deleted")
+			log.WithField("TestID", testid).Info("Test deleted")
 		default:
 			w.Write(buildFailure("Request not supported", http.StatusBadRequest, w))
 		}
@@ -185,9 +185,9 @@ func (server *ApiServer) Start() {
 		// create TestInstance
 		// for now generate uid using test name + timestamp
 		now := time.Now().Unix()
-		uid := test.Name + "-" + strconv.FormatInt(now, 10)
+		instanceid := test.Name + "-" + strconv.FormatInt(now, 10)
 		testInstance := &mgr.TestInstance{
-			ID:        mgr.TestInstanceID(uid),
+			ID:        mgr.TestInstanceID(instanceid),
 			TestID:    mgr.TestID(testid),
 			Type:      "adhoc",
 			Status:    "submitted",
@@ -210,8 +210,8 @@ func (server *ApiServer) Start() {
 			}
 
 			// monitor the channel
-			go func() {
-				maggregator := metrics.NewMetricAggregator(testid)
+			go func(j mgr.Job) {
+				maggregator := metrics.NewMetricAggregator(testid, instanceid)
 
 				for msg := range ch {
 					switch x := msg.(type) {
@@ -232,10 +232,10 @@ func (server *ApiServer) Start() {
 				delete(server.ongoingTests, testid)
 				log.
 					WithField("TestID", testid).
-					WithField("TestInstanceID", uid).
-					WithField("JobID", v.ID).
+					WithField("TestInstanceID", instanceid).
+					WithField("JobID", j.ID).
 					Info("Finished/Stopped Job")
-			}()
+			}(v)
 		}
 
 		server.ongoingTests[testid] = true
@@ -244,6 +244,7 @@ func (server *ApiServer) Start() {
 			buildSuccess(
 				map[string]string{
 					"testid": testid,
+					"instanceid": instanceid,
 				},
 				w,
 			),
@@ -251,7 +252,7 @@ func (server *ApiServer) Start() {
 
 		log.
 			WithField("TestID", testid).
-			WithField("TestInstanceID", uid).
+			WithField("TestInstanceID", instanceid).
 			Info("Test submitted")
 	})
 

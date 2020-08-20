@@ -225,10 +225,13 @@ func (e *tdigestEstimator) Get(q float64) float64 {
 	return e.TDigest.Quantile(q)
 }
 
-func NewMetricAggregator(testid string) *Metrics {
+func NewMetricAggregator(testid string, instanceid string) *Metrics {
 	var magg Metrics
 
-	labels := map[string]string{"testid": testid}
+	labels := map[string]string{
+		"testid": testid,
+		"instanceid": instanceid,
+	}
 
 	magg.collector = NewLoadTestCollection(labels)
 
