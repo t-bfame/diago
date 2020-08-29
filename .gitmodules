@@ -1,0 +1,3 @@
+[submodule "idl"]
+	path = idl
+	url = git@github.com:t-bfame/diago-idl.git

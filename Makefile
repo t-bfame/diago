@@ -34,4 +34,4 @@ proto:
 	$(PROTOC) \
 		--go_out=Mgrpc/service_config/service_config.proto=/proto-gen/api:. \
 		--go-grpc_out=Mgrpc/service_config/service_config.proto=/proto-gen/api:. \
-		api/proto/worker.proto
+		idl/proto/worker.proto
