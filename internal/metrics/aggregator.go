@@ -229,7 +229,7 @@ func NewMetricAggregator(testid string, instanceid string) *Metrics {
 	var magg Metrics
 
 	labels := map[string]string{
-		"testid": testid,
+		"testid":     testid,
 		"instanceid": instanceid,
 	}
 
