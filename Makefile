@@ -1,10 +1,12 @@
 .PHONY:	build run
 
-build: remove proto
+build:
 	GOOS=linux go build cmd/main.go
+	# kubectl apply -f deployments/deploy.yaml
+	# kubectl get po
+
+docker:
 	docker build -f build/package/Dockerfile -t diago .
-	kubectl apply -f deployments/deploy.yaml
-	kubectl get po
 
 remove:
 	- kubectl delete sts diago
@@ -17,10 +19,6 @@ run:
 
 logs:
 	kubectl logs diago-0 -f
-
-
-test:
-	./test.sh
 
 .PHONY: local
 local:
@@ -35,3 +33,9 @@ proto:
 		--go_out=Mgrpc/service_config/service_config.proto=/proto-gen/api:. \
 		--go-grpc_out=Mgrpc/service_config/service_config.proto=/proto-gen/api:. \
 		idl/proto/worker.proto
+
+# test:
+# 	./test.sh
+
+test:
+	go test -v ./...
