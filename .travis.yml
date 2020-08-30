@@ -19,3 +19,7 @@ install:
 
 script:
   - make test
+
+after_success:
+- mv cover.out coverage.txt
+- bash <(curl -s https://codecov.io/bash)
