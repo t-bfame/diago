@@ -1,6 +1,6 @@
 .PHONY:	build run
 
-build: proto
+build:
 	GOOS=linux go build cmd/main.go
 	# kubectl apply -f deployments/deploy.yaml
 	# kubectl get po
