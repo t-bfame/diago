@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/bmizerany/perks v0.0.0-20141205001514-d9a9656a3a4b
+	github.com/davecgh/go-spew v1.1.1
 	github.com/dgryski/go-gk v0.0.0-20140819190930-201884a44051
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/golang/protobuf v1.4.2
