@@ -15,14 +15,16 @@ type (
 	TestID string
 )
 
-var test_validator validator
-
 type (
 	Job map[string]interface{}
 	JobID string
 )
 
-var job_validator validator
+var (
+	test_validator validator
+	job_validator validator
+	transform_validator validator
+)
 
 func Test_Collection_Name() string {
 	return "test"
@@ -55,23 +57,19 @@ func InitTest() {
 		"Jobs": list(job_validator),
 	})
 
+	transform_validator = doc(map[string]validator {
+		"Jobs": list(
+			doc(map[string]validator{
+				"Priority": typ(json.Number("")),
+				"Frequency": typ(json.Number("")),
+				"Duration": typ(json.Number("")),
+			}),
+		),
+	})
 }
 
 func (test Test) save() (bool, error) {
 	if ok, et := test_validator(map[string]interface{}(test)); !ok {
-		return false, errors.New(et.String())
-	}
-
-	// Need to also validate test and job ids
-	// since we're saving
-	if ok, et := typ(TestID(""))(test["ID"]); !ok {
-		return false, errors.New(et.String())
-	}
-	if ok, et := list(
-		doc(map[string]validator {
-			"ID": typ(JobID("")),
-		}),
-	)(test["Jobs"]); !ok { // already know "Jobs" this exists from test_validator
 		return false, errors.New(et.String())
 	}
 
@@ -129,15 +127,7 @@ func TestFromBody(body []byte) (map[string]interface{}, error) {
 	}
 
 	// Pre-verify fields to transform
-	if ok, et := doc(map[string]validator {
-		"Jobs": list(
-			doc(map[string]validator{
-				"Priority": typ(json.Number("")),
-				"Frequency": typ(json.Number("")),
-				"Duration": typ(json.Number("")),
-			}),
-		),
-	})(content); !ok {
+	if ok, et := transform_validator(content); !ok {
 		return nil, errors.New(et.String())
 	}
 

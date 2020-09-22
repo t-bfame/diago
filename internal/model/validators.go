@@ -6,16 +6,16 @@ import (
 	"strings"
 )
 
-type validator func (value interface{}, exists ...bool) (bool, *errortrace)
+type validator func(value interface{}, exists ...bool) (bool, *errortrace)
 
 type errortrace struct {
-	trace	[]string
+	trace []string
 }
 
 func (v errortrace) String() string {
 	var sb strings.Builder
 	sb.WriteString("validation failed at: ")
-	for i := len(v.trace)-1; i >= 0; i-- {
+	for i := len(v.trace) - 1; i >= 0; i-- {
 		sb.WriteString(v.trace[i])
 	}
 	return sb.String()
@@ -28,18 +28,21 @@ func (v *errortrace) attach(msg string) {
 }
 
 func kind(t reflect.Kind) validator {
-	return func (value interface{}, exists ...bool) (bool, *errortrace) {
+	return func(value interface{}, exists ...bool) (bool, *errortrace) {
 		valid := value != nil && reflect.TypeOf(value).Kind() == t
 		if !valid {
 			et := errortrace{}
+			var kindString string
+			if value != nil {
+				kindString = reflect.TypeOf(value).Kind().String()
+			} else {
+				kindString = "unknown"
+			}
 			et.attach(fmt.Sprintf(
-				" (expected kind: %s, got value %s of kind %s)",
+				" (expected kind: `%s`, got value `%v` of kind `%s`)",
 				t,
 				value,
-				map[bool]string{
-					true: "unknown",
-					false: reflect.TypeOf(value).Kind().String(),
-				}[value == nil],
+				kindString,
 			))
 			return false, &et
 		}
@@ -49,18 +52,21 @@ func kind(t reflect.Kind) validator {
 
 func typ(instance interface{}) validator {
 	t := reflect.TypeOf(instance)
-	return func (value interface{}, exists ...bool) (bool, *errortrace) {
+	return func(value interface{}, exists ...bool) (bool, *errortrace) {
 		valid := value != nil && reflect.TypeOf(value) == t
 		if !valid {
 			et := errortrace{}
+			var typeString string
+			if value != nil {
+				typeString = reflect.TypeOf(value).String()
+			} else {
+				typeString = "unknown"
+			}
 			et.attach(fmt.Sprintf(
-				" (expected type: %s, got value %s of type %s)",
+				" (expected type: `%s`, got value `%v` of type `%s`)",
 				t,
 				value,
-				map[bool]string{
-					true: "unknown",
-					false: reflect.TypeOf(value).String(),
-				}[value == nil],
+				typeString,
 			))
 			return false, &et
 		}
@@ -69,8 +75,8 @@ func typ(instance interface{}) validator {
 }
 
 func opt(v validator) validator {
-	return func (value interface{}, exists ...bool) (bool, *errortrace) {
-		if (len(exists) > 0 && exists[0] == false) {
+	return func(value interface{}, exists ...bool) (bool, *errortrace) {
+		if len(exists) > 0 && exists[0] == false {
 			return true, nil
 		}
 		return v(value, exists...)
@@ -81,7 +87,7 @@ func opt(v validator) validator {
 func doc(vm map[string]validator, name ...string) validator {
 	return all(
 		kind(reflect.Map),
-		func (value interface{}, exists ...bool) (bool, *errortrace) {
+		func(value interface{}, exists ...bool) (bool, *errortrace) {
 			for k, v := range vm {
 				inner, x := value.(map[string]interface{})[k]
 				if valid, et := v(inner, x); !valid {
@@ -101,7 +107,7 @@ func doc(vm map[string]validator, name ...string) validator {
 func list(ev validator) validator {
 	return all(
 		kind(reflect.Slice),
-		func (value interface{}, exists ...bool) (bool, *errortrace) {
+		func(value interface{}, exists ...bool) (bool, *errortrace) {
 			for i, el := range value.([]interface{}) {
 				if valid, et := ev(el, true); !valid {
 					et.attach(fmt.Sprintf("[%d]", i))
@@ -114,7 +120,7 @@ func list(ev validator) validator {
 }
 
 func all(vl ...validator) validator {
-	return func (value interface{}, exists ...bool) (bool, *errortrace) {
+	return func(value interface{}, exists ...bool) (bool, *errortrace) {
 		for _, v := range vl {
 			if valid, et := v(value, exists...); !valid {
 				return false, et
