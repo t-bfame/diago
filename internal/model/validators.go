@@ -39,7 +39,7 @@ func kind(t reflect.Kind) validator {
 				kindString = "unknown"
 			}
 			et.attach(fmt.Sprintf(
-				" (expected kind: `%s`, got value `%v` of kind `%s`)",
+				" (expected kind `%s`, got value `%v` of kind `%s`)",
 				t,
 				value,
 				kindString,
@@ -63,7 +63,7 @@ func typ(instance interface{}) validator {
 				typeString = "unknown"
 			}
 			et.attach(fmt.Sprintf(
-				" (expected type: `%s`, got value `%v` of type `%s`)",
+				" (expected type `%s`, got value `%v` of type `%s`)",
 				t,
 				value,
 				typeString,

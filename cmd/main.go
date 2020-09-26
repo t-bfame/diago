@@ -7,6 +7,7 @@ import (
 
 	"github.com/t-bfame/diago/cmd/server"
 	"github.com/t-bfame/diago/internal/scheduler"
+
 	// "github.com/t-bfame/diago/internal/model"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -41,7 +42,7 @@ func main() {
 	// 	fmt.Println(err)
 	// }
 	// fmt.Println(test)
-	// fmt.Println(model.TestById(test["ID"].(model.TestID)))
+	// fmt.Println(model.TestByID(test["ID"].(model.TestID)))
 
 	// body2 := []byte(`{
 	// 	"Name":"Test2",

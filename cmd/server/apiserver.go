@@ -243,7 +243,7 @@ func (server *ApiServer) Start() {
 		w.Write(
 			buildSuccess(
 				map[string]string{
-					"testid": testid,
+					"testid":     testid,
 					"instanceid": instanceid,
 				},
 				w,
