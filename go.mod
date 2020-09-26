@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/bmizerany/perks v0.0.0-20141205001514-d9a9656a3a4b
+	github.com/boltdb/bolt v1.3.1
 	github.com/dgryski/go-gk v0.0.0-20140819190930-201884a44051
 	github.com/golang/protobuf v1.4.3
 	github.com/google/gofuzz v1.2.0 // indirect
