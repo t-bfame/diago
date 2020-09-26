@@ -14,6 +14,7 @@ func assertSuccess(t *testing.T, valueStr string, ok bool, et *errortrace) {
 func assertFailure(t *testing.T, valueStr string, ok bool, et *errortrace, expectedTrace string) {
 	if ok {
 		t.Errorf("Expected validation of %s to fail, but it passed", valueStr)
+		return
 	}
 	if et.String() != expectedTrace {
 		t.Errorf("Expected error trace \"%s\", got \"%s\"", expectedTrace, *et)
@@ -33,6 +34,10 @@ func TestValidator_Kind(t *testing.T) {
 	ok, et = v(nil)
 	assertFailure(t, "<nil>", ok, et,
 		"validation failed at:  (expected kind `string`, got value `<nil>` of kind `unknown`)")
+
+	ok, et = v(nil, false)
+	assertFailure(t, "<nil>", ok, et,
+		"validation failed at:  (field is required, but was not found)")
 }
 
 func TestValidator_Typ(t *testing.T) {
@@ -49,13 +54,17 @@ func TestValidator_Typ(t *testing.T) {
 	ok, et = v(nil)
 	assertFailure(t, "<nil>", ok, et,
 		"validation failed at:  (expected type `model.MyType`, got value `<nil>` of type `unknown`)")
+
+	ok, et = v(nil, false)
+	assertFailure(t, "<nil>", ok, et,
+		"validation failed at:  (field is required, but was not found)")
 }
 
 func TestValidator_Opt(t *testing.T) {
 	v := opt(kind(reflect.String))
 
-	ok, et := v(1, false)
-	assertSuccess(t, "1", ok, et)
+	ok, et := v(nil, false)
+	assertSuccess(t, "<nil>", ok, et)
 
 	ok, et = v("", true)
 	assertSuccess(t, "\"\"", ok, et)
@@ -121,4 +130,64 @@ func TestValidator_Doc(t *testing.T) {
 	ok, et = v(value)
 	assertFailure(t, "{f1: \"str1\", f2: \"str2\", f3: [\"str3\", 3, \"str4\"]}", ok, et,
 		"validation failed at: MyDocumentName.f3[1] (expected kind `string`, got value `3` of kind `int`)")
+}
+
+func TestValidator_Nested(t *testing.T) {
+	v := doc(map[string]validator{
+		"f1": opt(list(
+			doc(map[string]validator{
+				"i1": kind(reflect.Int),
+				"i2": opt(list(kind(reflect.Int))),
+			}),
+		)),
+	}, "MyDocumentName")
+
+	value := map[string]interface{}{}
+	ok, et := v(value)
+	assertSuccess(t, "{}", ok, et)
+
+	value = map[string]interface{}{
+		"f1": 1,
+	}
+	ok, et = v(value)
+	assertFailure(t, "{f1: 1}", ok, et,
+		"validation failed at: MyDocumentName.f1 (expected kind `slice`, got value `1` of kind `int`)")
+
+	value = map[string]interface{}{
+		"f1": []interface{}{
+			map[string]interface{}{},
+		},
+	}
+	ok, et = v(value)
+	assertFailure(t, "{f1: [{}]}", ok, et,
+		"validation failed at: MyDocumentName.f1[0].i1 (field is required, but was not found)")
+
+	value = map[string]interface{}{
+		"f1": []interface{}{
+			map[string]interface{}{
+				"i1": 1,
+			},
+			map[string]interface{}{
+				"i1": 1,
+				"i2": []interface{}{"str1"},
+			},
+		},
+	}
+	ok, et = v(value)
+	assertFailure(t, "{f1: [{i1: 1}, {i1: 1, i2: {\"str1\"}]}", ok, et,
+		"validation failed at: MyDocumentName.f1[1].i2[0] (expected kind `int`, got value `str1` of kind `string`)")
+
+	value = map[string]interface{}{
+		"f1": []interface{}{
+			map[string]interface{}{
+				"i1": 1,
+			},
+			map[string]interface{}{
+				"i1": 1,
+				"i2": []interface{}{1, 2, 3},
+			},
+		},
+	}
+	ok, et = v(value)
+	assertSuccess(t, "{f1: [{i1: 1}, {i1: 1, i2: {\"str1\"}]}", ok, et)
 }

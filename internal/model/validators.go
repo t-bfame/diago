@@ -32,18 +32,24 @@ func kind(t reflect.Kind) validator {
 		valid := value != nil && reflect.TypeOf(value).Kind() == t
 		if !valid {
 			et := errortrace{}
-			var kindString string
-			if value != nil {
-				kindString = reflect.TypeOf(value).Kind().String()
+			// This is probably more informative than
+			// "expected kind ..., got value `<nil`> ..."
+			if len(exists) > 0 && exists[0] == false {
+				et.attach(" (field is required, but was not found)")
 			} else {
-				kindString = "unknown"
+				var kindString string
+				if value != nil {
+					kindString = reflect.TypeOf(value).Kind().String()
+				} else {
+					kindString = "unknown"
+				}
+				et.attach(fmt.Sprintf(
+					" (expected kind `%s`, got value `%v` of kind `%s`)",
+					t,
+					value,
+					kindString,
+				))
 			}
-			et.attach(fmt.Sprintf(
-				" (expected kind `%s`, got value `%v` of kind `%s`)",
-				t,
-				value,
-				kindString,
-			))
 			return false, &et
 		}
 		return true, nil
@@ -56,18 +62,24 @@ func typ(instance interface{}) validator {
 		valid := value != nil && reflect.TypeOf(value) == t
 		if !valid {
 			et := errortrace{}
-			var typeString string
-			if value != nil {
-				typeString = reflect.TypeOf(value).String()
+			// This is probably more informative than
+			// "expected type ..., got value `<nil`> ..."
+			if len(exists) > 0 && exists[0] == false {
+				et.attach(" (field is required, but was not found)")
 			} else {
-				typeString = "unknown"
+				var typeString string
+				if value != nil {
+					typeString = reflect.TypeOf(value).String()
+				} else {
+					typeString = "unknown"
+				}
+				et.attach(fmt.Sprintf(
+					" (expected type `%s`, got value `%v` of type `%s`)",
+					t,
+					value,
+					typeString,
+				))
 			}
-			et.attach(fmt.Sprintf(
-				" (expected type `%s`, got value `%v` of type `%s`)",
-				t,
-				value,
-				typeString,
-			))
 			return false, &et
 		}
 		return true, nil
