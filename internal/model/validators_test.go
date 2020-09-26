@@ -48,7 +48,7 @@ func TestValidator_Typ(t *testing.T) {
 	assertSuccess(t, "MyType(\"another value\")", ok, et)
 
 	ok, et = v("my str")
-	assertFailure(t, "MyType(\"another value\")", ok, et,
+	assertFailure(t, "\"my str\"", ok, et,
 		"validation failed at:  (expected type `model.MyType`, got value `my str` of type `string`)")
 
 	ok, et = v(nil)
@@ -91,9 +91,9 @@ func TestValidator_List(t *testing.T) {
 	ok, et = v([]interface{}{"str1", "str2"})
 	assertSuccess(t, "[\"str1\", \"str2\"]", ok, et)
 
-	ok, et = v([]interface{}{"str1", 1})
-	assertFailure(t, "[\"str1\", 1]", ok, et,
-		"validation failed at: [1] (expected kind `string`, got value `1` of kind `int`)")
+	ok, et = v([]interface{}{"str1", 5})
+	assertFailure(t, "[\"str1\", 5]", ok, et,
+		"validation failed at: [1] (expected kind `string`, got value `5` of kind `int`)")
 }
 
 func TestValidator_Doc(t *testing.T) {
@@ -119,7 +119,7 @@ func TestValidator_Doc(t *testing.T) {
 	}
 
 	ok, et = v(value)
-	assertFailure(t, "{f1: 1, f2: 1.0, f3: [\"str2\"]}", ok, et,
+	assertFailure(t, "{f1: 1, f2: int64(1), f3: [\"str2\"]}", ok, et,
 		"validation failed at: MyDocumentName.f2 (expected kind `string`, got value `1` of kind `int64`)")
 
 	value = map[string]interface{}{
@@ -174,7 +174,7 @@ func TestValidator_Nested(t *testing.T) {
 		},
 	}
 	ok, et = v(value)
-	assertFailure(t, "{f1: [{i1: 1}, {i1: 1, i2: {\"str1\"}]}", ok, et,
+	assertFailure(t, "{f1: [{i1: 1}, {i1: 1, i2: [\"str1\"]]}", ok, et,
 		"validation failed at: MyDocumentName.f1[1].i2[0] (expected kind `int`, got value `str1` of kind `string`)")
 
 	value = map[string]interface{}{
@@ -189,5 +189,5 @@ func TestValidator_Nested(t *testing.T) {
 		},
 	}
 	ok, et = v(value)
-	assertSuccess(t, "{f1: [{i1: 1}, {i1: 1, i2: {\"str1\"}]}", ok, et)
+	assertSuccess(t, "{f1: [{i1: 1}, {i1: 1, i2: [1, 2, 3]]}", ok, et)
 }
