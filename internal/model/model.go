@@ -10,6 +10,7 @@ func InitModel() {
 	storage = make(map[string]interface{})
 
 	InitTest()
+	InitTestInstance()
 }
 
 func DumpStorage() {

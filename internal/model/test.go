@@ -8,18 +8,34 @@ import (
 	"reflect"
 	"strconv"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/t-bfame/diago/pkg/utils"
 )
 
-type (
-	Test   map[string]interface{}
-	TestID string
-)
+// JobID Unique job identifier
+type JobID string
 
-type (
-	Job   map[string]interface{}
-	JobID string
-)
+// Job configuration to be passed to scheduler
+type Job struct {
+	ID         JobID
+	Name       string
+	Group      string
+	Priority   int
+	Env        map[string]string
+	Config     []string
+	Frequency  uint64
+	Duration   uint64
+	HTTPMethod string
+	HTTPUrl    string
+}
+
+type TestID string
+
+type Test struct {
+	ID   TestID
+	Name string
+	Jobs []Job
+}
 
 var (
 	testValidator      validator
@@ -27,17 +43,13 @@ var (
 	transformValidator validator
 )
 
-func Test_Collection_Name() string {
-	return "test"
-}
-
-func Test_Collection() map[string]Test {
-	return *(storage[Test_Collection_Name()].(*map[string]Test))
+func TestCollection() map[string]Test {
+	return *(storage["test"].(*map[string]Test))
 }
 
 func InitTest() {
 	testCollection := make(map[string]Test)
-	storage[Test_Collection_Name()] = &(testCollection)
+	storage["test"] = &(testCollection)
 
 	jobValidator = doc(map[string]validator{
 		"ID":         opt(typ(JobID(""))),
@@ -50,7 +62,7 @@ func InitTest() {
 		"Duration":   kind(reflect.Uint64),
 		"HTTPMethod": kind(reflect.String),
 		"HTTPUrl":    kind(reflect.String),
-	}, Test_Collection_Name())
+	}, "test")
 
 	testValidator = doc(map[string]validator{
 		"ID":   opt(typ(TestID(""))),
@@ -69,57 +81,27 @@ func InitTest() {
 	})
 }
 
-func (test Test) save() (bool, error) {
-	if ok, et := testValidator(map[string]interface{}(test)); !ok {
-		return false, errors.New(et.String())
-	}
-
-	Test_Collection()[string(test["ID"].(TestID))] = test
-	return true, nil
-}
-
-func TestByID(id TestID) Test {
-	return Test_Collection()[string(id)]
-}
-
-func (test Test) delete() (bool, error) {
-	key := test["ID"].(string)
-	_, ok := Test_Collection()[key]
-	if ok {
-		delete(Test_Collection(), key)
-		return true, nil
-	}
-	return false, errors.New("Test not found")
-}
-
-func CreateTest(content map[string]interface{}) (Test, error) {
-	// Validate unmarshalled json first, so we know what to expect
-	if ok, et := testValidator(content); !ok {
-		return nil, errors.New(et.String())
-	}
-
-	name := content["Name"]
-
-	// For now, make id by using random hash of length 5
-	// TODO: Maybe use a counter for every group for better UX?
-	testID := fmt.Sprintf("%s-%s", name, utils.RandHash(5))
-	content["ID"] = TestID(testID)
-
-	// Assign job ids
-	for i := range content["Jobs"].([]interface{}) {
-		j := &content["Jobs"].([]interface{})[i]
-
-		(*j).(map[string]interface{})["ID"] = JobID(fmt.Sprintf("%s-%d", testID, i))
-	}
-
-	test := Test(content)
-	if ok, err := test.save(); !ok {
-		return nil, err
-	}
+func (test *Test) Save() (*Test, error) {
+	TestCollection()[string(test.ID)] = *test
 	return test, nil
 }
 
-func TestFromBody(body []byte) (map[string]interface{}, error) {
+func TestByID(id TestID) (Test, bool) {
+	test, exists := TestCollection()[string(id)]
+	return test, exists
+}
+
+func (test *Test) Delete() (bool, error) {
+	key := string(test.ID)
+	_, ok := TestCollection()[key]
+	if ok {
+		delete(TestCollection(), key)
+		return true, nil
+	}
+	return false, fmt.Errorf("Test<%s> not found", key)
+}
+
+func SaveTestFromBody(body []byte, create ...bool) (*Test, error) {
 	content := make(map[string]interface{})
 	d := json.NewDecoder(bytes.NewBuffer(body))
 	d.UseNumber()
@@ -127,7 +109,7 @@ func TestFromBody(body []byte) (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	// Pre-verify fields to transform
+	// Validate fields to transform
 	if ok, et := transformValidator(content); !ok {
 		return nil, errors.New(et.String())
 	}
@@ -144,5 +126,35 @@ func TestFromBody(body []byte) (map[string]interface{}, error) {
 		(*j).(map[string]interface{})["Duration"] = duration
 	}
 
-	return content, nil
+	// Validate everything else
+	if ok, et := testValidator(content); !ok {
+		return nil, errors.New(et.String())
+	}
+
+	// Test Creation (as opposed to Update)
+	if len(create) > 0 && create[0] {
+		// Generate job ids
+		name := content["Name"]
+
+		// For now, make id by using random hash of length 5
+		// TODO: Maybe use a counter for every group for better UX?
+		testID := fmt.Sprintf("%s-%s", name, utils.RandHash(5))
+		content["ID"] = TestID(testID)
+
+		// Assign job ids
+		for i := range content["Jobs"].([]interface{}) {
+			j := &content["Jobs"].([]interface{})[i]
+			(*j).(map[string]interface{})["ID"] = JobID(fmt.Sprintf("%s-%d", testID, i))
+		}
+	}
+
+	var test Test
+	mapstructure.Decode(content, &test)
+
+	_, err := test.Save()
+	if err != nil {
+		return nil, err
+	}
+
+	return &test, nil
 }

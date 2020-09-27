@@ -3,7 +3,7 @@ package scheduler
 import (
 	"errors"
 
-	mgr "github.com/t-bfame/diago/internal/manager"
+	m "github.com/t-bfame/diago/internal/model"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -26,7 +26,7 @@ func (pm PodManager) register(group string, instance InstanceID) (leader chan In
 	return pg.registerPod(group, instance)
 }
 
-func (pm PodManager) schedule(j mgr.Job, events chan Event) (err error) {
+func (pm PodManager) schedule(j m.Job, events chan Event) (err error) {
 	groupName := j.Group
 	pg, ok := pm.podGroups[groupName]
 
@@ -41,7 +41,7 @@ func (pm PodManager) schedule(j mgr.Job, events chan Event) (err error) {
 	return nil
 }
 
-func (pm PodManager) unschedule(j mgr.Job) (err error) {
+func (pm PodManager) unschedule(j m.Job) (err error) {
 	groupName := j.Group
 	pg, ok := pm.podGroups[groupName]
 

@@ -3,7 +3,7 @@ package scheduler
 import (
 	"errors"
 
-	mgr "github.com/t-bfame/diago/internal/manager"
+	m "github.com/t-bfame/diago/internal/model"
 	worker "github.com/t-bfame/diago/proto-gen/worker"
 )
 
@@ -12,22 +12,22 @@ type InstanceID string
 
 // Event for internal communication
 type Event interface {
-	getJobID() mgr.JobID
+	getJobID() m.JobID
 }
 
 // Incoming messages from workers to leader
 type Incoming interface {
-	getJobID() mgr.JobID
+	getJobID() m.JobID
 }
 
 // Finish message
 type Finish struct {
-	ID mgr.JobID
+	ID m.JobID
 }
 
 // Metrics message
 type Metrics struct {
-	ID       mgr.JobID
+	ID       m.JobID
 	Code     uint32
 	BytesIn  uint64
 	BytesOut uint64
@@ -35,11 +35,11 @@ type Metrics struct {
 	Error    string
 }
 
-func (m Finish) getJobID() mgr.JobID {
+func (m Finish) getJobID() m.JobID {
 	return m.ID
 }
 
-func (m Metrics) getJobID() mgr.JobID {
+func (m Metrics) getJobID() m.JobID {
 	return m.ID
 }
 
@@ -51,7 +51,7 @@ func ProtoToIncoming(msg *worker.Message) (Incoming, error) {
 	case *worker.Message_Metrics:
 		metrics := msg.GetMetrics()
 		inc = Metrics{
-			ID:       mgr.JobID(metrics.GetJobId()),
+			ID:       m.JobID(metrics.GetJobId()),
 			Code:     metrics.GetCode(),
 			BytesIn:  metrics.GetBytesIn(),
 			BytesOut: metrics.GetBytesOut(),
@@ -62,7 +62,7 @@ func ProtoToIncoming(msg *worker.Message) (Incoming, error) {
 	case *worker.Message_Finish:
 		finish := msg.GetFinish()
 		inc = Finish{
-			ID: mgr.JobID(finish.GetJobId()),
+			ID: m.JobID(finish.GetJobId()),
 		}
 
 	default:
@@ -74,13 +74,13 @@ func ProtoToIncoming(msg *worker.Message) (Incoming, error) {
 
 // Outgoing messages to worker from leader
 type Outgoing interface {
-	getJobID() mgr.JobID
+	getJobID() m.JobID
 	ToProto() *worker.Message
 }
 
 // Start message
 type Start struct {
-	ID         mgr.JobID
+	ID         m.JobID
 	Frequency  uint64
 	Duration   uint64
 	HTTPMethod string
@@ -89,10 +89,10 @@ type Start struct {
 
 // Stop message
 type Stop struct {
-	ID mgr.JobID
+	ID m.JobID
 }
 
-func (m Start) getJobID() mgr.JobID {
+func (m Start) getJobID() m.JobID {
 	return m.ID
 }
 
@@ -113,7 +113,7 @@ func (m Start) ToProto() *worker.Message {
 	}
 }
 
-func (m Stop) getJobID() mgr.JobID {
+func (m Stop) getJobID() m.JobID {
 	return m.ID
 }
 

@@ -34,7 +34,7 @@ func kind(t reflect.Kind) validator {
 			et := errortrace{}
 			// This is probably more informative than
 			// "expected kind ..., got value `<nil`> ..."
-			if len(exists) > 0 && exists[0] == false {
+			if len(exists) > 0 && !exists[0] {
 				et.attach(" (field is required, but was not found)")
 			} else {
 				var kindString string
@@ -64,7 +64,7 @@ func typ(instance interface{}) validator {
 			et := errortrace{}
 			// This is probably more informative than
 			// "expected type ..., got value `<nil`> ..."
-			if len(exists) > 0 && exists[0] == false {
+			if len(exists) > 0 && !exists[0] {
 				et.attach(" (field is required, but was not found)")
 			} else {
 				var typeString string
@@ -88,7 +88,7 @@ func typ(instance interface{}) validator {
 
 func opt(v validator) validator {
 	return func(value interface{}, exists ...bool) (bool, *errortrace) {
-		if len(exists) > 0 && exists[0] == false {
+		if len(exists) > 0 && !exists[0] {
 			return true, nil
 		}
 		return v(value, exists...)

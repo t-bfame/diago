@@ -225,7 +225,7 @@ func (e *tdigestEstimator) Get(q float64) float64 {
 	return e.TDigest.Quantile(q)
 }
 
-func NewMetricAggregator(testid string, instanceid string) *Metrics {
+func NewMetricAggregator(testid string, instanceid string, jobid string) *Metrics {
 	var magg Metrics
 
 	labels := map[string]string{
