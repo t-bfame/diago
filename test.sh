@@ -21,7 +21,7 @@ make_dummy_test() {
               }
             ]
           }")
-  testid=$(echo $output | python3 -c "import sys, json; print(json.load(sys.stdin)['payload']['testid'])")
+  testid=$(echo $output | python3 -c "import sys, json; print(json.load(sys.stdin)['payload']['ID'])")
 }
 
 make_dummy_test2() {
@@ -42,7 +42,7 @@ make_dummy_test2() {
               }
             ]
           }")
-  testid=$(echo $output | python3 -c "import sys, json; print(json.load(sys.stdin)['payload']['testid'])")
+  testid=$(echo $output | python3 -c "import sys, json; print(json.load(sys.stdin)['payload']['ID'])")
 }
 
 get_test() {

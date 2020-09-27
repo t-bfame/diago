@@ -186,7 +186,7 @@ func (jf *JobFunnel) StopTest(testID m.TestID) (bool, error) {
 		return false, fmt.Errorf("No instances found for Test<%s>", testID)
 	}
 	for _, instance := range instances {
-		if instance.IsTerminal() {
+		if !instance.IsTerminal() {
 			instance.Status = "stopped"
 			_, err := instance.Save()
 			if err != nil {

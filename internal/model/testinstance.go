@@ -27,8 +27,19 @@ func InitTestInstance() {
 }
 
 func (instance *TestInstance) Save() (*TestInstance, error) {
-	TestInstanceCollection()[string(instance.TestID)] =
-		append(TestInstanceCollection()[string(instance.TestID)], *instance)
+	key := string(instance.TestID)
+
+	// update?
+	for i, ti := range TestInstanceCollection()[key] {
+		if ti.ID == instance.ID {
+			TestInstanceCollection()[key][i] = *instance
+			return instance, nil
+		}
+	}
+
+	// create
+	TestInstanceCollection()[key] =
+		append(TestInstanceCollection()[key], *instance)
 	return instance, nil
 }
 
