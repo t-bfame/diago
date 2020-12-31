@@ -8,6 +8,8 @@ import (
 	"github.com/t-bfame/diago/cmd/server"
 	"github.com/t-bfame/diago/internal/scheduler"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 )
@@ -15,6 +17,13 @@ import (
 func main() {
 	s := scheduler.NewScheduler()
 	var opts []grpc.ServerOption
+
+	g := promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "diago_alive",
+		Help: "Currently supported capacity",
+	})
+
+	g.Set(1)
 
 	go func() {
 		apiServer := server.NewApiServer(&s)
