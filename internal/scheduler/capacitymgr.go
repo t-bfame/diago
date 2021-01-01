@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	log "github.com/sirupsen/logrus"
-	mgr "github.com/t-bfame/diago/internal/manager"
+	m "github.com/t-bfame/diago/internal/model"
 )
 
 // CapacityManager Data structure for keeping track of worker capacities
@@ -13,7 +13,7 @@ type CapacityManager struct {
 	instanceCount        uint64
 	capmux               sync.Mutex
 	currentCapacities    map[InstanceID]uint64
-	workloadDistribution map[InstanceID]*map[mgr.JobID]uint64
+	workloadDistribution map[InstanceID]*map[m.JobID]uint64
 	pdcol                *PodCollection
 	capacity             uint64
 }
@@ -49,7 +49,7 @@ func (cm *CapacityManager) calculateInstanceCount(frequency uint64) (int, error)
 	return int(count), nil
 }
 
-func (cm *CapacityManager) assignCapacity(instance InstanceID, jobID mgr.JobID, required uint64) (uint64, uint64, error) {
+func (cm *CapacityManager) assignCapacity(instance InstanceID, jobID m.JobID, required uint64) (uint64, uint64, error) {
 	cm.capmux.Lock()
 	defer cm.capmux.Unlock()
 
@@ -77,7 +77,7 @@ func (cm *CapacityManager) assignCapacity(instance InstanceID, jobID mgr.JobID, 
 	return workload, required, nil
 }
 
-func (cm *CapacityManager) reclaimCapacity(instance InstanceID, jobID mgr.JobID) error {
+func (cm *CapacityManager) reclaimCapacity(instance InstanceID, jobID m.JobID) error {
 	cm.capmux.Lock()
 	defer cm.capmux.Unlock()
 
@@ -129,7 +129,7 @@ func (cm *CapacityManager) addInstance(instance InstanceID) error {
 	defer cm.capmux.Unlock()
 
 	capacity := cm.capacity
-	workloadDistribution := make(map[mgr.JobID]uint64)
+	workloadDistribution := make(map[m.JobID]uint64)
 
 	cm.currentCapacities[instance] = capacity
 	cm.workloadDistribution[instance] = &workloadDistribution
@@ -137,7 +137,7 @@ func (cm *CapacityManager) addInstance(instance InstanceID) error {
 	return nil
 }
 
-func (cm *CapacityManager) getPodAssignment(jobID mgr.JobID) *[]InstanceID {
+func (cm *CapacityManager) getPodAssignment(jobID m.JobID) *[]InstanceID {
 	cm.capmux.Lock()
 	defer cm.capmux.Unlock()
 
@@ -157,7 +157,7 @@ func NewCapacityManager(group string) *CapacityManager {
 	var capmgr CapacityManager
 
 	capmgr.currentCapacities = make(map[InstanceID]uint64)
-	capmgr.workloadDistribution = make(map[InstanceID]*map[mgr.JobID]uint64)
+	capmgr.workloadDistribution = make(map[InstanceID]*map[m.JobID]uint64)
 	capmgr.capacity, _ = getCapacity(group)
 
 	capmgr.pdcol = NewPodCollection(map[string]string{"group": group})

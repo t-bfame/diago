@@ -6,7 +6,7 @@ build:
 	# kubectl get po
 
 docker:
-	docker build -f build/package/Dockerfile -t diago .
+	docker build --no-cache -f build/package/Dockerfile -t diago .
 
 remove:
 	- kubectl delete sts diago

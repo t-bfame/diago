@@ -3,7 +3,7 @@ package scheduler
 import (
 	"sync"
 
-	mgr "github.com/t-bfame/diago/internal/manager"
+	m "github.com/t-bfame/diago/internal/model"
 	"github.com/t-bfame/diago/pkg/utils"
 
 	log "github.com/sirupsen/logrus"
@@ -21,11 +21,11 @@ type PodGroup struct {
 	scheduledPods map[InstanceID]chan Outgoing
 	podmux        sync.Mutex
 
-	outputChannels map[mgr.JobID]chan Event
-	workloadCount  map[mgr.JobID]uint32
+	outputChannels map[m.JobID]chan Event
+	workloadCount  map[m.JobID]uint32
 
 	qmux     sync.Mutex
-	jobQueue *[]mgr.Job
+	jobQueue *[]m.Job
 
 	capmgr *CapacityManager
 }
@@ -107,7 +107,7 @@ func (pg *PodGroup) removeInstance(instance InstanceID) (err error) {
 	return nil
 }
 
-func (pg *PodGroup) addJob(j mgr.Job, events chan Event) (err error) {
+func (pg *PodGroup) addJob(j m.Job, events chan Event) (err error) {
 	pg.qmux.Lock()
 	defer pg.qmux.Unlock()
 
@@ -121,7 +121,7 @@ func (pg *PodGroup) addJob(j mgr.Job, events chan Event) (err error) {
 	return nil
 }
 
-func (pg *PodGroup) removeJob(id mgr.JobID) (err error) {
+func (pg *PodGroup) removeJob(id m.JobID) (err error) {
 
 	for _, instance := range *(pg.capmgr.getPodAssignment(id)) {
 		pg.scheduledPods[instance] <- Stop{id}
@@ -256,10 +256,10 @@ func NewPodGroup(group string, clientset *kubernetes.Clientset) (pg *PodGroup) {
 	pg.group = group
 
 	pg.scheduledPods = make(map[InstanceID]chan Outgoing)
-	pg.outputChannels = make(map[mgr.JobID]chan Event)
-	pg.workloadCount = make(map[mgr.JobID]uint32)
+	pg.outputChannels = make(map[m.JobID]chan Event)
+	pg.workloadCount = make(map[m.JobID]uint32)
 
-	pg.jobQueue = new([]mgr.Job)
+	pg.jobQueue = new([]m.Job)
 	pg.capmgr = NewCapacityManager(group)
 
 	return pg
