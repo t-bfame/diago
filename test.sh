@@ -18,6 +18,15 @@ make_dummy_test() {
 			          \"Duration\":   30,
 			          \"HTTPMethod\": \"GET\",
 			          \"HTTPUrl\":    \"https://www.google.com\"
+              },
+              {
+                \"Name\": \"beta\",
+                \"Group\": \"diago-worker\",
+                \"Priority\": 0,
+                \"Frequency\":  5,
+			          \"Duration\":   30,
+			          \"HTTPMethod\": \"GET\",
+			          \"HTTPUrl\":    \"https://www.google.com\"
               }
             ]
           }")

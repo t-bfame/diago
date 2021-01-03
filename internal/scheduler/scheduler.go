@@ -1,7 +1,7 @@
 package scheduler
 
 import (
-	mgr "github.com/t-bfame/diago/internal/manager"
+	m "github.com/t-bfame/diago/internal/model"
 )
 
 // Scheduler lalalal
@@ -10,7 +10,7 @@ type Scheduler struct {
 }
 
 // Submit dingdingi
-func (s Scheduler) Submit(j mgr.Job) (events chan Event, err error) {
+func (s Scheduler) Submit(j m.Job) (events chan Event, err error) {
 	events = make(chan Event, 2)
 
 	// Put job in queue for pod group
@@ -20,7 +20,7 @@ func (s Scheduler) Submit(j mgr.Job) (events chan Event, err error) {
 }
 
 // Stop dongdongdong
-func (s Scheduler) Stop(j mgr.Job) (err error) {
+func (s Scheduler) Stop(j m.Job) (err error) {
 	return s.pm.unschedule(j)
 }
 
