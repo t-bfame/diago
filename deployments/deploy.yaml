@@ -21,6 +21,12 @@ spec:
     port: 2112
     targetPort: 2112
     nodePort: 30017
+  # TODO: for testing purposes only; remove once product is more mature
+  - name: grpc
+    protocol: TCP
+    port: 5000
+    targetPort: 5000
+    nodePort: 30018
 ---
 apiVersion: apps/v1
 kind: StatefulSet
