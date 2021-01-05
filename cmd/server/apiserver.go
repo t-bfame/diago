@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"reflect"
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
@@ -15,7 +16,8 @@ import (
 	"github.com/t-bfame/diago/pkg/utils"
 )
 
-type ApiServer struct {
+// APIServer serves API calls over HTTP
+type APIServer struct {
 	scheduler      *sch.Scheduler
 	dummyTests     map[string]m.Test
 	dummyInstances map[string][]*m.TestInstance
@@ -53,13 +55,14 @@ func buildFailure(msg string, code int, w http.ResponseWriter) []byte {
 
 	json, err := json.Marshal(respMap)
 	if err != nil {
-		// ???
+		log.Info("failed to build failure for %v", respMap)
 		return make([]byte, 0)
 	}
 	return json
 }
 
-func (server *ApiServer) Start() {
+// Start starts the APIServer
+func (server *APIServer) Start() {
 	router := mux.NewRouter()
 	router.Use(preResponse)
 
@@ -70,6 +73,13 @@ func (server *ApiServer) Start() {
 			w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
 			return
 		}
+
+		err = m.Validate(reflect.TypeOf(m.Test{}), bodyContent)
+		if err != nil {
+			w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
+			return
+		}
+
 		var test m.Test
 		err = json.Unmarshal(bodyContent, &test)
 		if err != nil {
@@ -121,6 +131,13 @@ func (server *ApiServer) Start() {
 				w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
 				return
 			}
+
+			err = m.Validate(reflect.TypeOf(m.Test{}), bodyContent)
+			if err != nil {
+				w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
+				return
+			}
+
 			var updatedTest m.Test
 			err = json.Unmarshal(bodyContent, &updatedTest)
 			if err != nil {
@@ -203,8 +220,9 @@ func (server *ApiServer) Start() {
 	log.WithField("port", port).Info("Api server listening")
 }
 
-func NewApiServer(sched *sch.Scheduler) *ApiServer {
-	return &ApiServer{
+// NewAPIServer create a new APIServer
+func NewAPIServer(sched *sch.Scheduler) *APIServer {
+	return &APIServer{
 		sched,
 		make(map[string]m.Test),
 		make(map[string][]*m.TestInstance),

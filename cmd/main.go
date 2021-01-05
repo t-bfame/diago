@@ -26,7 +26,7 @@ func main() {
 	g.Set(1)
 
 	go func() {
-		apiServer := server.NewApiServer(&s)
+		apiServer := server.NewAPIServer(&s)
 		apiServer.Start()
 	}()
 
