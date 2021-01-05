@@ -124,7 +124,7 @@ func (cm *CapacityManager) removeInstance(instance InstanceID) {
 	cm.pdcol.updateCurrentCapacity(cm.nonBlockingCurrentCapacity())
 }
 
-func (cm *CapacityManager) addInstance(instance InstanceID) error {
+func (cm *CapacityManager) addInstance(instance InstanceID, frequency uint64) error {
 	cm.capmux.Lock()
 	defer cm.capmux.Unlock()
 

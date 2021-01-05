@@ -23,7 +23,7 @@ func (pm PodManager) createPodGroup(groupName string) (pg *PodGroup) {
 	return pm.podGroups[groupName]
 }
 
-func (pm PodManager) register(group string, instance InstanceID) (leader chan Incoming, worker chan Outgoing, err error) {
+func (pm PodManager) register(group string, instance InstanceID, frequency uint64) (leader chan Incoming, worker chan Outgoing, err error) {
 	pg, ok := pm.podGroups[group]
 
 	// In this case, leader was not responsible for spinning up the worker process
@@ -34,7 +34,7 @@ func (pm PodManager) register(group string, instance InstanceID) (leader chan In
 	}
 
 	// Add test channel for multiplexing
-	return pg.registerPod(group, instance)
+	return pg.registerPod(group, instance, frequency)
 }
 
 func (pm PodManager) schedule(j m.Job, events chan Event) (err error) {

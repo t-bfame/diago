@@ -93,7 +93,7 @@ get_instance() {
 
 testid=""
 pad
-make_dummy_test
+make_dummy_test2
 
 # strip quotes from id
 testid=$(echo $testid | tr -d '"')

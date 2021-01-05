@@ -225,6 +225,7 @@ func (e *tdigestEstimator) Get(q float64) float64 {
 	return e.TDigest.Quantile(q)
 }
 
+// NewMetricAggregator Creates a new MAgg
 func NewMetricAggregator(testid string, instanceid string, jobid string) *Metrics {
 	var magg Metrics
 

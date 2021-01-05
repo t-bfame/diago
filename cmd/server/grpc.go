@@ -37,11 +37,13 @@ func (s *workerServer) Coordinate(stream pb.Worker_CoordinateServer) error {
 
 	reg := msg.GetRegister()
 	group := reg.GetGroup()
+	freq := reg.GetFrequency()
+
 	instance := scheduler.InstanceID(reg.GetInstance())
 
-	log.WithField("group", group).WithField("instance", instance).Info("Received registration for pod")
+	log.WithField("group", group).WithField("instance", instance).WithField("frequency", freq).Info("Received registration for pod")
 
-	leaderMsgs, workerMsgs, err := s.sched.Register(group, instance)
+	leaderMsgs, workerMsgs, err := s.sched.Register(group, instance, freq)
 
 	if err != nil {
 		log.WithError(err).Error("Encountered error during registeration")

@@ -25,8 +25,8 @@ func (s Scheduler) Stop(j m.Job) (err error) {
 }
 
 // Register something
-func (s Scheduler) Register(group string, instance InstanceID) (chan Incoming, chan Outgoing, error) {
-	return s.pm.register(group, instance)
+func (s Scheduler) Register(group string, instance InstanceID, frequency uint64) (chan Incoming, chan Outgoing, error) {
+	return s.pm.register(group, instance, frequency)
 }
 
 // NewScheduler laalala
