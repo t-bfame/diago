@@ -102,9 +102,9 @@ pad
 
 get_test
 submit_test
-get_instance
+# get_instance
 
-# sleep 5
+sleep 30
 
 # stop_test
 get_instance

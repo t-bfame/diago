@@ -53,6 +53,14 @@ func (pc *LoadTestCollection) clear() {
 	pc.bytesOut.Set(0)
 	pc.requests.Set(0)
 	pc.success.Set(0)
+
+	prometheus.Unregister(pc.latencyMean)
+	prometheus.Unregister(pc.latencyMin)
+	prometheus.Unregister(pc.latencyMax)
+	prometheus.Unregister(pc.bytesIn)
+	prometheus.Unregister(pc.bytesOut)
+	prometheus.Unregister(pc.requests)
+	prometheus.Unregister(pc.success)
 }
 
 // NewLoadTestCollection returns a new prometheus metric collection
