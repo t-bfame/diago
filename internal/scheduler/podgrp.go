@@ -130,7 +130,7 @@ func (pg *PodGroup) removeJob(id m.JobID) (err error) {
 	return nil
 }
 
-func (pg *PodGroup) registerPod(group string, instance InstanceID) (leader chan Incoming, worker chan Outgoing, err error) {
+func (pg *PodGroup) registerPod(group string, instance InstanceID, frequency uint64) (leader chan Incoming, worker chan Outgoing, err error) {
 	pg.qmux.Lock()
 	defer pg.qmux.Unlock()
 
@@ -138,7 +138,7 @@ func (pg *PodGroup) registerPod(group string, instance InstanceID) (leader chan 
 	worker = make(chan Outgoing, 2) // messages for worker
 
 	pg.scheduledPods[instance] = worker
-	pg.capmgr.addInstance(instance)
+	pg.capmgr.addInstance(instance, frequency)
 
 	// Mux events from pod to correct job channels
 	go func() {

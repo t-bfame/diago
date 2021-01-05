@@ -93,7 +93,7 @@ get_instance() {
 
 testid=""
 pad
-make_dummy_test
+make_dummy_test2
 
 # strip quotes from id
 testid=$(echo $testid | tr -d '"')
@@ -102,9 +102,9 @@ pad
 
 get_test
 submit_test
-get_instance
+# get_instance
 
-# sleep 5
+sleep 30
 
 # stop_test
 get_instance

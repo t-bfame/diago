@@ -7,6 +7,8 @@ import (
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // PodManager Manages pods created by diago in K8s cluster
@@ -15,24 +17,33 @@ type PodManager struct {
 	podGroups map[string]*PodGroup
 }
 
-func (pm PodManager) register(group string, instance InstanceID) (leader chan Incoming, worker chan Outgoing, err error) {
+func (pm PodManager) createPodGroup(groupName string) (pg *PodGroup) {
+	pm.podGroups[groupName] = NewPodGroup(groupName, pm.clientset)
+
+	return pm.podGroups[groupName]
+}
+
+func (pm PodManager) register(group string, instance InstanceID, frequency uint64) (leader chan Incoming, worker chan Outgoing, err error) {
 	pg, ok := pm.podGroups[group]
 
+	// In this case, leader was not responsible for spinning up the worker process
+	// and it will simply create initialize a new group to accomodate discovery
 	if !ok {
-		return nil, nil, errors.New("Could not find specified group")
+		log.WithField("group", group).Debug("Group doesnt exist, creating a new group during registration")
+		pg = pm.createPodGroup(group)
 	}
 
 	// Add test channel for multiplexing
-	return pg.registerPod(group, instance)
+	return pg.registerPod(group, instance, frequency)
 }
 
 func (pm PodManager) schedule(j m.Job, events chan Event) (err error) {
-	groupName := j.Group
-	pg, ok := pm.podGroups[groupName]
+	group := j.Group
+	pg, ok := pm.podGroups[group]
 
 	if !ok {
-		pg = NewPodGroup(groupName, pm.clientset)
-		pm.podGroups[groupName] = pg
+		log.WithField("group", group).Debug("Group doesnt exist, creating a new group")
+		pg = pm.createPodGroup(group)
 	}
 
 	// Add channel for receiving events

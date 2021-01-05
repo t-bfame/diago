@@ -6,7 +6,7 @@ build:
 	# kubectl get po
 
 docker:
-	docker build --no-cache -f build/package/Dockerfile -t diago .
+	eval $(minikube docker-env) && docker build -f build/package/Dockerfile -t diago .
 
 remove:
 	- kubectl delete sts diago
@@ -16,6 +16,8 @@ remove:
 run:
 	kubectl apply -f deployments/deploy.yaml
 	kubectl get po
+
+do: build docker remove run
 
 logs:
 	kubectl logs diago-0 -f
