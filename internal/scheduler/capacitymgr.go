@@ -42,10 +42,6 @@ func (cm *CapacityManager) calculateInstanceCount(frequency uint64) (int, error)
 		count = (remaining / capacity) + 1
 	}
 
-	cm.instanceCount += count
-	cm.pdcol.updateTotalCapacity(cm.instanceCount * capacity)
-	cm.pdcol.updateWorkerCount(cm.instanceCount)
-
 	return int(count), nil
 }
 
@@ -131,8 +127,13 @@ func (cm *CapacityManager) addInstance(instance InstanceID, frequency uint64) er
 	capacity := cm.capacity
 	workloadDistribution := make(map[m.JobID]uint64)
 
+	cm.instanceCount++
 	cm.currentCapacities[instance] = capacity
 	cm.workloadDistribution[instance] = &workloadDistribution
+
+	cm.pdcol.updateTotalCapacity(cm.instanceCount * capacity)
+	cm.pdcol.updateWorkerCount(cm.instanceCount)
+	cm.pdcol.updateCurrentCapacity(cm.nonBlockingCurrentCapacity())
 
 	return nil
 }
