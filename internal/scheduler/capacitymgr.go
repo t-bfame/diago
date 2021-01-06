@@ -13,6 +13,8 @@ type CapacityManager struct {
 	instanceCount        uint64
 	capmux               sync.Mutex
 	currentCapacities    map[InstanceID]uint64
+	maxCapacities        map[InstanceID]uint64
+	cumulativeMaxCap     uint64
 	workloadDistribution map[InstanceID]*map[m.JobID]uint64
 	pdcol                *PodCollection
 	capacity             uint64
@@ -25,14 +27,14 @@ func (cm *CapacityManager) calculateInstanceCount(frequency uint64) (int, error)
 	defer cm.capmux.Unlock()
 
 	capacity := cm.capacity
-	currentCapacity := capacity * cm.instanceCount
+	maxCapacity := cm.cumulativeMaxCap
 
 	// All pods running right now can satisfy capacity
-	if frequency <= currentCapacity {
+	if frequency <= maxCapacity {
 		return 0, errors.New("No new pods are required, capacity can be fulfilled")
 	}
 
-	remaining := frequency - currentCapacity
+	remaining := frequency - maxCapacity
 	rdr := remaining % capacity
 	var count uint64 = 0
 
@@ -115,6 +117,8 @@ func (cm *CapacityManager) removeInstance(instance InstanceID) {
 	cm.capmux.Lock()
 	defer cm.capmux.Unlock()
 
+	cm.cumulativeMaxCap -= cm.maxCapacities[instance]
+	delete(cm.maxCapacities, instance)
 	delete(cm.currentCapacities, instance)
 	delete(cm.workloadDistribution, instance)
 	cm.instanceCount--
@@ -124,14 +128,15 @@ func (cm *CapacityManager) removeInstance(instance InstanceID) {
 	cm.pdcol.updateCurrentCapacity(cm.nonBlockingCurrentCapacity())
 }
 
-func (cm *CapacityManager) addInstance(instance InstanceID, frequency uint64) error {
+func (cm *CapacityManager) addInstance(instance InstanceID, capacity uint64) error {
 	cm.capmux.Lock()
 	defer cm.capmux.Unlock()
 
-	capacity := cm.capacity
 	workloadDistribution := make(map[m.JobID]uint64)
 
 	cm.currentCapacities[instance] = capacity
+	cm.maxCapacities[instance] = capacity
+	cm.cumulativeMaxCap += capacity
 	cm.workloadDistribution[instance] = &workloadDistribution
 
 	return nil
@@ -156,6 +161,7 @@ func (cm *CapacityManager) getPodAssignment(jobID m.JobID) *[]InstanceID {
 func NewCapacityManager(group string) *CapacityManager {
 	var capmgr CapacityManager
 
+	capmgr.maxCapacities = make(map[InstanceID]uint64)
 	capmgr.currentCapacities = make(map[InstanceID]uint64)
 	capmgr.workloadDistribution = make(map[InstanceID]*map[m.JobID]uint64)
 	capmgr.capacity, _ = getCapacity(group)

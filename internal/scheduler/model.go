@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -104,8 +105,9 @@ func createPodConfig(group string, instance InstanceID) (podConfig *v1.Pod, err 
 
 func getCapacity(group string) (uint64, error) {
 	dat, ok := storage[group]
+	capacity, _ := strconv.ParseUint(os.Getenv("DEFAULT_GROUP_CAPACITY"), 10, 64)
 	if !ok {
-		return 0, errors.New("Could not find capacity for specified group")
+		return capacity, errors.New("Could not find capacity for specified group")
 	}
 
 	return dat.Capacity, nil
