@@ -17,7 +17,7 @@ func main() {
 	var opts []grpc.ServerOption
 
 	go func() {
-		apiServer := server.NewApiServer(&s)
+		apiServer := server.NewAPIServer(&s)
 		apiServer.Start()
 	}()
 
