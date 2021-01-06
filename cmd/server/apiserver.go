@@ -55,7 +55,7 @@ func buildFailure(msg string, code int, w http.ResponseWriter) []byte {
 
 	json, err := json.Marshal(respMap)
 	if err != nil {
-		log.Info("failed to build failure for %v", respMap)
+		log.WithField("RespMap", respMap).Info("failed to build failure")
 		return make([]byte, 0)
 	}
 	return json
