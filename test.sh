@@ -104,7 +104,7 @@ get_test
 submit_test
 # get_instance
 
-sleep 30
+sleep 10
 
 # stop_test
 get_instance
