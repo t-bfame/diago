@@ -16,6 +16,8 @@ type CapacityManager struct {
 	workloadDistribution map[InstanceID]*map[m.JobID]uint64
 	pdcol                *PodCollection
 	capacity             uint64
+
+	model *SchedulerModel
 }
 
 // Calculate the number of instances that should be spun up
@@ -154,12 +156,14 @@ func (cm *CapacityManager) getPodAssignment(jobID m.JobID) *[]InstanceID {
 }
 
 // NewCapacityManager returns a new capacity manager
-func NewCapacityManager(group string) *CapacityManager {
+func NewCapacityManager(group string, model *SchedulerModel) *CapacityManager {
 	var capmgr CapacityManager
+
+	capmgr.model = model
 
 	capmgr.currentCapacities = make(map[InstanceID]uint64)
 	capmgr.workloadDistribution = make(map[InstanceID]*map[m.JobID]uint64)
-	capmgr.capacity, _ = getCapacity(group)
+	capmgr.capacity, _ = model.getCapacity(group)
 
 	capmgr.pdcol = NewPodCollection(map[string]string{"group": group})
 

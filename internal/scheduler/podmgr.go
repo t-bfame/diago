@@ -14,11 +14,12 @@ import (
 // PodManager Manages pods created by diago in K8s cluster
 type PodManager struct {
 	clientset *kubernetes.Clientset
+	model     *SchedulerModel
 	podGroups map[string]*PodGroup
 }
 
 func (pm PodManager) createPodGroup(groupName string) (pg *PodGroup) {
-	pm.podGroups[groupName] = NewPodGroup(groupName, pm.clientset)
+	pm.podGroups[groupName] = NewPodGroup(groupName, pm.clientset, pm.model)
 
 	return pm.podGroups[groupName]
 }
@@ -82,6 +83,12 @@ func NewPodManager() *PodManager {
 	pm := new(PodManager)
 	pm.clientset = clientset
 	pm.podGroups = make(map[string]*PodGroup)
+
+	pm.model, err = NewSchedulerModel(config)
+
+	if err != nil {
+		panic(err.Error())
+	}
 
 	return pm
 }
