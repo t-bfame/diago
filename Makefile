@@ -11,7 +11,7 @@ docker:
 remove:
 	- kubectl delete sts diago
 	- kubectl delete svc diago-0
-	- kubectl delete po -l group=diago-worker
+	- kubectl delete po -l group=test-worker
 
 run:
 	kubectl apply -f deployments/deploy.yaml
@@ -35,6 +35,9 @@ proto:
 		--go_out=Mgrpc/service_config/service_config.proto=/proto-gen/api:. \
 		--go-grpc_out=Mgrpc/service_config/service_config.proto=/proto-gen/api:. \
 		idl/proto/worker.proto
+
+crd-gen:
+	controller-gen object paths=./api/v1alpha1/worker.go
 
 # test:
 # 	./test.sh

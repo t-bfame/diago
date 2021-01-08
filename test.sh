@@ -12,7 +12,7 @@ make_dummy_test() {
             \"Jobs\": [
               {
                 \"Name\": \"alpha\",
-                \"Group\": \"diago-worker\",
+                \"Group\": \"test-worker\",
                 \"Priority\": 0,
                 \"Frequency\":  5,
 			          \"Duration\":   30,
@@ -21,7 +21,7 @@ make_dummy_test() {
               },
               {
                 \"Name\": \"beta\",
-                \"Group\": \"diago-worker\",
+                \"Group\": \"test-worker\",
                 \"Priority\": 0,
                 \"Frequency\":  5,
 			          \"Duration\":   30,
@@ -42,7 +42,7 @@ make_dummy_test2() {
               {
                 \"ID\": \"1\",
                 \"Name\": \"alpha\",
-                \"Group\": \"diago-worker\",
+                \"Group\": \"test-worker\",
                 \"Priority\": 0,
                 \"Frequency\":  5,
 			          \"Duration\":   5,
@@ -104,7 +104,7 @@ get_test
 submit_test
 # get_instance
 
-sleep 30
+sleep 10
 
 # stop_test
 get_instance
