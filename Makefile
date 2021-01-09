@@ -33,7 +33,7 @@ proto:
 		idl/proto/worker.proto
 
 crd-gen:
-	controller-gen object paths=./api/v1alpha1/worker.go
+	controller-gen object paths=./api/v1alpha1/workergroup.go
 
 # test:
 # 	./test.sh
