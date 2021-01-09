@@ -30,7 +30,7 @@ func main() {
 
 	go func() {
 		http.Handle("/metrics", promhttp.Handler())
-		http.ListenAndServe(fmt.Sprintf(":%s", config.Diago.PrometheusPort), nil)
+		http.ListenAndServe(fmt.Sprintf(":%d", config.Diago.PrometheusPort), nil)
 	}()
 
 	server.InitGRPCServer("tcp", config.Diago.Host, config.Diago.GRPCPort, opts, s)
