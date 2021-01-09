@@ -17,7 +17,7 @@ func main() {
 	var opts []grpc.ServerOption
 
 	go func() {
-		apiServer := server.NewAPIServer(&s)
+		apiServer := server.NewAPIServer(s)
 		apiServer.Start()
 	}()
 
@@ -26,5 +26,5 @@ func main() {
 		http.ListenAndServe(fmt.Sprintf(":%s", os.Getenv("PROMETHEUS_PORT")), nil)
 	}()
 
-	server.InitGRPCServer("tcp", os.Getenv("GRPC_HOST"), os.Getenv("GRPC_PORT"), opts, &s)
+	server.InitGRPCServer("tcp", os.Getenv("GRPC_HOST"), os.Getenv("GRPC_PORT"), opts, s)
 }
