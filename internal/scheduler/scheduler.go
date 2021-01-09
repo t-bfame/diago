@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"errors"
+	"sync"
 
 	log "github.com/sirupsen/logrus"
 	m "github.com/t-bfame/diago/internal/model"
@@ -15,25 +16,34 @@ type Scheduler struct {
 	clientset *kubernetes.Clientset
 	model     *SchedulerModel
 	podGroups map[string]*PodGroup
+
+	pgmux sync.Mutex
 }
 
-func (s Scheduler) createPodGroup(groupName string) (pg *PodGroup) {
+func (s *Scheduler) createPodGroup(groupName string) (pg *PodGroup) {
+	pg, ok := s.podGroups[groupName]
+
+	if ok {
+		return pg
+	}
+
+	// Pod group creation has to be an atomic operation
+	s.pgmux.Lock()
+	defer s.pgmux.Unlock()
+
+	log.WithField("group", groupName).Debug("Group doesnt exist, creating a new group")
+
 	s.podGroups[groupName] = NewPodGroup(groupName, s.clientset, s.model)
 
 	return s.podGroups[groupName]
 }
 
 // Submit dingdingi
-func (s Scheduler) Submit(j m.Job) (events chan Event, err error) {
+func (s *Scheduler) Submit(j m.Job) (events chan Event, err error) {
 	events = make(chan Event, 2)
 
 	group := j.Group
-	pg, ok := s.podGroups[group]
-
-	if !ok {
-		log.WithField("group", group).Debug("Group doesnt exist, creating a new group")
-		pg = s.createPodGroup(group)
-	}
+	pg := s.createPodGroup(group)
 
 	// Add channel for receiving events
 	pg.addJob(j, events)
@@ -42,7 +52,7 @@ func (s Scheduler) Submit(j m.Job) (events chan Event, err error) {
 }
 
 // Stop dongdongdong
-func (s Scheduler) Stop(j m.Job) (err error) {
+func (s *Scheduler) Stop(j m.Job) (err error) {
 	groupName := j.Group
 	pg, ok := s.podGroups[groupName]
 
@@ -56,15 +66,8 @@ func (s Scheduler) Stop(j m.Job) (err error) {
 }
 
 // Register something
-func (s Scheduler) Register(group string, instance InstanceID, frequency uint64) (chan Incoming, chan Outgoing, error) {
-	pg, ok := s.podGroups[group]
-
-	// In this case, leader was not responsible for spinning up the worker process
-	// and it will simply create initialize a new group to accomodate discovery
-	if !ok {
-		log.WithField("group", group).Debug("Group doesnt exist, creating a new group during registration")
-		pg = s.createPodGroup(group)
-	}
+func (s *Scheduler) Register(group string, instance InstanceID, frequency uint64) (chan Incoming, chan Outgoing, error) {
+	pg := s.createPodGroup(group)
 
 	// Add test channel for multiplexing
 	return pg.registerPod(group, instance, frequency)
