@@ -1,12 +1,12 @@
 .PHONY:	build run
 
-build:
+.PHONY: local
+local:
 	GOOS=linux go build cmd/main.go
-	# kubectl apply -f deployments/deploy.yaml
-	# kubectl get po
+	docker build -f Dockerfile.dev -t diago .
 
 docker:
-	eval $(minikube docker-env) && docker build -f build/package/Dockerfile -t diago .
+	docker build Dockerfile -t diago .
 
 remove:
 	- kubectl delete sts diago
@@ -17,14 +17,10 @@ run:
 	kubectl apply -f deployments/deploy.yaml
 	kubectl get po
 
-do: build docker remove run
+do: local remove run
 
 logs:
 	kubectl logs diago-0 -f
-
-.PHONY: local
-local:
-	go build cmd/main.go
 
 PROTOC := protoc
 
