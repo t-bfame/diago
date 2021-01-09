@@ -9,11 +9,16 @@ import (
 	"github.com/t-bfame/diago/internal/scheduler"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
 
 func main() {
 	config.Init()
+
+	if config.Diago.Debug {
+		log.SetLevel(log.DebugLevel)
+	}
 
 	s := scheduler.NewScheduler()
 	var opts []grpc.ServerOption

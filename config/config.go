@@ -1,9 +1,8 @@
 package config
 
 import (
-	"log"
-
 	"github.com/kelseyhightower/envconfig"
+	log "github.com/sirupsen/logrus"
 )
 
 type Config struct {
@@ -14,6 +13,8 @@ type Config struct {
 
 	DefaultGroupCapacity uint64 `envconfig:"DIAGO_DEFAULT_GROUP_CAPACITY" default:"20"`
 	DefaultNamespace     string `envconfig:"DIAGO_DEFAULT_NAMESPACE" default:"default"`
+
+	Debug bool `envconfig:"DIAGO_DEBUG" default:"false"`
 }
 
 var Diago *Config
@@ -24,7 +25,6 @@ func Init() error {
 	err := envconfig.Process("DIAGO", &c)
 	if err != nil {
 		log.Fatal(err.Error())
-
 	}
 
 	Diago = &c
