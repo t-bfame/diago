@@ -10,12 +10,10 @@ docker:
 
 remove:
 	- kubectl delete sts diago
-	- kubectl delete svc diago-0
 	- kubectl delete po -l group=test-worker
 
 run:
-	kubectl apply -f deployments/deploy.yaml
-	kubectl get po
+	kubectl apply -k manifests/
 
 do: local remove run
 
