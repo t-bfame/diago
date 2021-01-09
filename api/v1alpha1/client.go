@@ -4,8 +4,8 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-func (c *DiagoV1Alpha1Client) Workers(namespace string) WorkerInterface {
-	return &workerClient{
+func (c *DiagoV1Alpha1Client) WorkerGroups(namespace string) WorkerGroupInterface {
+	return &workerGroupClient{
 		client: c.restClient,
 		ns:     namespace,
 	}

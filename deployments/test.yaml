@@ -1,5 +1,5 @@
 apiVersion: diago.app/v1alpha1
-kind: Worker
+kind: WorkerGroup
 metadata:
   name: test-worker
 spec:

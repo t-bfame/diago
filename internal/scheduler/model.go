@@ -39,7 +39,7 @@ func (sm SchedulerModel) createContainerSpec(name string, image string, env map[
 }
 
 func (sm SchedulerModel) getEnvs(group string, instance InstanceID) map[string]string {
-	workerConfig, err := sm.client.Workers("default").Get(group)
+	workerConfig, err := sm.client.WorkerGroups("default").Get(group)
 
 	if err != nil {
 		log.WithField("group", group).Error("Unable to find config for worker")
@@ -67,7 +67,7 @@ func (sm SchedulerModel) getLabels(group string, instance InstanceID) map[string
 }
 
 func (sm SchedulerModel) getConfigs(group string, instance InstanceID) (image string, env map[string]string, labels map[string]string, err error) {
-	workerConfig, err := sm.client.Workers("default").Get(group)
+	workerConfig, err := sm.client.WorkerGroups("default").Get(group)
 
 	if err != nil {
 		log.WithField("group", group).Error("Unable to find config for worker")
@@ -105,7 +105,7 @@ func (sm SchedulerModel) createPodConfig(group string, instance InstanceID) (pod
 
 func (sm SchedulerModel) getCapacity(group string) (uint64, error) {
 
-	workerConfig, err := sm.client.Workers("default").Get(group)
+	workerConfig, err := sm.client.WorkerGroups("default").Get(group)
 
 	if err != nil {
 		log.WithField("group", group).Error("Unable to find capacity for worker")
