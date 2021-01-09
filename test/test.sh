@@ -91,6 +91,8 @@ get_instance() {
 
 # sleep 5
 
+kubectl apply -f test/test.yaml
+
 testid=""
 pad
 make_dummy_test2

@@ -12,10 +12,10 @@ remove:
 	- kubectl delete sts diago
 	- kubectl delete po -l group=test-worker
 
-run:
+deploy:
 	kubectl apply -k manifests/
 
-do: local remove run
+do: local remove deploy
 
 logs:
 	kubectl logs diago-0 -f
@@ -38,3 +38,6 @@ crd-gen:
 
 test:
 	go test -v -coverprofile=coverage.out ./...
+
+flow:
+	./test/test.sh

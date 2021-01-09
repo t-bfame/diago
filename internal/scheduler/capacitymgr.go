@@ -13,6 +13,8 @@ type CapacityManager struct {
 	instanceCount        uint64
 	capmux               sync.Mutex
 	currentCapacities    map[InstanceID]uint64
+	maxCapacities        map[InstanceID]uint64
+	cumulativeMaxCap     uint64
 	workloadDistribution map[InstanceID]*map[m.JobID]uint64
 	podMetrics           map[InstanceID]*PodMetrics
 	capacity             uint64
@@ -28,14 +30,14 @@ func (cm *CapacityManager) calculateInstanceCount(frequency uint64) (int, error)
 	defer cm.capmux.Unlock()
 
 	capacity := cm.capacity
-	currentCapacity := capacity * cm.instanceCount
+	maxCapacity := cm.cumulativeMaxCap
 
 	// All pods running right now can satisfy capacity
-	if frequency <= currentCapacity {
+	if frequency <= maxCapacity {
 		return 0, errors.New("No new pods are required, capacity can be fulfilled")
 	}
 
-	remaining := frequency - currentCapacity
+	remaining := frequency - maxCapacity
 	rdr := remaining % capacity
 	var count uint64 = 0
 
@@ -114,27 +116,30 @@ func (cm *CapacityManager) removeInstance(instance InstanceID) {
 	cm.capmux.Lock()
 	defer cm.capmux.Unlock()
 
+	cm.cumulativeMaxCap -= cm.maxCapacities[instance]
 	cm.instanceCount--
 
 	cm.podMetrics[instance].cleanup()
 
+	delete(cm.maxCapacities, instance)
 	delete(cm.podMetrics, instance)
 	delete(cm.currentCapacities, instance)
 	delete(cm.workloadDistribution, instance)
 }
 
-func (cm *CapacityManager) addInstance(instance InstanceID, frequency uint64) error {
+func (cm *CapacityManager) addInstance(instance InstanceID, capacity uint64) error {
 	cm.capmux.Lock()
 	defer cm.capmux.Unlock()
 
-	capacity := cm.capacity
 	workloadDistribution := make(map[m.JobID]uint64)
 
 	cm.instanceCount++
 	cm.currentCapacities[instance] = capacity
+	cm.maxCapacities[instance] = capacity
+	cm.cumulativeMaxCap += capacity
 	cm.workloadDistribution[instance] = &workloadDistribution
 
-	cm.podMetrics[instance] = NewPodMetrics(cm.group, instance, frequency)
+	cm.podMetrics[instance] = NewPodMetrics(cm.group, instance, capacity)
 
 	return nil
 }
@@ -161,6 +166,7 @@ func NewCapacityManager(group string, model *SchedulerModel) *CapacityManager {
 	capmgr.model = model
 	capmgr.group = group
 
+	capmgr.maxCapacities = make(map[InstanceID]uint64)
 	capmgr.currentCapacities = make(map[InstanceID]uint64)
 	capmgr.workloadDistribution = make(map[InstanceID]*map[m.JobID]uint64)
 	capmgr.podMetrics = make(map[InstanceID]*PodMetrics)

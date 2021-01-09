@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/t-bfame/diago/api/v1alpha1"
 
@@ -109,7 +110,7 @@ func (sm SchedulerModel) getCapacity(group string) (uint64, error) {
 
 	if err != nil {
 		log.WithField("group", group).Error("Unable to find capacity for worker")
-		return 0, err
+		return strconv.ParseUint(os.Getenv("DEFAULT_GROUP_CAPACITY"), 10, 64)
 	}
 
 	return uint64(workerConfig.Spec.Capacity), nil
