@@ -6,7 +6,7 @@ local:
 	docker build -f Dockerfile.dev -t diago .
 
 docker:
-	docker build Dockerfile -t diago .
+	docker build -t diago .
 
 remove:
 	- kubectl delete sts diago
