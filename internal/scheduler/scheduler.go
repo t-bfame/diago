@@ -31,9 +31,21 @@ func (s *Scheduler) createPodGroup(groupName string) (pg *PodGroup) {
 	s.pgmux.Lock()
 	defer s.pgmux.Unlock()
 
-	log.WithField("group", groupName).Debug("Group doesnt exist, creating a new group")
+	log.WithField("group", groupName).Info("Group doesnt exist, creating a new group")
 
-	s.podGroups[groupName] = NewPodGroup(groupName, s.clientset, s.model)
+	cleanupChannel := make(chan struct{})
+	s.podGroups[groupName] = NewPodGroup(groupName, s.clientset, s.model, cleanupChannel)
+
+	go func() {
+		<-cleanupChannel
+		s.pgmux.Lock()
+		defer s.pgmux.Unlock()
+
+		log.WithField("group", groupName).Info("Group does not have remaining workers, removing group instance")
+
+		// Pod group deletion has to be an atomic operation
+		delete(s.podGroups, groupName)
+	}()
 
 	return s.podGroups[groupName]
 }

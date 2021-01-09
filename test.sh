@@ -45,7 +45,7 @@ make_dummy_test2() {
                 \"Group\": \"test-worker\",
                 \"Priority\": 0,
                 \"Frequency\":  5,
-			          \"Duration\":   5,
+			          \"Duration\":   30,
 			          \"HTTPMethod\": \"GET\",
 			          \"HTTPUrl\":    \"https://www.google.com\"
               }

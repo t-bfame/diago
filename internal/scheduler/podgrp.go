@@ -29,6 +29,8 @@ type PodGroup struct {
 	jobQueue *[]m.Job
 
 	capmgr *CapacityManager
+
+	cleanupChannel chan struct{}
 }
 
 // Instances are 0 indexed
@@ -105,6 +107,13 @@ func (pg *PodGroup) removeInstance(instance InstanceID) (err error) {
 	}
 
 	log.WithField("podName", name).WithField("podGroup", pg.group).Info("Removed pod")
+
+	// Since there are no more workers remaining we can
+	// cleanup the pg instance from the scheduler
+	if len(pg.scheduledPods) == 0 {
+		close(pg.cleanupChannel)
+	}
+
 	return nil
 }
 
@@ -250,7 +259,7 @@ func (pg *PodGroup) distribute() {
 }
 
 // NewPodGroup Allocates a new podGroup
-func NewPodGroup(group string, clientset *kubernetes.Clientset, model *SchedulerModel) (pg *PodGroup) {
+func NewPodGroup(group string, clientset *kubernetes.Clientset, model *SchedulerModel, cleanup chan struct{}) (pg *PodGroup) {
 	pg = new(PodGroup)
 
 	pg.clientset = clientset
@@ -263,6 +272,8 @@ func NewPodGroup(group string, clientset *kubernetes.Clientset, model *Scheduler
 
 	pg.jobQueue = new([]m.Job)
 	pg.capmgr = NewCapacityManager(group, model)
+
+	pg.cleanupChannel = cleanup
 
 	return pg
 }

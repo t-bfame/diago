@@ -5,4 +5,4 @@ metadata:
 spec:
   image: diago-worker
   capacity: 20
-  allowedInactivityPeriod: 200
+  allowedInactivityPeriod: 30
