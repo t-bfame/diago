@@ -3,10 +3,9 @@ package scheduler
 import (
 	"errors"
 	"fmt"
-	"os"
-	"strconv"
 
 	"github.com/t-bfame/diago/api/v1alpha1"
+	c "github.com/t-bfame/diago/config"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,7 +39,7 @@ func (sm SchedulerModel) createContainerSpec(name string, image string, env map[
 }
 
 func (sm SchedulerModel) getEnvs(group string, instance InstanceID) map[string]string {
-	workerConfig, err := sm.client.WorkerGroups("default").Get(group)
+	workerConfig, err := sm.client.WorkerGroups(c.Diago.DefaultNamespace).Get(group)
 
 	if err != nil {
 		log.WithField("group", group).Error("Unable to find config for worker")
@@ -50,8 +49,8 @@ func (sm SchedulerModel) getEnvs(group string, instance InstanceID) map[string]s
 	envs := map[string]string{
 		"DIAGO_WORKER_GROUP":                group,
 		"DIAGO_WORKER_GROUP_INSTANCE":       string(instance),
-		"DIAGO_LEADER_HOST":                 os.Getenv("GRPC_HOST"),
-		"DIAGO_LEADER_PORT":                 os.Getenv("GRPC_PORT"),
+		"DIAGO_LEADER_HOST":                 c.Diago.Host,
+		"DIAGO_LEADER_PORT":                 fmt.Sprintf("%d", c.Diago.GRPCPort),
 		"ALLOWED_INACTIVITY_PERIOD_SECONDS": fmt.Sprintf("%d", workerConfig.Spec.AllowedInactivityPeriod),
 	}
 
@@ -68,7 +67,7 @@ func (sm SchedulerModel) getLabels(group string, instance InstanceID) map[string
 }
 
 func (sm SchedulerModel) getConfigs(group string, instance InstanceID) (image string, env map[string]string, labels map[string]string, err error) {
-	workerConfig, err := sm.client.WorkerGroups("default").Get(group)
+	workerConfig, err := sm.client.WorkerGroups(c.Diago.DefaultNamespace).Get(group)
 
 	if err != nil {
 		log.WithField("group", group).Error("Unable to find config for worker")
@@ -106,14 +105,25 @@ func (sm SchedulerModel) createPodConfig(group string, instance InstanceID) (pod
 
 func (sm SchedulerModel) getCapacity(group string) (uint64, error) {
 
-	workerConfig, err := sm.client.WorkerGroups("default").Get(group)
+	workerConfig, err := sm.client.WorkerGroups(c.Diago.DefaultNamespace).Get(group)
 
 	if err != nil {
 		log.WithField("group", group).Error("Unable to find capacity for worker")
-		return strconv.ParseUint(os.Getenv("DEFAULT_GROUP_CAPACITY"), 10, 64)
+		return c.Diago.DefaultGroupCapacity, nil
 	}
 
 	return uint64(workerConfig.Spec.Capacity), nil
+}
+
+func (sm SchedulerModel) checkExists(group string) bool {
+	_, err := sm.client.WorkerGroups(c.Diago.DefaultNamespace).Get(group)
+
+	if err != nil {
+		log.WithField("group", group).Error("WorkerGroup resource does not exist")
+		return false
+	}
+
+	return true
 }
 
 func NewSchedulerModel(config *rest.Config) (*SchedulerModel, error) {

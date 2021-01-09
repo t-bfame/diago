@@ -24,7 +24,7 @@ spec:
         image: diago
         imagePullPolicy: Never
         env:
-        - name: "GRPC_HOST"
+        - name: "DIAGO_HOST"
           valueFrom:
               fieldRef:
                 fieldPath: status.podIP

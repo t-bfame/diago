@@ -90,9 +90,9 @@ func newServer(s *scheduler.Scheduler) *workerServer {
 }
 
 // InitGRPCServer Initializes the gRPC server for diago
-func InitGRPCServer(protocol string, host string, port string, opts []grpc.ServerOption, s *scheduler.Scheduler) {
+func InitGRPCServer(protocol string, host string, port uint64, opts []grpc.ServerOption, s *scheduler.Scheduler) {
 
-	lis, err := net.Listen(protocol, fmt.Sprintf("%s:%s", host, port))
+	lis, err := net.Listen(protocol, fmt.Sprintf("%s:%d", host, port))
 
 	if err != nil {
 		log.Fatalf("gRPC server failed to listen: %v", err)

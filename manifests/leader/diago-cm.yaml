@@ -6,6 +6,6 @@ metadata:
     app.kubernetes.io/name: diago
     app.kubernetes.io/part-of: diago
 data:
-  GRPC_PORT: "5000"
-  API_PORT: "9001"
-  PROMETHEUS_PORT: "2112"
+  DIAGO_GRPC_PORT: "5000"
+  DIAGO_API_PORT: "9001"
+  DIAGO_PROMETHEUS_PORT: "2112"

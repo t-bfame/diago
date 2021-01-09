@@ -20,42 +20,53 @@ type Scheduler struct {
 	pgmux sync.Mutex
 }
 
-func (s *Scheduler) createPodGroup(groupName string) (pg *PodGroup) {
+func (s *Scheduler) createPodGroup(groupName string, failNonExistentGroup bool) (pg *PodGroup, err error) {
 	pg, ok := s.podGroups[groupName]
 
 	if ok {
-		return pg
+		return pg, nil
 	}
 
 	// Pod group creation has to be an atomic operation
 	s.pgmux.Lock()
 	defer s.pgmux.Unlock()
 
-	log.WithField("group", groupName).Info("Group doesnt exist, creating a new group")
-
 	cleanupChannel := make(chan struct{})
-	s.podGroups[groupName] = NewPodGroup(groupName, s.clientset, s.model, cleanupChannel)
+	pgroup, err := NewPodGroup(groupName, s.clientset, s.model, cleanupChannel, failNonExistentGroup)
+
+	if failNonExistentGroup && err != nil {
+		return nil, err
+	}
+
+	log.WithField("group", groupName).Debug("Group doesnt exist, creating a new group")
+	s.podGroups[groupName] = pgroup
 
 	go func() {
 		<-cleanupChannel
 		s.pgmux.Lock()
 		defer s.pgmux.Unlock()
 
-		log.WithField("group", groupName).Info("Group does not have remaining workers, removing group instance")
+		log.WithField("group", groupName).Debug("Group does not have remaining workers, removing group instance")
 
 		// Pod group deletion has to be an atomic operation
 		delete(s.podGroups, groupName)
 	}()
 
-	return s.podGroups[groupName]
+	return s.podGroups[groupName], nil
 }
 
 // Submit dingdingi
 func (s *Scheduler) Submit(j m.Job) (events chan Event, err error) {
 	events = make(chan Event, 2)
 
-	group := j.Group
-	pg := s.createPodGroup(group)
+	// If WorkerGroup does not exist while submitting a Job
+	// then Job is orphaned and cannot make progress therefore
+	// call must fail
+	pg, err := s.createPodGroup(j.Group, true)
+
+	if err != nil {
+		return nil, err
+	}
 
 	// Add channel for receiving events
 	pg.addJob(j, events)
@@ -79,7 +90,10 @@ func (s *Scheduler) Stop(j m.Job) (err error) {
 
 // Register something
 func (s *Scheduler) Register(group string, instance InstanceID, frequency uint64) (chan Incoming, chan Outgoing, error) {
-	pg := s.createPodGroup(group)
+	// If WorkerGroup does not exist while registration
+	// the worker must have been created dynamically
+	// and may not have a WorkerGroup in K8s
+	pg, _ := s.createPodGroup(group, false)
 
 	// Add test channel for multiplexing
 	return pg.registerPod(group, instance, frequency)

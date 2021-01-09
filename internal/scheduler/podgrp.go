@@ -1,8 +1,10 @@
 package scheduler
 
 import (
+	"errors"
 	"sync"
 
+	c "github.com/t-bfame/diago/config"
 	m "github.com/t-bfame/diago/internal/model"
 	"github.com/t-bfame/diago/pkg/utils"
 
@@ -64,8 +66,7 @@ func (pg *PodGroup) addInstances(frequency uint64) (err error) {
 				return
 			}
 
-			// TODO: Use namespace from env variables
-			result, err := pg.clientset.CoreV1().Pods("default").Create(pod)
+			result, err := pg.clientset.CoreV1().Pods(c.Diago.DefaultNamespace).Create(pod)
 			if err != nil {
 				log.WithField("group", pg.group).WithError(err).Error("Unable to add instances for pod group")
 				wgErr <- err
@@ -97,9 +98,14 @@ func (pg *PodGroup) removeInstance(instance InstanceID) (err error) {
 
 	deletePolicy := metav1.DeletePropagationForeground
 
-	// TODO: Use namespace from env variable
+	// Since there are no more workers remaining we can
+	// cleanup the pg instance from the scheduler
+	if len(pg.scheduledPods) == 0 {
+		close(pg.cleanupChannel)
+	}
+
 	// Add listeners for detecting deletion
-	if err := pg.clientset.CoreV1().Pods("default").Delete(name, &metav1.DeleteOptions{
+	if err := pg.clientset.CoreV1().Pods(c.Diago.DefaultNamespace).Delete(name, &metav1.DeleteOptions{
 		PropagationPolicy: &deletePolicy,
 	}); err != nil {
 		log.WithError(err).WithField("podName", name).WithField("podGroup", pg.group).Error("Encountered error while pod deletion")
@@ -107,12 +113,6 @@ func (pg *PodGroup) removeInstance(instance InstanceID) (err error) {
 	}
 
 	log.WithField("podName", name).WithField("podGroup", pg.group).Info("Removed pod")
-
-	// Since there are no more workers remaining we can
-	// cleanup the pg instance from the scheduler
-	if len(pg.scheduledPods) == 0 {
-		close(pg.cleanupChannel)
-	}
 
 	return nil
 }
@@ -259,7 +259,13 @@ func (pg *PodGroup) distribute() {
 }
 
 // NewPodGroup Allocates a new podGroup
-func NewPodGroup(group string, clientset *kubernetes.Clientset, model *SchedulerModel, cleanup chan struct{}) (pg *PodGroup) {
+func NewPodGroup(group string, clientset *kubernetes.Clientset, model *SchedulerModel, cleanup chan struct{}, failNonExistentGroup bool) (pg *PodGroup, err error) {
+
+	// If we want to fail when WorkerGroup doesnt exist in K8s
+	if failNonExistentGroup && !model.checkExists(group) {
+		return nil, errors.New("WorkerGroup does not exist")
+	}
+
 	pg = new(PodGroup)
 
 	pg.clientset = clientset
@@ -275,5 +281,5 @@ func NewPodGroup(group string, clientset *kubernetes.Clientset, model *Scheduler
 
 	pg.cleanupChannel = cleanup
 
-	return pg
+	return pg, nil
 }

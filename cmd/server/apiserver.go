@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"reflect"
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
+	c "github.com/t-bfame/diago/config"
 	mgr "github.com/t-bfame/diago/internal/manager"
 	m "github.com/t-bfame/diago/internal/model"
 	sch "github.com/t-bfame/diago/internal/scheduler"
@@ -215,8 +215,8 @@ func (server *APIServer) Start() {
 		)
 	})
 
-	port := os.Getenv("API_PORT")
-	defer http.ListenAndServe(":"+port, router)
+	port := c.Diago.APIPort
+	defer http.ListenAndServe(fmt.Sprintf(":%d", port), router)
 	log.WithField("port", port).Info("Api server listening")
 }
 

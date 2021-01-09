@@ -42,7 +42,7 @@ make_dummy_test2() {
               {
                 \"ID\": \"1\",
                 \"Name\": \"alpha\",
-                \"Group\": \"test-worker\",
+                \"Group\": \"test-worker-jerky\",
                 \"Priority\": 0,
                 \"Frequency\":  5,
 			          \"Duration\":   30,

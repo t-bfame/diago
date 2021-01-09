@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/t-bfame/diago/cmd/server"
+	"github.com/t-bfame/diago/config"
 	"github.com/t-bfame/diago/internal/scheduler"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -13,6 +13,8 @@ import (
 )
 
 func main() {
+	config.Init()
+
 	s := scheduler.NewScheduler()
 	var opts []grpc.ServerOption
 
@@ -23,8 +25,8 @@ func main() {
 
 	go func() {
 		http.Handle("/metrics", promhttp.Handler())
-		http.ListenAndServe(fmt.Sprintf(":%s", os.Getenv("PROMETHEUS_PORT")), nil)
+		http.ListenAndServe(fmt.Sprintf(":%s", config.Diago.PrometheusPort), nil)
 	}()
 
-	server.InitGRPCServer("tcp", os.Getenv("GRPC_HOST"), os.Getenv("GRPC_PORT"), opts, s)
+	server.InitGRPCServer("tcp", config.Diago.Host, config.Diago.GRPCPort, opts, s)
 }
