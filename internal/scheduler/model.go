@@ -3,24 +3,22 @@ package scheduler
 import (
 	"errors"
 	"fmt"
-	"os"
+
+	"github.com/t-bfame/diago/api/v1alpha1"
+	c "github.com/t-bfame/diago/config"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/rest"
+
+	log "github.com/sirupsen/logrus"
 )
 
-// PodConfig TODO: Move out to Storage later
-type PodConfig struct {
-	Image                         string
-	Capacity                      uint64
-	TerminationGracePeriodSeconds float32
+type SchedulerModel struct {
+	client *v1alpha1.DiagoV1Alpha1Client
 }
 
-var storage map[string]PodConfig = map[string]PodConfig{
-	"diago-worker": PodConfig{Image: "diago-worker", Capacity: 20, TerminationGracePeriodSeconds: 30},
-}
-
-func createContainerSpec(name string, image string, env map[string]string) (containers []v1.Container) {
+func (sm SchedulerModel) createContainerSpec(name string, image string, env map[string]string) (containers []v1.Container) {
 	envVars := []v1.EnvVar{}
 
 	for envName, envVal := range env {
@@ -40,24 +38,26 @@ func createContainerSpec(name string, image string, env map[string]string) (cont
 	return []v1.Container{container}
 }
 
-func getEnvs(group string, instance InstanceID) map[string]string {
-	dat, ok := storage[group]
-	if !ok {
+func (sm SchedulerModel) getEnvs(group string, instance InstanceID) map[string]string {
+	workerConfig, err := sm.client.WorkerGroups(c.Diago.DefaultNamespace).Get(group)
+
+	if err != nil {
+		log.WithField("group", group).Error("Unable to find config for worker")
 		return nil
 	}
 
 	envs := map[string]string{
-		"DIAGO_WORKER_GROUP":               group,
-		"DIAGO_WORKER_GROUP_INSTANCE":      string(instance),
-		"DIAGO_LEADER_HOST":                os.Getenv("GRPC_HOST"),
-		"DIAGO_LEADER_PORT":                os.Getenv("GRPC_PORT"),
-		"TERMINATION_GRACE_PERIOD_SECONDS": fmt.Sprintf("%f", dat.TerminationGracePeriodSeconds),
+		"DIAGO_WORKER_GROUP":                group,
+		"DIAGO_WORKER_GROUP_INSTANCE":       string(instance),
+		"DIAGO_LEADER_HOST":                 c.Diago.Host,
+		"DIAGO_LEADER_PORT":                 fmt.Sprintf("%d", c.Diago.GRPCPort),
+		"ALLOWED_INACTIVITY_PERIOD_SECONDS": fmt.Sprintf("%d", workerConfig.Spec.AllowedInactivityPeriod),
 	}
 
 	return envs
 }
 
-func getLabels(group string, instance InstanceID) map[string]string {
+func (sm SchedulerModel) getLabels(group string, instance InstanceID) map[string]string {
 	labels := map[string]string{
 		"group":    group,
 		"instance": string(instance),
@@ -66,20 +66,21 @@ func getLabels(group string, instance InstanceID) map[string]string {
 	return labels
 }
 
-func getConfigs(group string, instance InstanceID) (image string, env map[string]string, labels map[string]string, err error) {
-	dat, ok := storage[group]
-	if !ok {
-		return "", nil, nil, errors.New("Could not find image for specified group")
+func (sm SchedulerModel) getConfigs(group string, instance InstanceID) (image string, env map[string]string, labels map[string]string, err error) {
+	workerConfig, err := sm.client.WorkerGroups(c.Diago.DefaultNamespace).Get(group)
+
+	if err != nil {
+		log.WithField("group", group).Error("Unable to find config for worker")
+		return "", nil, nil, err
 	}
 
-	image = dat.Image
-	return image, getEnvs(group, instance), getLabels(group, instance), nil
+	image = workerConfig.Spec.Image
+	return image, sm.getEnvs(group, instance), sm.getLabels(group, instance), nil
 }
 
-func createPodConfig(group string, instance InstanceID) (podConfig *v1.Pod, err error) {
-	// TODO: Talk to storage to get configs
+func (sm SchedulerModel) createPodConfig(group string, instance InstanceID) (podConfig *v1.Pod, err error) {
 	name := group + "-" + string(instance)
-	image, env, labels, err := getConfigs(group, instance)
+	image, env, labels, err := sm.getConfigs(group, instance)
 	var gracePeriod int64 = 0
 
 	if err != nil {
@@ -93,7 +94,7 @@ func createPodConfig(group string, instance InstanceID) (podConfig *v1.Pod, err 
 		},
 
 		Spec: v1.PodSpec{
-			Containers:                    createContainerSpec(name, image, env),
+			Containers:                    sm.createContainerSpec(name, image, env),
 			RestartPolicy:                 v1.RestartPolicyNever,
 			TerminationGracePeriodSeconds: &gracePeriod,
 		},
@@ -102,11 +103,35 @@ func createPodConfig(group string, instance InstanceID) (podConfig *v1.Pod, err 
 	return pod, nil
 }
 
-func getCapacity(group string) (uint64, error) {
-	dat, ok := storage[group]
-	if !ok {
-		return 0, errors.New("Could not find capacity for specified group")
+func (sm SchedulerModel) getCapacity(group string) (uint64, error) {
+
+	workerConfig, err := sm.client.WorkerGroups(c.Diago.DefaultNamespace).Get(group)
+
+	if err != nil {
+		log.WithField("group", group).Error("Unable to find capacity for worker")
+		return c.Diago.DefaultGroupCapacity, nil
 	}
 
-	return dat.Capacity, nil
+	return uint64(workerConfig.Spec.Capacity), nil
+}
+
+func (sm SchedulerModel) checkExists(group string) bool {
+	_, err := sm.client.WorkerGroups(c.Diago.DefaultNamespace).Get(group)
+
+	if err != nil {
+		log.WithField("group", group).Error("WorkerGroup resource does not exist")
+		return false
+	}
+
+	return true
+}
+
+func NewSchedulerModel(config *rest.Config) (*SchedulerModel, error) {
+	crdclient, err := v1alpha1.NewClient(config)
+
+	if err != nil {
+		return nil, errors.New("Unable to initialize custom CRD client")
+	}
+
+	return &SchedulerModel{crdclient}, nil
 }

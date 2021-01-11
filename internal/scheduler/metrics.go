@@ -5,29 +5,29 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
-// PodCollection maintains prometheus metric collectors
-type PodCollection struct {
+// PodMetrics maintains prometheus metric collectors
+type PodMetrics struct {
 	totalCapacity   prometheus.Gauge
 	currentCapacity prometheus.Gauge
 	workerCount     prometheus.Gauge
 }
 
-func (pc *PodCollection) updateTotalCapacity(tot uint64) {
-	pc.totalCapacity.Set(float64(tot))
-}
-
-func (pc *PodCollection) updateCurrentCapacity(cur uint64) {
+func (pc *PodMetrics) updateCurrentCapacity(cur uint64) {
 	pc.currentCapacity.Set(float64(cur))
 }
 
-func (pc *PodCollection) updateWorkerCount(work uint64) {
-	pc.workerCount.Set(float64(work))
+func (pc *PodMetrics) cleanup() {
+	prometheus.Unregister(pc.totalCapacity)
+	prometheus.Unregister(pc.currentCapacity)
+	prometheus.Unregister(pc.workerCount)
 }
 
-// NewPodCollection returns a new prometheus metric collection
-func NewPodCollection(labels map[string]string) *PodCollection {
+// NewPodMetrics returns a new prometheus metric collection
+func NewPodMetrics(group string, instance InstanceID, totalCapacity uint64) *PodMetrics {
 
-	pc := PodCollection{
+	labels := map[string]string{"worker_group": group, "worker_instance": string(instance)}
+
+	pc := PodMetrics{
 		totalCapacity: promauto.NewGauge(prometheus.GaugeOpts{
 			Name:        "diago_total_capacity",
 			Help:        "Currently supported capacity",
@@ -44,6 +44,10 @@ func NewPodCollection(labels map[string]string) *PodCollection {
 			ConstLabels: prometheus.Labels(labels),
 		}),
 	}
+
+	pc.totalCapacity.Set(float64(totalCapacity))
+	pc.currentCapacity.Set(float64(totalCapacity))
+	pc.workerCount.Set(1)
 
 	return &pc
 }

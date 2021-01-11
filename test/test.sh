@@ -12,7 +12,7 @@ make_dummy_test() {
             \"Jobs\": [
               {
                 \"Name\": \"alpha\",
-                \"Group\": \"diago-worker\",
+                \"Group\": \"test-worker\",
                 \"Priority\": 0,
                 \"Frequency\":  5,
 			          \"Duration\":   30,
@@ -21,7 +21,7 @@ make_dummy_test() {
               },
               {
                 \"Name\": \"beta\",
-                \"Group\": \"diago-worker\",
+                \"Group\": \"test-worker\",
                 \"Priority\": 0,
                 \"Frequency\":  5,
 			          \"Duration\":   30,
@@ -42,10 +42,10 @@ make_dummy_test2() {
               {
                 \"ID\": \"1\",
                 \"Name\": \"alpha\",
-                \"Group\": \"diago-worker\",
+                \"Group\": \"test-worker\",
                 \"Priority\": 0,
                 \"Frequency\":  5,
-			          \"Duration\":   5,
+			          \"Duration\":   30,
 			          \"HTTPMethod\": \"GET\",
 			          \"HTTPUrl\":    \"https://www.google.com\"
               }
@@ -90,6 +90,8 @@ get_instance() {
 # get_instance
 
 # sleep 5
+
+kubectl apply -f test/test.yaml
 
 testid=""
 pad

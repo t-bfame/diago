@@ -1,0 +1,8 @@
+apiVersion: diago.app/v1alpha1
+kind: WorkerGroup
+metadata:
+  name: test-worker
+spec:
+  image: diago-worker
+  capacity: 20
+  allowedInactivityPeriod: 30
