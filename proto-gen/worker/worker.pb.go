@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.23.0
 // 	protoc        v3.12.3
-// source: api/proto/worker.proto
+// source: idl/proto/worker.proto
 
 package worker
 
@@ -44,7 +44,7 @@ type Message struct {
 func (x *Message) Reset() {
 	*x = Message{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_proto_worker_proto_msgTypes[0]
+		mi := &file_idl_proto_worker_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -57,7 +57,7 @@ func (x *Message) String() string {
 func (*Message) ProtoMessage() {}
 
 func (x *Message) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_worker_proto_msgTypes[0]
+	mi := &file_idl_proto_worker_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -70,7 +70,7 @@ func (x *Message) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Message.ProtoReflect.Descriptor instead.
 func (*Message) Descriptor() ([]byte, []int) {
-	return file_api_proto_worker_proto_rawDescGZIP(), []int{0}
+	return file_idl_proto_worker_proto_rawDescGZIP(), []int{0}
 }
 
 func (m *Message) GetPayload() isMessage_Payload {
@@ -175,7 +175,7 @@ type Register struct {
 func (x *Register) Reset() {
 	*x = Register{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_proto_worker_proto_msgTypes[1]
+		mi := &file_idl_proto_worker_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -188,7 +188,7 @@ func (x *Register) String() string {
 func (*Register) ProtoMessage() {}
 
 func (x *Register) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_worker_proto_msgTypes[1]
+	mi := &file_idl_proto_worker_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -201,7 +201,7 @@ func (x *Register) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Register.ProtoReflect.Descriptor instead.
 func (*Register) Descriptor() ([]byte, []int) {
-	return file_api_proto_worker_proto_rawDescGZIP(), []int{1}
+	return file_idl_proto_worker_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Register) GetGroup() string {
@@ -237,7 +237,7 @@ type HTTPRequest struct {
 func (x *HTTPRequest) Reset() {
 	*x = HTTPRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_proto_worker_proto_msgTypes[2]
+		mi := &file_idl_proto_worker_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -250,7 +250,7 @@ func (x *HTTPRequest) String() string {
 func (*HTTPRequest) ProtoMessage() {}
 
 func (x *HTTPRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_worker_proto_msgTypes[2]
+	mi := &file_idl_proto_worker_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -263,7 +263,7 @@ func (x *HTTPRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HTTPRequest.ProtoReflect.Descriptor instead.
 func (*HTTPRequest) Descriptor() ([]byte, []int) {
-	return file_api_proto_worker_proto_rawDescGZIP(), []int{2}
+	return file_idl_proto_worker_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *HTTPRequest) GetMethod() string {
@@ -297,7 +297,7 @@ type Start struct {
 func (x *Start) Reset() {
 	*x = Start{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_proto_worker_proto_msgTypes[3]
+		mi := &file_idl_proto_worker_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -310,7 +310,7 @@ func (x *Start) String() string {
 func (*Start) ProtoMessage() {}
 
 func (x *Start) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_worker_proto_msgTypes[3]
+	mi := &file_idl_proto_worker_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -323,7 +323,7 @@ func (x *Start) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Start.ProtoReflect.Descriptor instead.
 func (*Start) Descriptor() ([]byte, []int) {
-	return file_api_proto_worker_proto_rawDescGZIP(), []int{3}
+	return file_idl_proto_worker_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Start) GetJobId() string {
@@ -365,7 +365,7 @@ type Finish struct {
 func (x *Finish) Reset() {
 	*x = Finish{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_proto_worker_proto_msgTypes[4]
+		mi := &file_idl_proto_worker_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -378,7 +378,7 @@ func (x *Finish) String() string {
 func (*Finish) ProtoMessage() {}
 
 func (x *Finish) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_worker_proto_msgTypes[4]
+	mi := &file_idl_proto_worker_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -391,7 +391,7 @@ func (x *Finish) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Finish.ProtoReflect.Descriptor instead.
 func (*Finish) Descriptor() ([]byte, []int) {
-	return file_api_proto_worker_proto_rawDescGZIP(), []int{4}
+	return file_idl_proto_worker_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Finish) GetJobId() string {
@@ -411,15 +411,16 @@ type Metrics struct {
 	BytesIn  uint64 `protobuf:"varint,3,opt,name=bytes_in,json=bytesIn,proto3" json:"bytes_in,omitempty"`
 	BytesOut uint64 `protobuf:"varint,4,opt,name=bytes_out,json=bytesOut,proto3" json:"bytes_out,omitempty"`
 	// Nanoseconds
-	Latency   uint64               `protobuf:"varint,5,opt,name=latency,proto3" json:"latency,omitempty"`
-	Error     string               `protobuf:"bytes,6,opt,name=error,proto3" json:"error,omitempty"`
+	Latency int64  `protobuf:"varint,5,opt,name=latency,proto3" json:"latency,omitempty"`
+	Error   string `protobuf:"bytes,6,opt,name=error,proto3" json:"error,omitempty"`
+	// https://godoc.org/github.com/golang/protobuf/ptypes#TimestampProto
 	Timestamp *timestamp.Timestamp `protobuf:"bytes,7,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 }
 
 func (x *Metrics) Reset() {
 	*x = Metrics{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_proto_worker_proto_msgTypes[5]
+		mi := &file_idl_proto_worker_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -432,7 +433,7 @@ func (x *Metrics) String() string {
 func (*Metrics) ProtoMessage() {}
 
 func (x *Metrics) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_worker_proto_msgTypes[5]
+	mi := &file_idl_proto_worker_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -445,7 +446,7 @@ func (x *Metrics) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Metrics.ProtoReflect.Descriptor instead.
 func (*Metrics) Descriptor() ([]byte, []int) {
-	return file_api_proto_worker_proto_rawDescGZIP(), []int{5}
+	return file_idl_proto_worker_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Metrics) GetJobId() string {
@@ -476,7 +477,7 @@ func (x *Metrics) GetBytesOut() uint64 {
 	return 0
 }
 
-func (x *Metrics) GetLatency() uint64 {
+func (x *Metrics) GetLatency() int64 {
 	if x != nil {
 		return x.Latency
 	}
@@ -508,7 +509,7 @@ type Stop struct {
 func (x *Stop) Reset() {
 	*x = Stop{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_proto_worker_proto_msgTypes[6]
+		mi := &file_idl_proto_worker_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -521,7 +522,7 @@ func (x *Stop) String() string {
 func (*Stop) ProtoMessage() {}
 
 func (x *Stop) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_worker_proto_msgTypes[6]
+	mi := &file_idl_proto_worker_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -534,7 +535,7 @@ func (x *Stop) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Stop.ProtoReflect.Descriptor instead.
 func (*Stop) Descriptor() ([]byte, []int) {
-	return file_api_proto_worker_proto_rawDescGZIP(), []int{6}
+	return file_idl_proto_worker_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Stop) GetJobId() string {
@@ -553,7 +554,7 @@ type Ack struct {
 func (x *Ack) Reset() {
 	*x = Ack{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_proto_worker_proto_msgTypes[7]
+		mi := &file_idl_proto_worker_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -566,7 +567,7 @@ func (x *Ack) String() string {
 func (*Ack) ProtoMessage() {}
 
 func (x *Ack) ProtoReflect() protoreflect.Message {
-	mi := &file_api_proto_worker_proto_msgTypes[7]
+	mi := &file_idl_proto_worker_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -579,13 +580,13 @@ func (x *Ack) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Ack.ProtoReflect.Descriptor instead.
 func (*Ack) Descriptor() ([]byte, []int) {
-	return file_api_proto_worker_proto_rawDescGZIP(), []int{7}
+	return file_idl_proto_worker_proto_rawDescGZIP(), []int{7}
 }
 
-var File_api_proto_worker_proto protoreflect.FileDescriptor
+var File_idl_proto_worker_proto protoreflect.FileDescriptor
 
-var file_api_proto_worker_proto_rawDesc = []byte{
-	0x0a, 0x16, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x77, 0x6f, 0x72, 0x6b,
+var file_idl_proto_worker_proto_rawDesc = []byte{
+	0x0a, 0x16, 0x69, 0x64, 0x6c, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x77, 0x6f, 0x72, 0x6b,
 	0x65, 0x72, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1f, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65,
 	0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x74, 0x69, 0x6d, 0x65, 0x73, 0x74,
 	0x61, 0x6d, 0x70, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xdd, 0x01, 0x0a, 0x07, 0x4d, 0x65,
@@ -630,7 +631,7 @@ var file_api_proto_worker_proto_rawDesc = []byte{
 	0x65, 0x73, 0x49, 0x6e, 0x12, 0x1b, 0x0a, 0x09, 0x62, 0x79, 0x74, 0x65, 0x73, 0x5f, 0x6f, 0x75,
 	0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x62, 0x79, 0x74, 0x65, 0x73, 0x4f, 0x75,
 	0x74, 0x12, 0x18, 0x0a, 0x07, 0x6c, 0x61, 0x74, 0x65, 0x6e, 0x63, 0x79, 0x18, 0x05, 0x20, 0x01,
-	0x28, 0x04, 0x52, 0x07, 0x6c, 0x61, 0x74, 0x65, 0x6e, 0x63, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x65,
+	0x28, 0x03, 0x52, 0x07, 0x6c, 0x61, 0x74, 0x65, 0x6e, 0x63, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x65,
 	0x72, 0x72, 0x6f, 0x72, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f,
 	0x72, 0x12, 0x38, 0x0a, 0x09, 0x74, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x18, 0x07,
 	0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72,
@@ -646,19 +647,19 @@ var file_api_proto_worker_proto_rawDesc = []byte{
 }
 
 var (
-	file_api_proto_worker_proto_rawDescOnce sync.Once
-	file_api_proto_worker_proto_rawDescData = file_api_proto_worker_proto_rawDesc
+	file_idl_proto_worker_proto_rawDescOnce sync.Once
+	file_idl_proto_worker_proto_rawDescData = file_idl_proto_worker_proto_rawDesc
 )
 
-func file_api_proto_worker_proto_rawDescGZIP() []byte {
-	file_api_proto_worker_proto_rawDescOnce.Do(func() {
-		file_api_proto_worker_proto_rawDescData = protoimpl.X.CompressGZIP(file_api_proto_worker_proto_rawDescData)
+func file_idl_proto_worker_proto_rawDescGZIP() []byte {
+	file_idl_proto_worker_proto_rawDescOnce.Do(func() {
+		file_idl_proto_worker_proto_rawDescData = protoimpl.X.CompressGZIP(file_idl_proto_worker_proto_rawDescData)
 	})
-	return file_api_proto_worker_proto_rawDescData
+	return file_idl_proto_worker_proto_rawDescData
 }
 
-var file_api_proto_worker_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
-var file_api_proto_worker_proto_goTypes = []interface{}{
+var file_idl_proto_worker_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_idl_proto_worker_proto_goTypes = []interface{}{
 	(*Message)(nil),             // 0: Message
 	(*Register)(nil),            // 1: Register
 	(*HTTPRequest)(nil),         // 2: HTTPRequest
@@ -669,7 +670,7 @@ var file_api_proto_worker_proto_goTypes = []interface{}{
 	(*Ack)(nil),                 // 7: Ack
 	(*timestamp.Timestamp)(nil), // 8: google.protobuf.Timestamp
 }
-var file_api_proto_worker_proto_depIdxs = []int32{
+var file_idl_proto_worker_proto_depIdxs = []int32{
 	1, // 0: Message.register:type_name -> Register
 	3, // 1: Message.start:type_name -> Start
 	5, // 2: Message.metrics:type_name -> Metrics
@@ -687,13 +688,13 @@ var file_api_proto_worker_proto_depIdxs = []int32{
 	0, // [0:8] is the sub-list for field type_name
 }
 
-func init() { file_api_proto_worker_proto_init() }
-func file_api_proto_worker_proto_init() {
-	if File_api_proto_worker_proto != nil {
+func init() { file_idl_proto_worker_proto_init() }
+func file_idl_proto_worker_proto_init() {
+	if File_idl_proto_worker_proto != nil {
 		return
 	}
 	if !protoimpl.UnsafeEnabled {
-		file_api_proto_worker_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+		file_idl_proto_worker_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Message); i {
 			case 0:
 				return &v.state
@@ -705,7 +706,7 @@ func file_api_proto_worker_proto_init() {
 				return nil
 			}
 		}
-		file_api_proto_worker_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+		file_idl_proto_worker_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Register); i {
 			case 0:
 				return &v.state
@@ -717,7 +718,7 @@ func file_api_proto_worker_proto_init() {
 				return nil
 			}
 		}
-		file_api_proto_worker_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+		file_idl_proto_worker_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*HTTPRequest); i {
 			case 0:
 				return &v.state
@@ -729,7 +730,7 @@ func file_api_proto_worker_proto_init() {
 				return nil
 			}
 		}
-		file_api_proto_worker_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+		file_idl_proto_worker_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Start); i {
 			case 0:
 				return &v.state
@@ -741,7 +742,7 @@ func file_api_proto_worker_proto_init() {
 				return nil
 			}
 		}
-		file_api_proto_worker_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+		file_idl_proto_worker_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Finish); i {
 			case 0:
 				return &v.state
@@ -753,7 +754,7 @@ func file_api_proto_worker_proto_init() {
 				return nil
 			}
 		}
-		file_api_proto_worker_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+		file_idl_proto_worker_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Metrics); i {
 			case 0:
 				return &v.state
@@ -765,7 +766,7 @@ func file_api_proto_worker_proto_init() {
 				return nil
 			}
 		}
-		file_api_proto_worker_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+		file_idl_proto_worker_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Stop); i {
 			case 0:
 				return &v.state
@@ -777,7 +778,7 @@ func file_api_proto_worker_proto_init() {
 				return nil
 			}
 		}
-		file_api_proto_worker_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+		file_idl_proto_worker_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Ack); i {
 			case 0:
 				return &v.state
@@ -790,7 +791,7 @@ func file_api_proto_worker_proto_init() {
 			}
 		}
 	}
-	file_api_proto_worker_proto_msgTypes[0].OneofWrappers = []interface{}{
+	file_idl_proto_worker_proto_msgTypes[0].OneofWrappers = []interface{}{
 		(*Message_Register)(nil),
 		(*Message_Start)(nil),
 		(*Message_Metrics)(nil),
@@ -802,18 +803,18 @@ func file_api_proto_worker_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_api_proto_worker_proto_rawDesc,
+			RawDescriptor: file_idl_proto_worker_proto_rawDesc,
 			NumEnums:      0,
 			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_api_proto_worker_proto_goTypes,
-		DependencyIndexes: file_api_proto_worker_proto_depIdxs,
-		MessageInfos:      file_api_proto_worker_proto_msgTypes,
+		GoTypes:           file_idl_proto_worker_proto_goTypes,
+		DependencyIndexes: file_idl_proto_worker_proto_depIdxs,
+		MessageInfos:      file_idl_proto_worker_proto_msgTypes,
 	}.Build()
-	File_api_proto_worker_proto = out.File
-	file_api_proto_worker_proto_rawDesc = nil
-	file_api_proto_worker_proto_goTypes = nil
-	file_api_proto_worker_proto_depIdxs = nil
+	File_idl_proto_worker_proto = out.File
+	file_idl_proto_worker_proto_rawDesc = nil
+	file_idl_proto_worker_proto_goTypes = nil
+	file_idl_proto_worker_proto_depIdxs = nil
 }

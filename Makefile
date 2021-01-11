@@ -3,6 +3,7 @@
 .PHONY: local
 local:
 	GOOS=linux go build cmd/main.go
+	eval $(minikube docker-env)
 	docker build -f Dockerfile.dev -t diago .
 
 docker:

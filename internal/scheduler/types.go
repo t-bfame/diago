@@ -2,7 +2,10 @@ package scheduler
 
 import (
 	"errors"
+	"log"
+	"time"
 
+	pytypes "github.com/golang/protobuf/ptypes"
 	m "github.com/t-bfame/diago/internal/model"
 	worker "github.com/t-bfame/diago/proto-gen/worker"
 )
@@ -27,12 +30,13 @@ type Finish struct {
 
 // Metrics message
 type Metrics struct {
-	ID       m.JobID
-	Code     uint32
-	BytesIn  uint64
-	BytesOut uint64
-	Latency  uint64
-	Error    string
+	ID        m.JobID
+	Code      uint32
+	BytesIn   uint64
+	BytesOut  uint64
+	Latency   time.Duration
+	Error     string
+	Timestamp time.Time
 }
 
 func (m Finish) getJobID() m.JobID {
@@ -50,13 +54,18 @@ func ProtoToIncoming(msg *worker.Message) (Incoming, error) {
 	switch msg.Payload.(type) {
 	case *worker.Message_Metrics:
 		metrics := msg.GetMetrics()
+		timestamp, err := pytypes.Timestamp(metrics.GetTimestamp())
+		if err != nil {
+			log.Fatal(err)
+		}
 		inc = Metrics{
-			ID:       m.JobID(metrics.GetJobId()),
-			Code:     metrics.GetCode(),
-			BytesIn:  metrics.GetBytesIn(),
-			BytesOut: metrics.GetBytesOut(),
-			Latency:  metrics.GetLatency(),
-			Error:    metrics.GetError(),
+			ID:        m.JobID(metrics.GetJobId()),
+			Code:      metrics.GetCode(),
+			BytesIn:   metrics.GetBytesIn(),
+			BytesOut:  metrics.GetBytesOut(),
+			Latency:   time.Duration(metrics.GetLatency()),
+			Error:     metrics.GetError(),
+			Timestamp: timestamp,
 		}
 
 	case *worker.Message_Finish:
