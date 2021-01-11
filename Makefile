@@ -2,11 +2,10 @@
 
 build:
 	GOOS=linux go build cmd/main.go
-	# kubectl apply -f deployments/deploy.yaml
-	# kubectl get po
 
 docker:
-	eval $(minikube docker-env) && docker build -f build/package/Dockerfile -t diago .
+	eval $(minikube docker-env)
+	docker build -f build/package/Dockerfile -t diago .
 
 remove:
 	- kubectl delete sts diago

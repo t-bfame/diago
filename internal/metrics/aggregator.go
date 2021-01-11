@@ -26,19 +26,19 @@ type Metrics struct {
 	BytesOut ByteMetrics `json:"bytes_out"`
 
 	// Earliest is the earliest timestamp in a Result set.
-	//Earliest time.Time `json:"earliest"`
+	Earliest time.Time `json:"earliest"`
 
 	// Latest is the latest timestamp in a Result set.
-	//Latest time.Time `json:"latest"`
+	Latest time.Time `json:"latest"`
 
 	// End is the latest timestamp in a Result set plus its latency.
-	//End time.Time `json:"end"`
+	End time.Time `json:"end"`
 
 	// Duration is the duration of the attack.
-	//Duration time.Duration `json:"duration"`
+	Duration time.Duration `json:"duration"`
 
 	// Wait is the extra time waiting for responses from targets.
-	//Wait time.Duration `json:"wait"`
+	Wait time.Duration `json:"wait"`
 
 	// Requests is the total number of requests executed.
 	Requests uint64 `json:"requests"`
@@ -47,7 +47,7 @@ type Metrics struct {
 	Rate float64 `json:"rate"`
 
 	// Throughput is the rate of successful requests per second.
-	//Throughput float64 `json:"throughput"`
+	Throughput float64 `json:"throughput"`
 
 	// Success is the percentage of non-error responses.
 	Success float64 `json:"success"`
@@ -76,19 +76,17 @@ func (m *Metrics) Add(r *scheduler.Metrics) {
 
 	m.Latencies.Add(time.Duration(r.Latency))
 
-	/*
-		if m.Earliest.IsZero() || m.Earliest.After(r.Timestamp) {
-			m.Earliest = r.Timestamp
-		}
+	if m.Earliest.IsZero() || m.Earliest.After(r.Timestamp) {
+		m.Earliest = r.Timestamp
+	}
 
-		if r.Timestamp.After(m.Latest) {
-			m.Latest = r.Timestamp
-		}
+	if r.Timestamp.After(m.Latest) {
+		m.Latest = r.Timestamp
+	}
 
-		if end := r.End(); end.After(m.End) {
-			m.End = end
-		}
-	*/
+	if end := r.Timestamp.Add(r.Latency); end.After(m.End) {
+		m.End = end
+	}
 
 	if r.Code >= 200 && r.Code < 400 {
 		m.success++
@@ -117,15 +115,15 @@ func (m *Metrics) Close() {
 		return
 	}
 
-	//m.Rate = float64(m.Requests)
-	//m.Throughput = float64(m.success)
-	//m.Duration = m.Latest.Sub(m.Earliest)
-	//m.Wait = m.End.Sub(m.Latest)
-	//if secs := m.Duration.Seconds(); secs > 0 {
-	//m.Rate /= secs
-	// No need to check for zero because we know m.Duration > 0
-	//m.Throughput /= (m.Duration + m.Wait).Seconds()
-	//}
+	m.Rate = float64(m.Requests)
+	m.Throughput = float64(m.success)
+	m.Duration = m.Latest.Sub(m.Earliest)
+	m.Wait = m.End.Sub(m.Latest)
+	if secs := m.Duration.Seconds(); secs > 0 {
+		m.Rate /= secs
+		// No need to check for zero because we know m.Duration > 0
+		m.Throughput /= (m.Duration + m.Wait).Seconds()
+	}
 
 	m.BytesIn.Mean = float64(m.BytesIn.Total) / float64(m.Requests)
 	m.BytesOut.Mean = float64(m.BytesOut.Total) / float64(m.Requests)
