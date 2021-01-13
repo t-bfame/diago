@@ -1,7 +1,6 @@
 package scheduler
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/t-bfame/diago/api/v1alpha1"
@@ -9,7 +8,6 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/rest"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -126,12 +124,6 @@ func (sm SchedulerModel) checkExists(group string) bool {
 	return true
 }
 
-func NewSchedulerModel(config *rest.Config) (*SchedulerModel, error) {
-	crdclient, err := v1alpha1.NewClient(config)
-
-	if err != nil {
-		return nil, errors.New("Unable to initialize custom CRD client")
-	}
-
-	return &SchedulerModel{crdclient}, nil
+func NewSchedulerModel(crdClient *v1alpha1.DiagoV1Alpha1Client) *SchedulerModel {
+	return &SchedulerModel{crdClient}
 }

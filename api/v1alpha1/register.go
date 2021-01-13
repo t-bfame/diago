@@ -23,6 +23,9 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		SchemeGroupVersion,
 		&WorkerGroup{},
 		&WorkerGroupList{},
+		&TestSchedule{},
+		&TestScheduleList{},
+		&metav1.ListOptions{},
 	)
 
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
@@ -46,5 +49,5 @@ func NewClient(cfg *rest.Config) (*DiagoV1Alpha1Client, error) {
 		return nil, err
 	}
 
-	return &DiagoV1Alpha1Client{restClient: client}, nil
+	return &DiagoV1Alpha1Client{RESTClient: client}, nil
 }

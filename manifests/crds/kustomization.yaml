@@ -3,3 +3,4 @@ kind: Kustomization
 
 resources:
 - worker-group-crd.yaml
+- test-schedule-crd.yaml

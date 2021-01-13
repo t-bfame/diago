@@ -11,5 +11,5 @@ rules:
   resources: ["pods"]
   verbs: ["get", "watch", "list", "create", "delete"]
 - apiGroups: ["diago.app"]
-  resources: ["workergroups"]
+  resources: ["workergroups", "testschedules"]
   verbs: ["get", "watch", "list", "create", "delete"]

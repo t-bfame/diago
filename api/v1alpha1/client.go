@@ -6,11 +6,18 @@ import (
 
 func (c *DiagoV1Alpha1Client) WorkerGroups(namespace string) WorkerGroupInterface {
 	return &workerGroupClient{
-		client: c.restClient,
+		client: c.RESTClient,
+		ns:     namespace,
+	}
+}
+
+func (c *DiagoV1Alpha1Client) TestSchedules(namespace string) TestScheduleInterface {
+	return &testScheduleClient{
+		client: c.RESTClient,
 		ns:     namespace,
 	}
 }
 
 type DiagoV1Alpha1Client struct {
-	restClient rest.Interface
+	RESTClient *rest.RESTClient
 }

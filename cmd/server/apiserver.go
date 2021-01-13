@@ -19,8 +19,8 @@ import (
 // APIServer serves API calls over HTTP
 type APIServer struct {
 	scheduler      *sch.Scheduler
-	dummyTests     map[string]m.Test
-	dummyInstances map[string][]*m.TestInstance
+	dummyTests     *map[string]m.Test
+	dummyInstances *map[string][]*m.TestInstance
 	jf             *mgr.JobFunnel
 }
 
@@ -91,7 +91,7 @@ func (server *APIServer) Start() {
 		// TODO: Maybe use a counter for every group for better UX?
 		testid := fmt.Sprintf("%s-%s", test.Name, utils.RandHash(5))
 		test.ID = m.TestID(testid)
-		server.dummyTests[testid] = test
+		(*server.dummyTests)[testid] = test
 
 		for i := range test.Jobs {
 			test.Jobs[i].ID = m.JobID(fmt.Sprintf("%s-%d", test.ID, i))
@@ -114,7 +114,7 @@ func (server *APIServer) Start() {
 	router.HandleFunc("/tests/{id}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		testid := vars["id"]
-		test, found := server.dummyTests[testid]
+		test, found := (*server.dummyTests)[testid]
 		if !found {
 			w.Write(buildFailure("Test not found", http.StatusNotFound, w))
 			return
@@ -144,12 +144,12 @@ func (server *APIServer) Start() {
 				w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
 				return
 			}
-			server.dummyTests[testid] = updatedTest
+			(*server.dummyTests)[testid] = updatedTest
 			w.Write(buildSuccess(updatedTest, w))
 
 			log.WithField("TestID", testid).Info("Test updated")
 		case http.MethodDelete:
-			delete(server.dummyTests, testid)
+			delete(*server.dummyTests, testid)
 			w.Write(
 				buildSuccess(
 					map[string]string{
@@ -169,7 +169,7 @@ func (server *APIServer) Start() {
 	router.HandleFunc("/test-instances/{testid}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		testid := vars["testid"]
-		instances, found := server.dummyInstances[testid]
+		instances, found := (*server.dummyInstances)[testid]
 		if !found {
 			w.Write(buildFailure("Test not found", http.StatusNotFound, w))
 			return
@@ -183,7 +183,7 @@ func (server *APIServer) Start() {
 	router.HandleFunc("/start-test/{id}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		testid := vars["id"]
-		ok, err := server.jf.BeginTest(m.TestID(testid), &server.dummyTests, &server.dummyInstances)
+		ok, err := server.jf.BeginTest(m.TestID(testid), "adhoc", server.dummyTests, server.dummyInstances)
 		if !ok {
 			w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
 			return
@@ -201,7 +201,7 @@ func (server *APIServer) Start() {
 	router.HandleFunc("/stop-test/{id}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		testid := vars["id"]
-		ok, err := server.jf.StopTest(m.TestID(testid), &server.dummyTests, &server.dummyInstances)
+		ok, err := server.jf.StopTest(m.TestID(testid), server.dummyTests, server.dummyInstances)
 		if !ok {
 			w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
 			return
@@ -221,11 +221,14 @@ func (server *APIServer) Start() {
 }
 
 // NewAPIServer create a new APIServer
-func NewAPIServer(sched *sch.Scheduler) *APIServer {
+func NewAPIServer(
+	sched *sch.Scheduler, jf *mgr.JobFunnel,
+	tests *map[string]m.Test, instances *map[string][]*m.TestInstance,
+) *APIServer {
 	return &APIServer{
 		sched,
-		make(map[string]m.Test),
-		make(map[string][]*m.TestInstance),
-		mgr.NewJobFunnel(sched),
+		tests,
+		instances,
+		jf,
 	}
 }

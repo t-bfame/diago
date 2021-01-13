@@ -5,10 +5,10 @@ import (
 	"sync"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/t-bfame/diago/api/v1alpha1"
 	m "github.com/t-bfame/diago/internal/model"
 
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 )
 
 // Scheduler lalalal
@@ -100,28 +100,12 @@ func (s *Scheduler) Register(group string, instance InstanceID, frequency uint64
 }
 
 // NewScheduler laalala
-func NewScheduler() *Scheduler {
-	// creates the in-cluster config
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		panic(err.Error())
-	}
-
-	// creates the clientset
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		panic(err.Error())
-	}
-
+func NewScheduler(clientset *kubernetes.Clientset, crdClient *v1alpha1.DiagoV1Alpha1Client) *Scheduler {
 	s := new(Scheduler)
 	s.clientset = clientset
 	s.podGroups = make(map[string]*PodGroup)
 
-	s.model, err = NewSchedulerModel(config)
-
-	if err != nil {
-		panic(err.Error())
-	}
+	s.model = NewSchedulerModel(crdClient)
 
 	return s
 }

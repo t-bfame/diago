@@ -12,6 +12,7 @@ require (
 	github.com/influxdata/tdigest v0.0.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/prometheus/client_golang v1.9.0
+	github.com/robfig/cron/v3 v3.0.0
 	github.com/sirupsen/logrus v1.7.0
 	github.com/streadway/quantile v0.0.0-20150917103942-b0c588724d25
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad // indirect

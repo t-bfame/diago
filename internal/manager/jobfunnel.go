@@ -6,8 +6,16 @@ import (
 	"sync"
 	"time"
 
+	"github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/tools/cache"
 
+	"github.com/t-bfame/diago/api/v1alpha1"
+	c "github.com/t-bfame/diago/config"
 	"github.com/t-bfame/diago/internal/metrics"
 	m "github.com/t-bfame/diago/internal/model"
 	s "github.com/t-bfame/diago/internal/scheduler"
@@ -40,6 +48,7 @@ func (jf *JobFunnel) endOp(key string) {
 // if another instance of the same Test is not already ongoing
 func (jf *JobFunnel) BeginTest(
 	testID m.TestID,
+	testType string,
 	tests *map[string]m.Test, // TODO(frank): rm once we have storage
 	instances *map[string][]*m.TestInstance,
 ) (bool, error) {
@@ -218,6 +227,126 @@ func (jf *JobFunnel) StopTest(
 		WithField("TestID", testID).
 		Info("Test stopped")
 	return true, nil
+}
+
+// PrepareScheduledTests sets up crons using test schedules
+func (jf *JobFunnel) PrepareScheduledTests(
+	client *v1alpha1.DiagoV1Alpha1Client,
+	tests *map[string]m.Test, // TODO(frank): rm once we have storage
+	instances *map[string][]*m.TestInstance,
+) {
+	// run all existing
+	testSchedules, err := client.TestSchedules(c.Diago.DefaultNamespace).GetAll()
+	if err != nil {
+		log.WithError(err).Error("Failed to prepare scheduled tests")
+	}
+
+	cronRunner := cron.New()
+	for _, ts := range testSchedules.Items {
+		_, exists := (*tests)[ts.Spec.TestID]
+		if !exists {
+			log.Error(fmt.Sprintf("Failed to scheduled test: Test with ID %s does not exist", ts.Spec.TestID))
+			continue
+		}
+
+		_, err = cronRunner.AddFunc(
+			ts.Spec.CronSpec,
+			func() {
+				_, err := jf.BeginTest(m.TestID(ts.Spec.TestID), "scheduled", tests, instances)
+				if err != nil {
+					log.WithError(err).Error("Failed to begin scheduled test")
+				}
+			},
+		)
+		if err != nil {
+			log.WithError(err).Error("Failed to scheduled test")
+		}
+	}
+
+	// watch for changes to test schedules
+
+	// lw := cache.NewListWatchFromClient(
+	// 	client.RESTClient, "testschedules", c.Diago.DefaultNamespace, fields.Everything(),
+	// )
+	//
+	lw := &cache.ListWatch{
+		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+			// options.FieldSelector = fields.Everything().String()
+			// tsl := v1alpha1.TestScheduleList{}
+			// err := client.RESTClient.Get().
+			// 	Namespace(c.Diago.DefaultNamespace).
+			// 	Resource("testschedules").
+			// 	VersionedParams(&options, metav1.ParameterCodec).Do().Into(&tsl)
+			// return &tsl, err
+			return client.TestSchedules(c.Diago.DefaultNamespace).GetAll()
+		},
+		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+			options.Watch = true
+			options.FieldSelector = fields.Everything().String()
+			// return client.TestSchedules(c.Diago.DefaultNamespace).Watch()
+			return client.RESTClient.Get().
+				Namespace(c.Diago.DefaultNamespace).
+				Resource("testschedules").
+				VersionedParams(&options, metav1.ParameterCodec).
+				Watch()
+		},
+	}
+	// wgl := v1alpha1.TestScheduleList{}
+	// client.RESTClient.Get().Namespace(c.Diago.DefaultNamespace).Resource("testschedules").Do().Into(&wgl)
+	// fmt.Printf("%+v\n", wgl)
+	// fmt.Printf("%+v\n", err)
+	// obj, err := lw.ListFunc(metav1.ListOptions{})
+	// fmt.Printf("%+v\n", obj)
+	// fmt.Printf("%+v\n", err)
+	// o, err := lw.List(metav1.ListOptions{})
+	// fmt.Printf("%+v\n", err)
+	// var list *metainternalversion.List
+	// list = &metainternalversion.List{Items: make([]runtime.Object, 0, 10)}
+	// m, err := meta.ListAccessor(o)
+
+	// fmt.Printf("%+v\n", m)
+	// fmt.Printf("%+v\n", list)
+	// fmt.Println("asdf")
+
+	_, controller := cache.NewInformer(
+		lw, &v1alpha1.TestSchedule{}, time.Second*0,
+		cache.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				spec := obj.(*v1alpha1.TestSchedule).Spec
+				log.Info(fmt.Sprintf("TS added. spec: %+v \n", spec))
+			},
+			DeleteFunc: func(obj interface{}) {
+				log.Info(fmt.Sprintf("TS deleted. value: %+v \n", obj))
+			},
+			UpdateFunc: func(oldObj, obj interface{}) {
+				spec := obj.(*v1alpha1.TestSchedule).Spec
+				log.Info(fmt.Sprintf("TS updated. spec: %+v \n", spec))
+			},
+		},
+	)
+	stop := make(chan struct{})
+	controller.Run(stop)
+
+	// store := client.TestSchedules(c.Diago.DefaultNamespace).ListWatch()
+	// log.Info(fmt.Sprintf("%+v", store.ListKeys()))
+
+	// watcher, err := client.TestSchedules(c.Diago.DefaultNamespace).Watch()
+	// if err != nil {
+	// 	log.WithError(err).Error("Failed to watch testschedules")
+	// }
+
+	// for e := range watcher.ResultChan() {
+	// 	switch e.Type {
+	// 	case watch.Added:
+	// 		log.Info(fmt.Sprintf("Added %v", e.Object))
+	// 	case watch.Modified:
+	// 		break
+	// 	case watch.Deleted:
+	// 		break
+	// 	default:
+	// 		log.Info(fmt.Sprintf("Added %v", e.Object))
+	// 	}
+	// }
 }
 
 // NewJobFunnel creates a new JobFunnel

@@ -1,0 +1,7 @@
+apiVersion: diago.app/v1alpha1
+kind: TestSchedule
+metadata:
+  name: test-schedule-m
+spec:
+  testID: Test-abc1234
+  cronSpec: "@hourly"

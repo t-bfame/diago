@@ -1,0 +1,46 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: testschedules.diago.app
+  labels:
+    app.kubernetes.io/name: diago
+    app.kubernetes.io/part-of: diago
+spec:
+  group: diago.app
+  names:
+    kind: TestSchedule
+    plural: testschedules
+    singular: testschedule
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          apiVersion:
+            type: string
+          kind:
+            type: string
+          metadata:
+            type: object
+            properties:
+              name:
+                type: string
+          spec:
+            type: object
+            properties:
+              testID:
+                type: string
+              cronSpec:
+                type: string
+            required:
+            - testID
+            - cronSpec
+        required:
+        - apiVersion
+        - kind
+        - metadata
+        - spec

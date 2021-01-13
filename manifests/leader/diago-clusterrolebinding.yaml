@@ -4,8 +4,8 @@ metadata:
   name: diago-role-binding
 subjects:
 - kind: ServiceAccount
-  name: diago
-  namespace: diago
+  name: default
+  namespace: default
 roleRef:
   kind: Role
   name: diago-role
