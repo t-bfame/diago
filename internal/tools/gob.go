@@ -1,11 +1,11 @@
-package daoImplBoltDB
+package tools
 
 import (
 	"bytes"
 	"encoding/gob"
 )
 
-func gobEncode(obj interface{}) ([]byte, error) {
+func GobEncode(obj interface{}) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	enc := gob.NewEncoder(buf)
 	err := enc.Encode(obj)
@@ -15,7 +15,7 @@ func gobEncode(obj interface{}) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func gobDecode(e interface{}, data []byte) error {
+func GobDecode(e interface{}, data []byte) error {
 	buf := bytes.NewBuffer(data)
 	dec := gob.NewDecoder(buf)
 	err := dec.Decode(e)
