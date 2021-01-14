@@ -40,7 +40,6 @@ make_dummy_test2() {
             \"Name\": \"Test1\",
             \"Jobs\": [
               {
-                \"ID\": \"1\",
                 \"Name\": \"alpha\",
                 \"Group\": \"test-worker\",
                 \"Priority\": 0,

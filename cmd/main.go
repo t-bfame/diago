@@ -7,6 +7,7 @@ import (
 	"github.com/t-bfame/diago/cmd/server"
 	"github.com/t-bfame/diago/config"
 	"github.com/t-bfame/diago/internal/scheduler"
+	"github.com/t-bfame/diago/internal/storage"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
@@ -15,6 +16,7 @@ import (
 
 func main() {
 	config.Init()
+	storage.InitDatabase(storage.DatabaseName)
 
 	if config.Diago.Debug {
 		log.SetLevel(log.DebugLevel)
