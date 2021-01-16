@@ -13,7 +13,6 @@ import (
 	mgr "github.com/t-bfame/diago/internal/manager"
 	m "github.com/t-bfame/diago/internal/model"
 	sch "github.com/t-bfame/diago/internal/scheduler"
-	"github.com/t-bfame/diago/pkg/utils"
 )
 
 // APIServer serves API calls over HTTP
@@ -89,7 +88,7 @@ func (server *APIServer) Start() {
 
 		// For now, make id by using random hash of length 5
 		// TODO: Maybe use a counter for every group for better UX?
-		testid := fmt.Sprintf("%s-%s", test.Name, utils.RandHash(5))
+		testid := test.Name
 		test.ID = m.TestID(testid)
 		server.dummyTests[testid] = test
 
