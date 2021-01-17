@@ -13,15 +13,13 @@ import (
 	mgr "github.com/t-bfame/diago/internal/manager"
 	m "github.com/t-bfame/diago/internal/model"
 	sch "github.com/t-bfame/diago/internal/scheduler"
-	"github.com/t-bfame/diago/pkg/utils"
+	sto "github.com/t-bfame/diago/internal/storage"
 )
 
 // APIServer serves API calls over HTTP
 type APIServer struct {
-	scheduler      *sch.Scheduler
-	dummyTests     map[string]m.Test
-	dummyInstances map[string][]*m.TestInstance
-	jf             *mgr.JobFunnel
+	scheduler *sch.Scheduler
+	jf        *mgr.JobFunnel
 }
 
 func preResponse(next http.Handler) http.Handler {
@@ -89,12 +87,17 @@ func (server *APIServer) Start() {
 
 		// For now, make id by using random hash of length 5
 		// TODO: Maybe use a counter for every group for better UX?
-		testid := fmt.Sprintf("%s-%s", test.Name, utils.RandHash(5))
+		testid := test.Name
 		test.ID = m.TestID(testid)
-		server.dummyTests[testid] = test
 
 		for i := range test.Jobs {
 			test.Jobs[i].ID = m.JobID(fmt.Sprintf("%s-%d", test.ID, i))
+		}
+
+		err = sto.AddTest(&test)
+		if err != nil {
+			w.Write(buildFailure(err.Error(), http.StatusInternalServerError, w))
+			return
 		}
 
 		w.Write(
@@ -114,14 +117,14 @@ func (server *APIServer) Start() {
 	router.HandleFunc("/tests/{id}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		testid := vars["id"]
-		test, found := server.dummyTests[testid]
-		if !found {
-			w.Write(buildFailure("Test not found", http.StatusNotFound, w))
-			return
-		}
 
 		switch r.Method {
 		case http.MethodGet:
+			test, err := sto.GetTestByTestId(m.TestID(testid))
+			if err != nil {
+				w.Write(buildFailure(err.Error(), http.StatusNotFound, w))
+				return
+			}
 			w.Write(buildSuccess(test, w))
 
 			log.WithField("TestID", testid).Info("Test retrieved")
@@ -144,22 +147,22 @@ func (server *APIServer) Start() {
 				w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
 				return
 			}
-			server.dummyTests[testid] = updatedTest
+			updatedTest.ID = m.TestID(testid)
+			for i := range updatedTest.Jobs {
+				updatedTest.Jobs[i].ID = m.JobID(fmt.Sprintf("%s-%d", updatedTest.ID, i))
+			}
+			sto.AddTest(&updatedTest)
 			w.Write(buildSuccess(updatedTest, w))
 
 			log.WithField("TestID", testid).Info("Test updated")
 		case http.MethodDelete:
-			delete(server.dummyTests, testid)
 			w.Write(
-				buildSuccess(
-					map[string]string{
-						"testid": testid,
-					},
+				buildFailure(
+					"Deletion not implemented",
+					http.StatusNotImplemented,
 					w,
 				),
 			)
-
-			log.WithField("TestID", testid).Info("Test deleted")
 		default:
 			w.Write(buildFailure("Request not supported", http.StatusBadRequest, w))
 		}
@@ -169,9 +172,9 @@ func (server *APIServer) Start() {
 	router.HandleFunc("/test-instances/{testid}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		testid := vars["testid"]
-		instances, found := server.dummyInstances[testid]
-		if !found {
-			w.Write(buildFailure("Test not found", http.StatusNotFound, w))
+		instances, err := sto.GetTestInstancesByTestID(m.TestID(testid))
+		if err != nil {
+			w.Write(buildFailure(err.Error(), http.StatusNotFound, w))
 			return
 		}
 		w.Write(buildSuccess(instances, w))
@@ -183,8 +186,8 @@ func (server *APIServer) Start() {
 	router.HandleFunc("/start-test/{id}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		testid := vars["id"]
-		ok, err := server.jf.BeginTest(m.TestID(testid), &server.dummyTests, &server.dummyInstances)
-		if !ok {
+		err := server.jf.BeginTest(m.TestID(testid))
+		if err != nil {
 			w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
 			return
 		}
@@ -201,8 +204,8 @@ func (server *APIServer) Start() {
 	router.HandleFunc("/stop-test/{id}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		testid := vars["id"]
-		ok, err := server.jf.StopTest(m.TestID(testid), &server.dummyTests, &server.dummyInstances)
-		if !ok {
+		err := server.jf.StopTest(m.TestID(testid))
+		if err != nil {
 			w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
 			return
 		}
@@ -224,8 +227,6 @@ func (server *APIServer) Start() {
 func NewAPIServer(sched *sch.Scheduler) *APIServer {
 	return &APIServer{
 		sched,
-		make(map[string]m.Test),
-		make(map[string][]*m.TestInstance),
 		mgr.NewJobFunnel(sched),
 	}
 }

@@ -2,11 +2,8 @@ package storage
 
 import (
 	"fmt"
-	"github.com/boltdb/bolt"
-)
 
-const (
-	DatabaseName = "my.db"
+	"github.com/boltdb/bolt"
 )
 
 var (

@@ -1,8 +1,10 @@
 package storage
 
 import (
+	"encoding/gob"
 	"fmt"
 
+	"github.com/t-bfame/diago/internal/metrics"
 	"github.com/t-bfame/diago/internal/model"
 	"github.com/t-bfame/diago/internal/tools"
 
@@ -27,6 +29,7 @@ func initStorageTestInstance(db *bolt.DB) error {
 	if err := db.Update(createInitBucketFunc(IdxTestID2TestInstanceIDBucketName)); err != nil {
 		return err
 	}
+	gob.Register(map[string]*metrics.Metrics{})
 	return nil
 }
 

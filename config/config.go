@@ -14,6 +14,8 @@ type Config struct {
 	DefaultGroupCapacity uint64 `envconfig:"DIAGO_DEFAULT_GROUP_CAPACITY" default:"20"`
 	DefaultNamespace     string `envconfig:"DIAGO_DEFAULT_NAMESPACE" default:"default"`
 
+	StoragePath string `envconfig:"DIAGO_STORAGE_PATH" default:"diago.db"`
+
 	Debug bool `envconfig:"DIAGO_DEBUG" default:"false"`
 }
 
