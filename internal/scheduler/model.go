@@ -47,11 +47,12 @@ func (sm SchedulerModel) getEnvs(group string, instance InstanceID) map[string]s
 	}
 
 	envs := map[string]string{
-		"DIAGO_WORKER_GROUP":                group,
-		"DIAGO_WORKER_GROUP_INSTANCE":       string(instance),
-		"DIAGO_LEADER_HOST":                 c.Diago.Host,
-		"DIAGO_LEADER_PORT":                 fmt.Sprintf("%d", c.Diago.GRPCPort),
-		"ALLOWED_INACTIVITY_PERIOD_SECONDS": fmt.Sprintf("%d", workerConfig.Spec.AllowedInactivityPeriod),
+		"DIAGO_WORKER_GROUP":                   group,
+		"DIAGO_WORKER_GROUP_INSTANCE":          string(instance),
+		"DIAGO_LEADER_HOST":                    c.Diago.Host,
+		"DIAGO_LEADER_PORT":                    fmt.Sprintf("%d", c.Diago.GRPCPort),
+		"ALLOWED_INACTIVITY_PERIOD_SECONDS":    fmt.Sprintf("%d", workerConfig.Spec.AllowedInactivityPeriod),
+		"DIAGO_WORKER_GROUP_INSTANCE_CAPACITY": fmt.Sprintf("%d", workerConfig.Spec.Capacity),
 	}
 
 	return envs
