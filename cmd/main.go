@@ -16,7 +16,7 @@ import (
 
 func main() {
 	config.Init()
-	storage.InitDatabase(storage.DatabaseName)
+	storage.InitDatabase(config.Diago.StoragePath)
 
 	if config.Diago.Debug {
 		log.SetLevel(log.DebugLevel)

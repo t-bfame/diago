@@ -21,6 +21,9 @@ do: local remove deploy
 logs:
 	kubectl logs diago-0 -f --namespace=diago
 
+watch:
+	kubectl get po -n diago -w
+
 PROTOC := protoc
 
 .PHONY: proto
@@ -39,6 +42,9 @@ crd-gen:
 
 test:
 	go test -v -coverprofile=coverage.out ./...
+
+create-flow:
+	./test/create.sh
 
 flow:
 	./test/test.sh

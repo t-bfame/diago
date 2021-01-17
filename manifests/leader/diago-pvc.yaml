@@ -1,0 +1,14 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: diago-pvc
+  labels:
+    app.kubernetes.io/name: diago
+    app.kubernetes.io/part-of: diago
+    app.kubernetes.io/component: leader
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 200Mi
