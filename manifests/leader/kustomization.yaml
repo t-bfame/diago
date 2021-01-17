@@ -3,8 +3,10 @@ kind: Kustomization
 
 resources:
 - diago-ns.yaml
+- diago-sa.yaml
 - diago-clusterrole.yaml
 - diago-clusterrolebinding.yaml
 - diago-cm.yaml
 - diago-svc.yaml
+- diago-pvc.yaml
 - diago-sts.yaml
