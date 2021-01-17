@@ -11,6 +11,7 @@ import (
 	"github.com/t-bfame/diago/internal/metrics"
 	m "github.com/t-bfame/diago/internal/model"
 	s "github.com/t-bfame/diago/internal/scheduler"
+	sto "github.com/t-bfame/diago/internal/storage"
 )
 
 // JobFunnel is used to interface with the Scheduler while
@@ -38,22 +39,18 @@ func (jf *JobFunnel) endOp(key string) {
 
 // BeginTest creates a TestInstance for the Test with the specified TestID
 // if another instance of the same Test is not already ongoing
-func (jf *JobFunnel) BeginTest(
-	testID m.TestID,
-	tests *map[string]m.Test, // TODO(frank): rm once we have storage
-	instances *map[string][]*m.TestInstance,
-) (bool, error) {
+func (jf *JobFunnel) BeginTest(testID m.TestID) error {
 	key := string(testID)
 	jf.startOp(key)
 	defer jf.endOp(key)
 
-	test, exists := (*tests)[key]
-	if !exists {
-		return false, fmt.Errorf("Test<%s> does not exist", testID)
+	test, err := sto.GetTestByTestId(m.TestID(key))
+	if err != nil {
+		return err
 	}
 
 	if jf.ongoing[key] {
-		return false, fmt.Errorf("Test<%s> is already ongoing", testID)
+		return fmt.Errorf("Test<%s> is already ongoing", testID)
 	}
 
 	// make instance
@@ -68,7 +65,10 @@ func (jf *JobFunnel) BeginTest(
 	}
 
 	// save instance
-	(*instances)[key] = append((*instances)[key], instance)
+	err = sto.AddTestInstance(instance)
+	if err != nil {
+		return err
+	}
 
 	jobGroup := sync.WaitGroup{}
 	jobMAggs := map[string]*metrics.Metrics{}
@@ -80,11 +80,7 @@ func (jf *JobFunnel) BeginTest(
 			instance.Status = "failed"
 
 			// save instance
-			for i, ti := range (*instances)[key] {
-				if ti.ID == instance.ID {
-					(*instances)[key][i] = instance
-				}
-			}
+			sto.AddTestInstance(instance)
 
 			// cancel previously submitted jobs
 			for idx := 0; idx < i; idx++ {
@@ -98,7 +94,7 @@ func (jf *JobFunnel) BeginTest(
 						Info("Failed to stop job")
 				}
 			}
-			return false, fmt.Errorf("Job<%s> failed to submit: %s", v.ID, err)
+			return fmt.Errorf("Job<%s> failed to submit: %s", v.ID, err)
 		}
 
 		jobGroup.Add(1)
@@ -130,22 +126,28 @@ func (jf *JobFunnel) BeginTest(
 		}(v, mAgg)
 	}
 
-	// wait for all jobs to finish
+	// wait for all jobs to finish or stop
 	go func() {
 		jobGroup.Wait()
 		jf.startOp(key)
 		defer jf.endOp(key)
 
-		// instance completed -> save
-		instance.Status = "done"
-		instance.Metrics = jobMAggs
-		for i, ti := range (*instances)[key] {
-			if ti.ID == instance.ID {
-				(*instances)[key][i] = instance
-			}
+		// refresh instance
+		instance, err = sto.GetTestInstance(instance.ID)
+		if err != nil {
+			log.WithField("TestInstanceID", instance.ID).Error(err)
+		}
+
+		// If we haven't already stopped this test instance
+		if err != nil || !instance.IsTerminal() {
+			// save instance
+			instance.Status = "done"
+			instance.Metrics = jobMAggs
+			sto.AddTestInstance(instance)
 		}
 
 		delete(jf.ongoing, key)
+
 		log.
 			WithField("TestID", testID).
 			WithField("TestInstanceID", instance.ID).
@@ -156,68 +158,56 @@ func (jf *JobFunnel) BeginTest(
 	jf.ongoing[key] = true
 
 	instance.Status = "submitted"
-	for i, ti := range (*instances)[key] {
-		if ti.ID == instance.ID {
-			(*instances)[key][i] = instance
-		}
-	}
+	sto.AddTestInstance(instance)
 
 	log.
 		WithField("TestID", testID).
 		WithField("TestInstanceID", instance.ID).
 		Info("Test submitted")
-	return true, nil
+	return nil
 }
 
 // StopTest stops the running TestInstance for the Test corresponding
 // to the given TestID, if it exists
-func (jf *JobFunnel) StopTest(
-	testID m.TestID,
-	tests *map[string]m.Test, // TODO(frank): rm once we have storage
-	instances *map[string][]*m.TestInstance,
-) (bool, error) {
+func (jf *JobFunnel) StopTest(testID m.TestID) error {
 	key := string(testID)
 	jf.startOp(key)
 	defer jf.endOp(key)
 
-	test, exists := (*tests)[key]
-	if !exists {
-		return false, fmt.Errorf("Test<%s> does not exist", testID)
+	test, err := sto.GetTestByTestId(m.TestID(key))
+	if err != nil {
+		return err
 	}
 
 	if !jf.ongoing[key] {
-		return false, fmt.Errorf("No instance of Test<%s> is currently ongoing", testID)
+		return fmt.Errorf("No instance of Test<%s> is currently ongoing", testID)
 	}
 
 	for _, v := range test.Jobs {
 		err := jf.scheduler.Stop(v)
 		if err != nil {
-			return false, fmt.Errorf("Failed to stop Job<%s>", v.ID)
+			return fmt.Errorf("Failed to stop Job<%s>", v.ID)
 		}
 	}
 
 	// we've stopped the test instance
 	delete(jf.ongoing, key)
 
-	_, exists = (*instances)[key]
-	if !exists {
-		return false, fmt.Errorf("No instances found for Test<%s>", testID)
+	instances, err := sto.GetTestInstancesByTestID(m.TestID(key))
+	if len(instances) == 0 {
+		return fmt.Errorf("No instances found for Test<%s>", testID)
 	}
-	for _, instance := range (*instances)[key] {
+	for _, instance := range instances {
 		if !instance.IsTerminal() {
 			instance.Status = "stopped"
-			for i, ti := range (*instances)[key] {
-				if ti.ID == instance.ID {
-					(*instances)[key][i] = instance
-				}
-			}
+			sto.AddTestInstance(instance)
 		}
 	}
 
 	log.
 		WithField("TestID", testID).
 		Info("Test stopped")
-	return true, nil
+	return nil
 }
 
 // NewJobFunnel creates a new JobFunnel

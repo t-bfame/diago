@@ -10,8 +10,8 @@ docker:
 	docker build -t diago .
 
 remove:
-	- kubectl delete sts diago
-	- kubectl delete po -l group=test-worker
+	- kubectl delete sts diago --namespace=diago
+	- kubectl delete po -l group=test-worker --namespace=diago
 
 deploy:
 	kubectl apply -k manifests/
@@ -19,7 +19,10 @@ deploy:
 do: local remove deploy
 
 logs:
-	kubectl logs diago-0 -f
+	kubectl logs diago-0 -f --namespace=diago
+
+watch:
+	kubectl get po -n diago -w
 
 PROTOC := protoc
 
@@ -39,6 +42,9 @@ crd-gen:
 
 test:
 	go test -v -coverprofile=coverage.out ./...
+
+create-flow:
+	./test/create.sh
 
 flow:
 	./test/test.sh

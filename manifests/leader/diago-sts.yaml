@@ -19,16 +19,26 @@ spec:
         app.kubernetes.io/part-of: diago
         app.kubernetes.io/component: leader
     spec:
+      serviceAccountName: diago-sa
       containers:
       - name: leader
         image: diago
         imagePullPolicy: Never
+        volumeMounts:
+        - name: diago-storage
+          mountPath: "/storage"
         env:
         - name: "DIAGO_HOST"
           valueFrom:
               fieldRef:
                 fieldPath: status.podIP
+        - name: "DIAGO_STORAGE_PATH"
+          value: "/storage/diago.db"
         envFrom:
         - configMapRef:
             name: diago-cm
+      volumes:
+        - name: diago-storage
+          persistentVolumeClaim:
+            claimName: diago-pvc
       terminationGracePeriodSeconds: 0

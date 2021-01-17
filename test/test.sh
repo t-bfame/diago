@@ -4,56 +4,6 @@ pad() {
   printf "\n\n\n"
 }
 
-make_dummy_test() {
-  output=$(curl "$base:30007/tests"\
-        -H "Content-Type: application/json"\
-        -d "{
-            \"Name\": \"Test1\",
-            \"Jobs\": [
-              {
-                \"Name\": \"alpha\",
-                \"Group\": \"test-worker\",
-                \"Priority\": 0,
-                \"Frequency\":  5,
-			          \"Duration\":   30,
-			          \"HTTPMethod\": \"GET\",
-			          \"HTTPUrl\":    \"https://www.google.com\"
-              },
-              {
-                \"Name\": \"beta\",
-                \"Group\": \"test-worker\",
-                \"Priority\": 0,
-                \"Frequency\":  5,
-			          \"Duration\":   30,
-			          \"HTTPMethod\": \"GET\",
-			          \"HTTPUrl\":    \"https://www.google.com\"
-              }
-            ]
-          }")
-  testid=$(echo $output | python3 -c "import sys, json; print(json.load(sys.stdin)['payload']['testid'])")
-}
-
-make_dummy_test2() {
-  output=$(curl "$base:30007/tests"\
-        -H "Content-Type: application/json"\
-        -d "{
-            \"Name\": \"Test1\",
-            \"Jobs\": [
-              {
-                \"ID\": \"1\",
-                \"Name\": \"alpha\",
-                \"Group\": \"test-worker\",
-                \"Priority\": 0,
-                \"Frequency\":  5,
-			          \"Duration\":   30,
-			          \"HTTPMethod\": \"GET\",
-			          \"HTTPUrl\":    \"https://www.google.com\"
-              }
-            ]
-          }")
-  testid=$(echo $output | python3 -c "import sys, json; print(json.load(sys.stdin)['payload']['testid'])")
-}
-
 get_test() {
   curl "$base:30007/tests/$testid" | python3 -m json.tool
   pad
@@ -91,22 +41,15 @@ get_instance() {
 
 # sleep 5
 
-kubectl apply -f test/test.yaml
+testid="Test2"
 
-testid=""
-pad
-make_dummy_test2
-
-# strip quotes from id
-testid=$(echo $testid | tr -d '"')
-echo "created test with id: $testid"
+echo "starting test with id: $testid"
 pad
 
 get_test
 submit_test
-# get_instance
 
-sleep 10
+sleep 30
 
 # stop_test
 get_instance

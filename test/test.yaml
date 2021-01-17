@@ -2,6 +2,7 @@ apiVersion: diago.app/v1alpha1
 kind: WorkerGroup
 metadata:
   name: test-worker
+  namespace: diago
 spec:
   image: diago-worker
   capacity: 20
