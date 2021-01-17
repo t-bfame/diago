@@ -33,6 +33,11 @@ func main() {
 		apiRouter := router.PathPrefix("/api").Subrouter()
 		apiServer := server.NewAPIServer(s)
 		apiServer.Start(apiRouter)
+
+		server.NewUIBox(router)
+
+		defer http.ListenAndServe(fmt.Sprintf(":%d", config.Diago.APIPort), router)
+		log.WithField("port", config.Diago.APIPort).Info("Api server listening")
 	}()
 
 	go func() {
