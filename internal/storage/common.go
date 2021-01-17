@@ -6,10 +6,6 @@ import (
 	"github.com/boltdb/bolt"
 )
 
-const (
-	DatabaseName = "my.db"
-)
-
 var (
 	db *bolt.DB
 )
