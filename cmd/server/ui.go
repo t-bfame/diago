@@ -9,7 +9,7 @@ import (
 
 // NewUIBox Creates a packr box for diago-ui
 func NewUIBox(router *mux.Router) {
-	box := packr.New("diago-ui", "../ui/build")
+	box := packr.New("diago-ui", "../../dist")
 
 	router.Handle("/", http.FileServer(box))
 }
