@@ -5,22 +5,22 @@ pad() {
 }
 
 get_test() {
-  curl "$base:30007/tests/$testid" | python3 -m json.tool
+  curl "$base:30007/api/tests/$testid" | python3 -m json.tool
   pad
 }
 
 submit_test() {
-  curl "$base:30007/start-test/$testid" | python3 -m json.tool
+  curl "$base:30007/api/start-test/$testid" | python3 -m json.tool
   pad
 }
 
 stop_test() {
-  curl "$base:30007/stop-test/$testid" | python3 -m json.tool
+  curl "$base:30007/api/stop-test/$testid" | python3 -m json.tool
   pad
 }
 
 get_instance() {
-  curl "$base:30007/test-instances/$testid" | python3 -m json.tool
+  curl "$base:30007/api/test-instances/$testid" | python3 -m json.tool
   pad
 }
 

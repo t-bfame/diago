@@ -60,8 +60,7 @@ func buildFailure(msg string, code int, w http.ResponseWriter) []byte {
 }
 
 // Start starts the APIServer
-func (server *APIServer) Start() {
-	router := mux.NewRouter()
+func (server *APIServer) Start(router *mux.Router) {
 	router.Use(preResponse)
 
 	// Test C
