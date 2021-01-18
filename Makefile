@@ -6,6 +6,13 @@ local:
 	eval $(minikube docker-env)
 	docker build -f Dockerfile.dev -t diago .
 
+build-local-ui:
+	cd ui && npm install
+	cd ui && npm run build
+	mv ui/build dist
+
+local-ui: build-local-ui ui local
+
 docker:
 	docker build -t diago .
 
@@ -33,6 +40,10 @@ proto:
 		--go_out=Mgrpc/service_config/service_config.proto=/proto-gen/api:. \
 		--go-grpc_out=Mgrpc/service_config/service_config.proto=/proto-gen/api:. \
 		idl/proto/worker.proto
+
+.PHONY: ui
+ui:
+	GOOS=linux GO111MODULE=on packr2 --ignore-imports
 
 crd-gen:
 	controller-gen object paths=./api/v1alpha1/workergroup.go

@@ -17,8 +17,8 @@ spec:
   ports:
   - name: api
     protocol: TCP
-    port: 9001
-    targetPort: 9001
+    port: 80
+    targetPort: 80
     nodePort: 30007
   - name: prom
     protocol: TCP

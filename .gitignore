@@ -18,3 +18,7 @@
 # vendor/
 
 main
+
+dist/
+
+*-packr.go

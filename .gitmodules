@@ -1,3 +1,6 @@
 [submodule "idl"]
 	path = idl
 	url = https://github.com/t-bfame/diago-idl.git
+[submodule "ui"]
+	path = ui
+	url = https://github.com/t-bfame/diago-ui

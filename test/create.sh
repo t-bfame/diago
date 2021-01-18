@@ -5,7 +5,7 @@ pad() {
 }
 
 make_dummy_test() {
-  output=$(curl "$base:30007/tests"\
+  output=$(curl "$base:30007/api/tests"\
         -H "Content-Type: application/json"\
         -d "{
             \"Name\": \"Test1\",
@@ -34,7 +34,7 @@ make_dummy_test() {
 }
 
 make_dummy_test2() {
-  output=$(curl "$base:30007/tests"\
+  output=$(curl "$base:30007/api/tests"\
         -H "Content-Type: application/json"\
         -d "{
             \"Name\": \"Test2\",
