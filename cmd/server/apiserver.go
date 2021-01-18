@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"reflect"
 
+	"github.com/t-bfame/diago/internal/chaosmgr"
+
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	mgr "github.com/t-bfame/diago/internal/manager"
@@ -218,9 +220,9 @@ func (server *APIServer) Start(router *mux.Router) {
 }
 
 // NewAPIServer create a new APIServer
-func NewAPIServer(sched *sch.Scheduler) *APIServer {
+func NewAPIServer(sched *sch.Scheduler, cm *chaosmgr.ChaosManager) *APIServer {
 	return &APIServer{
 		sched,
-		mgr.NewJobFunnel(sched),
+		mgr.NewJobFunnel(sched, cm),
 	}
 }

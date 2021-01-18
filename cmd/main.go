@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/t-bfame/diago/cmd/server"
 	"github.com/t-bfame/diago/config"
+	"github.com/t-bfame/diago/internal/chaosmgr"
 	"github.com/t-bfame/diago/internal/scheduler"
 	"github.com/t-bfame/diago/internal/storage"
 
@@ -24,6 +25,7 @@ func main() {
 	}
 
 	s := scheduler.NewScheduler()
+	cm := chaosmgr.NewChaosManager()
 	var opts []grpc.ServerOption
 
 	router := mux.NewRouter()
@@ -31,7 +33,7 @@ func main() {
 	go func() {
 		// Set prefix for api paths
 		apiRouter := router.PathPrefix("/api").Subrouter()
-		apiServer := server.NewAPIServer(s)
+		apiServer := server.NewAPIServer(s, cm)
 		apiServer.Start(apiRouter)
 
 		server.NewUIBox(router)
