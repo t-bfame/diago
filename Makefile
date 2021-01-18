@@ -6,6 +6,13 @@ local:
 	eval $(minikube docker-env)
 	docker build -f Dockerfile.dev -t diago .
 
+build-local-ui:
+	cd ui && npm install
+	cd ui && npm run build
+	mv ui/build dist
+
+local-ui: build-local-ui ui local
+
 docker:
 	docker build -t diago .
 
