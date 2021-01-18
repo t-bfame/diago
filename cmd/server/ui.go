@@ -12,4 +12,5 @@ func NewUIBox(router *mux.Router) {
 	box := packr.New("diago-ui", "../../dist")
 
 	router.Handle("/", http.FileServer(box))
+	router.PathPrefix("/static/").Handler(http.FileServer(box))
 }

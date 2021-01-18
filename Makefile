@@ -34,6 +34,10 @@ proto:
 		--go-grpc_out=Mgrpc/service_config/service_config.proto=/proto-gen/api:. \
 		idl/proto/worker.proto
 
+.PHONY: ui
+ui:
+	GOOS=linux GO111MODULE=on packr2 --ignore-imports
+
 crd-gen:
 	controller-gen object paths=./api/v1alpha1/workergroup.go
 
