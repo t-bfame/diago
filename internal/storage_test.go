@@ -1,13 +1,14 @@
 package internal
 
 import (
-	log "github.com/sirupsen/logrus"
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/t-bfame/diago/internal/model"
 	sto "github.com/t-bfame/diago/internal/storage"
+
+	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -55,7 +56,7 @@ var (
 	}
 )
 
-func TestStorageJob(t *testing.T) {
+func TestAddAndGetJob(t *testing.T) {
 	initTestDB(t)
 	defer removeTestDB()
 
@@ -71,7 +72,27 @@ func TestStorageJob(t *testing.T) {
 	}
 }
 
-func TestStorageTest(t *testing.T) {
+func TestAddAndDeleteJob(t *testing.T) {
+	initTestDB(t)
+	defer removeTestDB()
+
+	if err := sto.AddJob(job); err != nil {
+		t.Error("Failed to add job")
+	}
+
+	if err := sto.DeleteJob(jobId); err != nil {
+		t.Error("Failed to delete job")
+	}
+
+	retrievedJob, err := sto.GetJobByJobId(jobId)
+	if err != nil {
+		t.Error("Failed to get job")
+	} else {
+		assert.Nil(t, retrievedJob)
+	}
+}
+
+func TestAddAndGetTest(t *testing.T) {
 	initTestDB(t)
 	defer removeTestDB()
 
@@ -87,7 +108,27 @@ func TestStorageTest(t *testing.T) {
 	}
 }
 
-func TestStorageTestInstance(t *testing.T) {
+func TestAddAndDeleteTest(t *testing.T) {
+	initTestDB(t)
+	defer removeTestDB()
+
+	if err := sto.AddTest(test); err != nil {
+		t.Error("Failed to add test")
+	}
+
+	if err := sto.DeleteTest(testId); err != nil {
+		t.Error("Failed to delete test")
+	}
+
+	retrievedTest, err := sto.GetTestByTestId(testId)
+	if err != nil {
+		t.Error("Failed to get test")
+	} else {
+		assert.Nil(t, retrievedTest)
+	}
+}
+
+func TestAddAndGetTestInstance(t *testing.T) {
 	initTestDB(t)
 	defer removeTestDB()
 
@@ -103,7 +144,7 @@ func TestStorageTestInstance(t *testing.T) {
 	}
 }
 
-func TestStorageTestInstances(t *testing.T) {
+func TestAddAndGetTestInstances(t *testing.T) {
 	initTestDB(t)
 	defer removeTestDB()
 
@@ -119,6 +160,26 @@ func TestStorageTestInstances(t *testing.T) {
 		t.Error("Failed to get test instance")
 	} else {
 		assert.ElementsMatch(t, retrievedTestInstances, []*model.TestInstance{testInstance1, testInstance2})
+	}
+}
+
+func TestAddAndDeleteTestInstance(t *testing.T) {
+	initTestDB(t)
+	defer removeTestDB()
+
+	if err := sto.AddTestInstance(testInstance1); err != nil {
+		t.Error("Failed to add test instance 1")
+	}
+
+	if err := sto.DeleteTestInstance(testInstanceId1); err != nil {
+		t.Error("Failed to delete test instance 1")
+	}
+
+	retrievedTestInstance, err := sto.GetTestInstance(testInstanceId1)
+	if err != nil {
+		t.Error("Failed to get test instance 1")
+	} else {
+		assert.Nil(t, retrievedTestInstance)
 	}
 }
 

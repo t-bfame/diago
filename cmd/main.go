@@ -19,7 +19,10 @@ import (
 
 func main() {
 	config.Init()
-	storage.InitDatabase(config.Diago.StoragePath)
+
+	if err := storage.InitDatabase(config.Diago.StoragePath); err != nil {
+		panic("Failed to init database.")
+	}
 
 	if config.Diago.Debug {
 		log.SetLevel(log.DebugLevel)

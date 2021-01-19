@@ -40,12 +40,33 @@ func AddJob(job *model.Job) error {
 	return nil
 }
 
+func DeleteJob(jobID model.JobID) error {
+	if err := db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(JobBucketName))
+		if b == nil {
+			return fmt.Errorf("missing bucket '%s'", JobBucketName)
+		}
+		if err := b.Delete([]byte(jobID)); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		log.WithError(err).WithField("jobID", jobID).Error("Failed to delete Job")
+		return err
+	}
+	return nil
+}
+
 func GetJobByJobId(jobId model.JobID) (*model.Job, error) {
 	var result *model.Job
 	if err := db.View(func(tx *bolt.Tx) error {
 		var err error
 		b := tx.Bucket([]byte(JobBucketName))
-		if err = tools.GobDecode(&result, b.Get([]byte(jobId))); err != nil {
+		data := b.Get([]byte(jobId))
+		if data == nil {
+			return nil
+		}
+		if err = tools.GobDecode(&result, data); err != nil {
 			return fmt.Errorf("failed to decode Job due to: %s", err)
 		}
 		return nil
