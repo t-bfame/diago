@@ -39,14 +39,14 @@ func (jf *JobFunnel) endOp(key string) {
 
 // BeginTest creates a TestInstance for the Test with the specified TestID
 // if another instance of the same Test is not already ongoing
-func (jf *JobFunnel) BeginTest(testID m.TestID) error {
+func (jf *JobFunnel) BeginTest(testID m.TestID, testType string) error {
 	key := string(testID)
 	jf.startOp(key)
 	defer jf.endOp(key)
 
 	test, err := sto.GetTestByTestId(m.TestID(key))
 	if err != nil {
-		return err
+		return fmt.Errorf("Cannot find Test<%s>", key)
 	}
 
 	if jf.ongoing[key] {
@@ -59,7 +59,7 @@ func (jf *JobFunnel) BeginTest(testID m.TestID) error {
 	instance := &m.TestInstance{
 		ID:        m.TestInstanceID(instanceid),
 		TestID:    m.TestID(testID),
-		Type:      "adhoc",
+		Type:      testType,
 		Status:    "submitted",
 		CreatedAt: now,
 	}
@@ -176,7 +176,7 @@ func (jf *JobFunnel) StopTest(testID m.TestID) error {
 
 	test, err := sto.GetTestByTestId(m.TestID(key))
 	if err != nil {
-		return err
+		return fmt.Errorf("Cannot find Test<%s>", key)
 	}
 
 	if !jf.ongoing[key] {

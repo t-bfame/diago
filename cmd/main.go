@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/t-bfame/diago/cmd/server"
 	"github.com/t-bfame/diago/config"
+	"github.com/t-bfame/diago/internal/manager"
 	"github.com/t-bfame/diago/internal/scheduler"
 	"github.com/t-bfame/diago/internal/storage"
 
@@ -29,9 +30,12 @@ func main() {
 	router := mux.NewRouter()
 
 	go func() {
+		jf := manager.NewJobFunnel(s)
+		sm := manager.NewScheduleManager(jf)
+
 		// Set prefix for api paths
 		apiRouter := router.PathPrefix("/api").Subrouter()
-		apiServer := server.NewAPIServer(s)
+		apiServer := server.NewAPIServer(s, jf, sm)
 		apiServer.Start(apiRouter)
 
 		server.NewUIBox(router)
