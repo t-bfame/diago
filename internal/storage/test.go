@@ -51,6 +51,7 @@ func GetTestByTestId(testId model.TestID) (*model.Test, error) {
 		return nil
 	}); err != nil {
 		log.WithError(err).WithField("TestId", testId).Error("Failed to GetTestByTestId")
+		return nil, err
 	}
 	return result, nil
 }

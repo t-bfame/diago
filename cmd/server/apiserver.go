@@ -19,6 +19,7 @@ import (
 type APIServer struct {
 	scheduler *sch.Scheduler
 	jf        *mgr.JobFunnel
+	sm        *mgr.ScheduleManager
 }
 
 func preResponse(next http.Handler) http.Handler {
@@ -116,13 +117,19 @@ func (server *APIServer) Start(router *mux.Router) {
 		vars := mux.Vars(r)
 		testid := vars["id"]
 
+		// make sure Test exists
+		test, err := sto.GetTestByTestId(m.TestID(testid))
+		if err != nil {
+			w.Write(buildFailure(
+				fmt.Sprintf("Cannot find Test<%s>", testid),
+				http.StatusNotFound,
+				w,
+			))
+			return
+		}
+
 		switch r.Method {
 		case http.MethodGet:
-			test, err := sto.GetTestByTestId(m.TestID(testid))
-			if err != nil {
-				w.Write(buildFailure(err.Error(), http.StatusNotFound, w))
-				return
-			}
 			w.Write(buildSuccess(test, w))
 
 			log.WithField("TestID", testid).Info("Test retrieved")
@@ -184,7 +191,7 @@ func (server *APIServer) Start(router *mux.Router) {
 	router.HandleFunc("/start-test/{id}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		testid := vars["id"]
-		err := server.jf.BeginTest(m.TestID(testid))
+		err := server.jf.BeginTest(m.TestID(testid), "adhoc")
 		if err != nil {
 			w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
 			return
@@ -215,12 +222,117 @@ func (server *APIServer) Start(router *mux.Router) {
 			),
 		)
 	})
+
+	prepareTestSchedule := func(w http.ResponseWriter, r *http.Request) *m.TestSchedule {
+		bodyContent, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
+			return nil
+		}
+
+		err = m.Validate(reflect.TypeOf(m.TestSchedule{}), bodyContent)
+		if err != nil {
+			w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
+			return nil
+		}
+
+		var schedule m.TestSchedule
+		err = json.Unmarshal(bodyContent, &schedule)
+		if err != nil {
+			w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
+			return nil
+		}
+
+		// make sure cron spec is valid
+		err = server.sm.ValidateSpec(schedule.CronSpec)
+		if err != nil {
+			w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
+			return nil
+		}
+
+		// make sure specified Test exists
+		if _, err := sto.GetTestByTestId(schedule.TestID); err != nil {
+			w.Write(buildFailure(
+				fmt.Sprintf("Cannot find Test<%s>", schedule.TestID),
+				http.StatusNotFound,
+				w,
+			))
+			return nil
+		}
+
+		schedule.ID = m.TestScheduleID(schedule.Name)
+
+		return &schedule
+	}
+
+	router.HandleFunc("/test-schedules", func(w http.ResponseWriter, r *http.Request) {
+		schedule := prepareTestSchedule(w, r)
+		if schedule == nil {
+			return
+		}
+
+		server.sm.Add(schedule)
+
+		w.Write(
+			buildSuccess(
+				map[string]string{
+					"scheduleid": string(schedule.ID),
+				},
+				w,
+			),
+		)
+	}).Methods(http.MethodPost)
+
+	router.HandleFunc("/test-schedules/{id}", func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		scheduleid := vars["id"]
+
+		switch r.Method {
+		case http.MethodGet:
+			// TODO: get from storage
+			w.Write(
+				buildSuccess(
+					map[string]interface{}{},
+					w,
+				),
+			)
+		case http.MethodPut:
+			// TODO: check if TestSchedule actually exists
+
+			schedule := prepareTestSchedule(w, r)
+			if schedule == nil {
+				return
+			}
+
+			// make sure id isn't changed
+			schedule.ID = m.TestScheduleID(scheduleid)
+
+			server.sm.Update(schedule)
+
+			w.Write(
+				buildSuccess(
+					map[string]string{
+						"scheduleid": string(schedule.ID),
+					},
+					w,
+				),
+			)
+		case http.MethodDelete:
+			server.sm.Remove(m.TestScheduleID(scheduleid))
+
+			w.Write(
+				buildSuccess(
+					map[string]string{
+						"scheduleid": scheduleid,
+					},
+					w,
+				),
+			)
+		}
+	}).Methods(http.MethodGet, http.MethodPut, http.MethodDelete)
 }
 
 // NewAPIServer create a new APIServer
-func NewAPIServer(sched *sch.Scheduler) *APIServer {
-	return &APIServer{
-		sched,
-		mgr.NewJobFunnel(sched),
-	}
+func NewAPIServer(sched *sch.Scheduler, jf *mgr.JobFunnel, sm *mgr.ScheduleManager) *APIServer {
+	return &APIServer{sched, jf, sm}
 }
