@@ -47,7 +47,7 @@ echo "starting test with id: $testid"
 pad
 
 get_test
-# submit_test
+submit_test
 
 # sleep 30
 

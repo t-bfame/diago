@@ -8,6 +8,7 @@ import (
 	"github.com/t-bfame/diago/cmd/server"
 	"github.com/t-bfame/diago/config"
 	"github.com/t-bfame/diago/internal/chaosmgr"
+	"github.com/t-bfame/diago/internal/manager"
 	"github.com/t-bfame/diago/internal/scheduler"
 	"github.com/t-bfame/diago/internal/storage"
 
@@ -31,9 +32,12 @@ func main() {
 	router := mux.NewRouter()
 
 	go func() {
+		jf := manager.NewJobFunnel(s, cm)
+		sm := manager.NewScheduleManager(jf)
+
 		// Set prefix for api paths
 		apiRouter := router.PathPrefix("/api").Subrouter()
-		apiServer := server.NewAPIServer(s, cm)
+		apiServer := server.NewAPIServer(s, jf, sm)
 		apiServer.Start(apiRouter)
 
 		server.NewUIBox(router)
