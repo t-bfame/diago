@@ -8,13 +8,14 @@ import (
 
 	m "github.com/t-bfame/diago/internal/model"
 
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
 	log "github.com/sirupsen/logrus"
 )
 
+// ChaosManager controls chaos
 type ChaosManager struct {
 	clientset *kubernetes.Clientset
 
@@ -34,7 +35,7 @@ func getLabelString(lm map[string]string) (labels string) {
 }
 
 func (cm *ChaosManager) relevantPodNames(instance *m.ChaosInstance) ([]string, error) {
-	pods, err := cm.clientset.CoreV1().Pods(instance.Namespace).List(meta_v1.ListOptions{
+	pods, err := cm.clientset.CoreV1().Pods(instance.Namespace).List(metav1.ListOptions{
 		LabelSelector: getLabelString(instance.Selectors),
 	})
 
@@ -55,7 +56,16 @@ func (cm *ChaosManager) relevantPodNames(instance *m.ChaosInstance) ([]string, e
 func (cm *ChaosManager) deletePod(name string, namespace string, timeout uint64, wg *sync.WaitGroup, podCh chan error) {
 	select {
 	case <-time.After(time.Duration(timeout) * time.Second):
-		log.WithField("name", name).WithField("namespace", namespace).Info("TIME TO KILL but NO")
+		deletePolicy := metav1.DeletePropagationForeground
+
+		if err := cm.clientset.CoreV1().Pods(namespace).Delete(name, &metav1.DeleteOptions{
+			PropagationPolicy: &deletePolicy,
+		}); err != nil {
+			log.WithError(err).WithField("podName", name).WithField("namespace", namespace).Error("Encountered error while pod deletion")
+		}
+
+		log.WithField("podName", name).WithField("namespace", namespace).Info("Removed pod")
+
 	case <-podCh:
 		log.WithField("name", name).WithField("namespace", namespace).Info("Received chaos interrupt, terminating simulation")
 	}
@@ -67,6 +77,7 @@ func (cm *ChaosManager) deletePod(name string, namespace string, timeout uint64,
 	wg.Done()
 }
 
+// Simulate simulates disaster!!
 func (cm *ChaosManager) Simulate(instance *m.ChaosInstance) (chan error, error) {
 	// Fetch names of pods that we can simulate disaster for
 	p, err := cm.relevantPodNames(instance)
