@@ -119,15 +119,25 @@ func (jf *JobFunnel) BeginTest(testID m.TestID) error {
 
 					var selector = map[string]string{
 						"app.kubernetes.io/name": "diago",
+						// "app": "dummy",
 					}
 
-					jf.chaosmgr.Simulate(&m.ChaosInstance{
-						Namespace:    "diago",
-						Count:        1,
-						Selectors:    selector,
-						Timeout:      300,
-						TestDuration: 300,
+					chaosch, err := jf.chaosmgr.Simulate(&m.ChaosInstance{
+						Namespace: "diago",
+						Count:     1,
+						Selectors: selector,
+						Timeout:   10,
+						Duration:  30,
 					})
+
+					if err != nil {
+						log.WithError(err).Error("Job Funnel man")
+					}
+
+					go func() {
+						<-chaosch
+						log.Info("Chaos simulation complete")
+					}()
 
 				default:
 				}

@@ -1,9 +1,9 @@
 package model
 
 type ChaosInstance struct {
-	Namespace    string
-	Count        uint32
-	Selectors    map[string]string
-	Timeout      uint64
-	TestDuration uint64
+	Namespace string            // Required
+	Selectors map[string]string // Required
+	Timeout   uint64            // Required
+	Duration  uint64            // Required
+	Count     int               // Optional
 }
