@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/t-bfame/diago/cmd/server"
 	"github.com/t-bfame/diago/config"
+	"github.com/t-bfame/diago/internal/chaosmgr"
 	"github.com/t-bfame/diago/internal/manager"
 	"github.com/t-bfame/diago/internal/scheduler"
 	"github.com/t-bfame/diago/internal/storage"
@@ -25,12 +26,13 @@ func main() {
 	}
 
 	s := scheduler.NewScheduler()
+	cm := chaosmgr.NewChaosManager()
 	var opts []grpc.ServerOption
 
 	router := mux.NewRouter()
 
 	go func() {
-		jf := manager.NewJobFunnel(s)
+		jf := manager.NewJobFunnel(s, cm)
 		sm := manager.NewScheduleManager(jf)
 
 		// Set prefix for api paths

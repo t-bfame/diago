@@ -41,7 +41,7 @@ get_instance() {
 
 # sleep 5
 
-testid="Test2"
+testid="Test3"
 
 echo "starting test with id: $testid"
 pad
@@ -49,7 +49,7 @@ pad
 get_test
 submit_test
 
-sleep 30
+# sleep 30
 
-# stop_test
+# # stop_test
 get_instance

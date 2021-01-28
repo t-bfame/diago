@@ -8,6 +8,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	cm "github.com/t-bfame/diago/internal/chaosmgr"
 	"github.com/t-bfame/diago/internal/metrics"
 	m "github.com/t-bfame/diago/internal/model"
 	s "github.com/t-bfame/diago/internal/scheduler"
@@ -21,6 +22,7 @@ type JobFunnel struct {
 	testLocks  map[string]*sync.Mutex
 	ongoing    map[string]bool
 	scheduler  *s.Scheduler
+	chaosmgr   *cm.ChaosManager
 }
 
 func (jf *JobFunnel) startOp(key string) {
@@ -114,6 +116,29 @@ func (jf *JobFunnel) BeginTest(testID m.TestID, testType string) error {
 					mAgg.Add(&x)
 				case s.Start:
 					log.WithField("Start event", msg).Info("Starting job")
+
+					var selector = map[string]string{
+						// "app.kubernetes.io/name": "diago",
+						"app": "dummy",
+					}
+
+					chaosch, err := jf.chaosmgr.Simulate(&m.ChaosInstance{
+						Namespace: "default",
+						Count:     1,
+						Selectors: selector,
+						Timeout:   10,
+						Duration:  30,
+					})
+
+					if err != nil {
+						log.WithError(err).Error("Job Funnel man")
+					}
+
+					go func() {
+						<-chaosch
+						log.Info("Chaos simulation complete")
+					}()
+
 				default:
 				}
 			}
@@ -211,12 +236,13 @@ func (jf *JobFunnel) StopTest(testID m.TestID) error {
 }
 
 // NewJobFunnel creates a new JobFunnel
-func NewJobFunnel(scheduler *s.Scheduler) *JobFunnel {
+func NewJobFunnel(scheduler *s.Scheduler, cm *cm.ChaosManager) *JobFunnel {
 	jf := JobFunnel{
 		&sync.Mutex{},
 		map[string]*sync.Mutex{},
 		map[string]bool{},
 		scheduler,
+		cm,
 	}
 	return &jf
 }
