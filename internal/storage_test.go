@@ -16,6 +16,7 @@ const (
 
 	jobId1          model.JobID          = "job-id-1"
 	jobId2          model.JobID          = "job-id-2"
+	testIdPrefix    string               = "test-id-"
 	testId1         model.TestID         = "test-id-1"
 	testId2         model.TestID         = "test-id-2"
 	testInstanceId1 model.TestInstanceID = "testInstance-id-1"
@@ -176,6 +177,37 @@ func TestAddAndGetAllTests(t *testing.T) {
 		t.Error("Error getting all tests")
 	} else {
 		assert.ElementsMatch(t, retrievedTests, []*model.Test{test1, test2})
+	}
+}
+
+func TestAddAndGetAllTestsWithPrefix(t *testing.T) {
+	initTestDB(t)
+	defer removeTestDB()
+
+	if err := sto.AddTest(test1); err != nil {
+		t.Error("Failed to add test 1")
+	}
+	if err := sto.AddTest(test2); err != nil {
+		t.Error("Failed to add test 2")
+	}
+
+	retrievedTests, err := sto.GetAllTestsWithPrefix(testIdPrefix)
+	if err != nil {
+		t.Error("Error getting all tests")
+	} else {
+		assert.ElementsMatch(t, retrievedTests, []*model.Test{test1, test2})
+	}
+}
+
+func TestGetAllTestsWithPrefixDoesNotReturn(t *testing.T) {
+	initTestDB(t)
+	defer removeTestDB()
+
+	retrievedTests, err := sto.GetAllTestsWithPrefix(testIdPrefix)
+	if err != nil {
+		t.Error("Error getting all tests")
+	} else {
+		assert.Empty(t, retrievedTests)
 	}
 }
 

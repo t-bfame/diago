@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/t-bfame/diago/internal/model"
@@ -94,6 +95,29 @@ func GetAllTests() ([]*model.Test, error) {
 		return nil
 	}); err != nil {
 		log.WithError(err).Error("Failed to GetAllTests")
+		return nil, err
+	}
+	return tests, nil
+}
+
+func GetAllTestsWithPrefix(prefixStr string) ([]*model.Test, error) {
+	var tests = make([]*model.Test, 0)
+	if err := db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(TestBucketName))
+		c := b.Cursor()
+
+		prefix := []byte(prefixStr)
+		for k, v := c.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, v = c.Next() {
+			var test *model.Test
+			if err := tools.GobDecode(&test, v); err != nil {
+				return fmt.Errorf("failed to decode Test due to: %s", err)
+			}
+			tests = append(tests, test)
+		}
+
+		return nil
+	}); err != nil {
+		log.WithError(err).Error("Failed to GetAllTestsWithPrefix")
 		return nil, err
 	}
 	return tests, nil
