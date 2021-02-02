@@ -76,3 +76,25 @@ func GetTestByTestId(testId model.TestID) (*model.Test, error) {
 	}
 	return result, nil
 }
+
+func GetAllTests() ([]*model.Test, error) {
+	var tests = make([]*model.Test, 0)
+	if err := db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(TestBucketName))
+		c := b.Cursor()
+
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			var test *model.Test
+			if err := tools.GobDecode(&test, v); err != nil {
+				return fmt.Errorf("failed to decode Test due to: %s", err)
+			}
+			tests = append(tests, test)
+		}
+
+		return nil
+	}); err != nil {
+		log.WithError(err).Error("Failed to GetAllTests")
+		return nil, err
+	}
+	return tests, nil
+}

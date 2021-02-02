@@ -75,3 +75,25 @@ func GetJobByJobId(jobId model.JobID) (*model.Job, error) {
 	}
 	return result, nil
 }
+
+func GetAllJobs() ([]*model.Job, error) {
+	var jobs = make([]*model.Job, 0)
+	if err := db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(JobBucketName))
+		c := b.Cursor()
+
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			var job *model.Job
+			if err := tools.GobDecode(&job, v); err != nil {
+				return fmt.Errorf("failed to decode Job due to: %s", err)
+			}
+			jobs = append(jobs, job)
+		}
+
+		return nil
+	}); err != nil {
+		log.WithError(err).Error("Failed to GetAllJobs")
+		return nil, err
+	}
+	return jobs, nil
+}

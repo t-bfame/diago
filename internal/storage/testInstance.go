@@ -14,7 +14,7 @@ import (
 
 const (
 	TestInstanceBucketName             = "TestInstance"
-	IdxTestID2TestInstanceIDBucketName = "TestInstance"
+	IdxTestID2TestInstanceIDBucketName = "TestInstanceIdx"
 )
 
 type IdxTestID2TestInstanceID struct {
@@ -38,7 +38,7 @@ func AddTestInstance(testInstance *model.TestInstance) error {
 		if err := doAddTestInstance(tx, testInstance); err != nil {
 			return err
 		}
-		if err := doAddIndex(tx, testInstance); err != nil {
+		if err := doAddTestInstanceIndex(tx, testInstance); err != nil {
 			return err
 		}
 		return nil
@@ -85,6 +85,28 @@ func GetTestInstance(testInstanceID model.TestInstanceID) (*model.TestInstance, 
 	return result, nil
 }
 
+func GetAllTestInstances() ([]*model.TestInstance, error) {
+	var instances = make([]*model.TestInstance, 0)
+	if err := db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(TestInstanceBucketName))
+		c := b.Cursor()
+
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			var instance *model.TestInstance
+			if err := tools.GobDecode(&instance, v); err != nil {
+				return fmt.Errorf("failed to decode TestInstance due to: %s", err)
+			}
+			instances = append(instances, instance)
+		}
+
+		return nil
+	}); err != nil {
+		log.WithError(err).Error("Failed to GetAllTestInstances")
+		return nil, err
+	}
+	return instances, nil
+}
+
 func GetTestInstances(testInstanceIDs []model.TestInstanceID) ([]*model.TestInstance, error) {
 	var result = make([]*model.TestInstance, 0)
 	if err := db.View(func(tx *bolt.Tx) error {
@@ -105,10 +127,14 @@ func GetTestInstancesByTestID(testID model.TestID) ([]*model.TestInstance, error
 	var result = make([]*model.TestInstance, 0)
 	if err := db.View(func(tx *bolt.Tx) error {
 		var index *IdxTestID2TestInstanceID
-		if value, err := doGetIndex(tx, testID); err != nil {
+		if value, err := doGetTestInstanceIndex(tx, testID); err != nil {
 			return err
 		} else {
 			index = value
+		}
+
+		if index == nil {
+			return nil
 		}
 
 		if instances, err := doGetTestInstancesByIDMap(tx, index.TestInstanceIds); err != nil {
@@ -139,7 +165,7 @@ func doAddTestInstance(tx *bolt.Tx, testInstance *model.TestInstance) error {
 	return nil
 }
 
-func doGetIndex(tx *bolt.Tx, testID model.TestID) (*IdxTestID2TestInstanceID, error) {
+func doGetTestInstanceIndex(tx *bolt.Tx, testID model.TestID) (*IdxTestID2TestInstanceID, error) {
 	b := tx.Bucket([]byte(IdxTestID2TestInstanceIDBucketName))
 	if b == nil {
 		return nil, fmt.Errorf("missing bucket '%s'", IdxTestID2TestInstanceIDBucketName)
@@ -157,7 +183,7 @@ func doGetIndex(tx *bolt.Tx, testID model.TestID) (*IdxTestID2TestInstanceID, er
 	return index, nil
 }
 
-func doAddIndex(tx *bolt.Tx, testInstance *model.TestInstance) error {
+func doAddTestInstanceIndex(tx *bolt.Tx, testInstance *model.TestInstance) error {
 	testID := testInstance.TestID
 	instanceID := testInstance.ID
 
@@ -167,7 +193,7 @@ func doAddIndex(tx *bolt.Tx, testInstance *model.TestInstance) error {
 	}
 
 	var index *IdxTestID2TestInstanceID
-	if value, err := doGetIndex(tx, testID); err != nil {
+	if value, err := doGetTestInstanceIndex(tx, testID); err != nil {
 		return err
 	} else {
 		index = value
