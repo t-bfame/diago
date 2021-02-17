@@ -47,8 +47,8 @@ func (jf *JobFunnel) BeginTest(testID m.TestID, testType string) error {
 	defer jf.endOp(key)
 
 	test, err := sto.GetTestByTestId(m.TestID(key))
-	if err != nil {
-		return fmt.Errorf("Cannot find Test<%s>", key)
+	if err != nil || test == nil {
+		return fmt.Errorf("Cannot retrieve Test<%s>", key)
 	}
 
 	if jf.ongoing[key] {
@@ -200,8 +200,8 @@ func (jf *JobFunnel) StopTest(testID m.TestID) error {
 	defer jf.endOp(key)
 
 	test, err := sto.GetTestByTestId(m.TestID(key))
-	if err != nil {
-		return fmt.Errorf("Cannot find Test<%s>", key)
+	if err != nil || test == nil {
+		return fmt.Errorf("Cannot retrieve Test<%s>", key)
 	}
 
 	if !jf.ongoing[key] {

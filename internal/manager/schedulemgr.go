@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	m "github.com/t-bfame/diago/internal/model"
+	sto "github.com/t-bfame/diago/internal/storage"
 )
 
 type ScheduleManager struct {
@@ -16,8 +17,12 @@ type ScheduleManager struct {
 	jf         *JobFunnel
 }
 
-func (sm *ScheduleManager) Add(schedule *m.TestSchedule) error {
-	// TODO: add to storage
+func (sm *ScheduleManager) Add(schedule *m.TestSchedule, store bool) error {
+	if store {
+		if err := sto.AddTestSchedule(schedule); err != nil {
+			return err
+		}
+	}
 
 	entryID, err := sm.cronRunner.AddFunc(schedule.CronSpec, func() {
 		log.WithField("TestScheduleID", schedule.ID).
@@ -53,23 +58,13 @@ func (sm *ScheduleManager) Remove(id m.TestScheduleID) error {
 	sm.cronRunner.Remove(entryID)
 	delete(sm.entries, id)
 
+	if err := sto.DeleteTestSchedule(id); err != nil {
+		return err
+	}
+
 	log.WithField("TestScheduleID", id).
 		Info("Removed TestSchedule")
 
-	// TODO: delete from storage
-
-	return nil
-}
-
-func (sm *ScheduleManager) Update(schedule *m.TestSchedule) error {
-	err := sm.Remove(schedule.ID)
-	if err != nil {
-		return err
-	}
-	err = sm.Add(schedule)
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -79,7 +74,13 @@ func (sm *ScheduleManager) ValidateSpec(spec string) error {
 }
 
 func (sm *ScheduleManager) onStart() {
-	// TODO: query storage for all TestSchedules and run all
+	schedules, err := sto.GetAllTestSchedules()
+	if err != nil {
+		log.WithError(err).Error("ScheduleManager failed to retrieve schedules")
+	}
+	for _, s := range schedules {
+		sm.Add(s, false)
+	}
 	sm.cronRunner.Start()
 	log.Info("ScheduleManager started cron runner")
 }
