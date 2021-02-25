@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"reflect"
+	"strings"
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
@@ -115,6 +116,20 @@ func (server *APIServer) Start(router *mux.Router) {
 		vars := mux.Vars(r)
 		testid := vars["id"]
 
+		// Handle prefix search
+		// TODO: prevent "*" from being a valid character in TestIDs
+		if strings.HasSuffix(testid, "*") {
+			tests, err := sto.GetAllTestsWithPrefix(testid[:len(testid)-1])
+			if err != nil {
+				w.Write(
+					buildFailure(err.Error(), http.StatusInternalServerError, w),
+				)
+				return
+			}
+			w.Write(buildSuccess(tests, w))
+			return
+		}
+
 		// make sure Test exists
 		test, err := sto.GetTestByTestId(m.TestID(testid))
 		if err != nil {
@@ -157,6 +172,20 @@ func (server *APIServer) Start(router *mux.Router) {
 	router.HandleFunc("/test-instances/{testid}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		testid := vars["testid"]
+
+		// TODO: prevent "all" from being a useable TestID
+		if testid == "all" {
+			tis, err := sto.GetAllTestInstances()
+			if err != nil {
+				w.Write(
+					buildFailure(err.Error(), http.StatusInternalServerError, w),
+				)
+				return
+			}
+			w.Write(buildSuccess(tis, w))
+			return
+		}
+
 		instances, err := sto.GetTestInstancesByTestID(m.TestID(testid))
 		if err != nil {
 			w.Write(buildFailure(err.Error(), http.StatusInternalServerError, w))
@@ -280,6 +309,19 @@ func (server *APIServer) Start(router *mux.Router) {
 	router.HandleFunc("/test-schedules/{id}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		scheduleid := vars["id"]
+
+		// TODO: prevent "all" from being a useable TestScheduleID
+		if scheduleid == "all" {
+			schedules, err := sto.GetAllTestSchedules()
+			if err != nil {
+				w.Write(
+					buildFailure(err.Error(), http.StatusInternalServerError, w),
+				)
+				return
+			}
+			w.Write(buildSuccess(schedules, w))
+			return
+		}
 
 		// schedule exists?
 		schedule, err := sto.GetTestSchedule(m.TestScheduleID(scheduleid))
