@@ -306,12 +306,13 @@ func (server *APIServer) Start(router *mux.Router) {
 		)
 	}).Methods(http.MethodPost)
 
-	router.HandleFunc("/test-schedules/{id}", func(w http.ResponseWriter, r *http.Request) {
+	// Get TestSchedules by TestID
+	router.HandleFunc("/test-schedules/{testid}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		scheduleid := vars["id"]
+		testid := vars["testid"]
 
-		// TODO: prevent "all" from being a useable TestScheduleID
-		if scheduleid == "all" {
+		// TODO: prevent "all" from being a useable TestID
+		if testid == "all" {
 			schedules, err := sto.GetAllTestSchedules()
 			if err != nil {
 				w.Write(
@@ -322,6 +323,32 @@ func (server *APIServer) Start(router *mux.Router) {
 			w.Write(buildSuccess(schedules, w))
 			return
 		}
+
+		// schedules exist?
+		schedules, err := sto.GetTestSchedulesByTestID(m.TestID(testid))
+		if err != nil {
+			w.Write(
+				buildFailure(err.Error(), http.StatusInternalServerError, w),
+			)
+			return
+		} else if schedules == nil {
+			schedules = []*m.TestSchedule{}
+		}
+
+		switch r.Method {
+		case http.MethodGet:
+			w.Write(
+				buildSuccess(schedules, w),
+			)
+		default:
+			w.Write(buildFailure("Request not supported", http.StatusBadRequest, w))
+		}
+	}).Methods(http.MethodGet)
+
+	// Delete a test schedule given a testscheduleid
+	router.HandleFunc("/test-schedules/{id}", func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		scheduleid := vars["id"]
 
 		// schedule exists?
 		schedule, err := sto.GetTestSchedule(m.TestScheduleID(scheduleid))
@@ -342,10 +369,6 @@ func (server *APIServer) Start(router *mux.Router) {
 		}
 
 		switch r.Method {
-		case http.MethodGet:
-			w.Write(
-				buildSuccess(schedule, w),
-			)
 		case http.MethodDelete:
 			if err := server.sm.Remove(m.TestScheduleID(scheduleid)); err != nil {
 				w.Write(
@@ -365,7 +388,7 @@ func (server *APIServer) Start(router *mux.Router) {
 		default:
 			w.Write(buildFailure("Request not supported", http.StatusBadRequest, w))
 		}
-	}).Methods(http.MethodGet, http.MethodDelete)
+	}).Methods(http.MethodDelete)
 }
 
 // NewAPIServer create a new APIServer
