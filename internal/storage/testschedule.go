@@ -126,6 +126,10 @@ func GetTestSchedulesByTestID(testID model.TestID) ([]*model.TestSchedule, error
 		var index *IdxTestID2TestScheduleID
 		if value, err := doGetTestScheduleIndex(tx, testID); err != nil {
 			return err
+		} else if value == nil {
+			// no index means no test schedules
+			result = []*model.TestSchedule{}
+			return nil
 		} else {
 			index = value
 		}
