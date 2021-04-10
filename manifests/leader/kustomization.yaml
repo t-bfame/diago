@@ -9,6 +9,7 @@ resources:
 - diago-chaos-clusterrole.yaml
 - diago-chaos-clusterrolebinding.yaml
 - diago-cm.yaml
+- diago-secret.yaml
 - diago-svc.yaml
 - diago-pvc.yaml
 - diago-sts.yaml

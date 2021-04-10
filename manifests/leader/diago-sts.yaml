@@ -37,6 +37,8 @@ spec:
         envFrom:
         - configMapRef:
             name: diago-cm
+        - secretRef:
+            name: diago-secret
       volumes:
         - name: diago-storage
           persistentVolumeClaim:

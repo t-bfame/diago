@@ -14,6 +14,7 @@ import (
 	m "github.com/t-bfame/diago/internal/model"
 	sch "github.com/t-bfame/diago/internal/scheduler"
 	sto "github.com/t-bfame/diago/internal/storage"
+	dash "github.com/t-bfame/diago/internal/dashboard"
 )
 
 // APIServer serves API calls over HTTP
@@ -21,6 +22,7 @@ type APIServer struct {
 	scheduler *sch.Scheduler
 	jf        *mgr.JobFunnel
 	sm        *mgr.ScheduleManager
+	db	      *dash.Dashboard
 }
 
 func preResponse(next http.Handler) http.Handler {
@@ -389,9 +391,25 @@ func (server *APIServer) Start(router *mux.Router) {
 			w.Write(buildFailure("Request not supported", http.StatusBadRequest, w))
 		}
 	}).Methods(http.MethodDelete)
+
+	// Get grafana dashboard metadata
+	router.HandleFunc("/dashboard-metadata", func(w http.ResponseWriter, r *http.Request) {
+		if server.db == nil {
+			w.Write(buildFailure("Grafana dashboards are not available", http.StatusNotFound, w))
+			return
+		}
+
+		body, err := server.db.ToJSON()
+		if err != nil {
+			w.Write(buildFailure("Grafana dashboards are not available", http.StatusNotFound, w))
+			return
+		}
+		w.Write(body)
+	}).Methods(http.MethodGet)
 }
 
 // NewAPIServer create a new APIServer
 func NewAPIServer(sched *sch.Scheduler, jf *mgr.JobFunnel, sm *mgr.ScheduleManager) *APIServer {
-	return &APIServer{sched, jf, sm}
+	db, _ := dash.NewDashboard()
+	return &APIServer{sched, jf, sm, db}
 }

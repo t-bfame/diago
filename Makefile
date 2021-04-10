@@ -3,7 +3,6 @@
 .PHONY: local
 local:
 	GOOS=linux go build cmd/main.go
-	eval $(minikube docker-env)
 	docker build -f Dockerfile.dev -t diago .
 
 build-local-ui:
@@ -23,7 +22,7 @@ remove:
 deploy:
 	kubectl apply -k manifests/
 
-do: local remove deploy
+do: remove local deploy
 
 logs:
 	kubectl logs diago-0 -f --namespace=diago

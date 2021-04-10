@@ -17,6 +17,10 @@ type Config struct {
 	StoragePath string `envconfig:"DIAGO_STORAGE_PATH" default:"diago.db"`
 
 	Debug bool `envconfig:"DIAGO_DEBUG" default:"false"`
+
+	GrafanaBasePath     string `envconfig:"DIAGO_GRAFANA_BASE_PATH" default:""`
+	GrafanaAPIKey     string `envconfig:"DIAGO_GRAFANA_API_KEY" default:""`
+	GrafanaDashboardConfig     string `envconfig:"DIAGO_GRAFANA_DASHBOARD_CONFIG" default:"default"`
 }
 
 var Diago *Config
