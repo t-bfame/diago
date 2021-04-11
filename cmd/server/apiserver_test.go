@@ -261,7 +261,7 @@ func TestHandleDelete(t *testing.T) {
 func TestHandleTestStart(t *testing.T) {
 	jf := &mgr.TestingJobFunnel{}
 	sm := &mgr.TestingScheduleManager{}
-	server := NewAPIServer(jf, sm)
+	server := &APIServer{jf, sm, nil}
 	startHandler := handleTestStartBuilder(server)
 
 	r, _ := http.NewRequest(
@@ -291,7 +291,7 @@ func TestHandleTestStart(t *testing.T) {
 func TestHandleTestStop(t *testing.T) {
 	jf := &mgr.TestingJobFunnel{}
 	sm := &mgr.TestingScheduleManager{}
-	server := NewAPIServer(jf, sm)
+	server := &APIServer{jf, sm, nil}
 	stopHandler := handleTestStopBuilder(server)
 
 	r, _ := http.NewRequest(
@@ -400,7 +400,7 @@ func TestHandleTestScheduleCreate(t *testing.T) {
 
 	jf := &mgr.TestingJobFunnel{}
 	sm := &mgr.TestingScheduleManager{}
-	server := NewAPIServer(jf, sm)
+	server := &APIServer{jf, sm, nil}
 	tsCreateHandler := handleTestScheduleCreateBuilder(server)
 
 	ts := []byte(
@@ -523,7 +523,7 @@ func TestHandleTestScheduleDelete(t *testing.T) {
 
 	jf := &mgr.TestingJobFunnel{}
 	sm := &mgr.TestingScheduleManager{}
-	server := NewAPIServer(jf, sm)
+	server := &APIServer{jf, sm, nil}
 	tsDeleteHandler := handleTestScheduleDeleteBuilder(server)
 
 	ts1 := m.TestSchedule{

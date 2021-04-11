@@ -6,4 +6,5 @@ type Test struct {
 	ID   TestID
 	Name string
 	Jobs []Job
+	Chaos []ChaosInstance
 }

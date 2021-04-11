@@ -86,6 +86,10 @@ func handleTestCreate(w http.ResponseWriter, r *http.Request) {
 		test.Jobs[i].ID = m.JobID(fmt.Sprintf("%s-%d", test.ID, i))
 	}
 
+	for i := range test.Chaos {
+		test.Chaos[i].ID = m.ChaosID(fmt.Sprintf("%s-%d", test.ID, i))
+	}
+
 	err = sto.AddTest(&test)
 	if err != nil {
 		w.Write(buildFailure(err.Error(), http.StatusInternalServerError, w))
