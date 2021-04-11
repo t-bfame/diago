@@ -30,6 +30,7 @@ func initStorageTestInstance(db *bolt.DB) error {
 		return err
 	}
 	gob.Register(map[string]*metrics.Metrics{})
+	gob.Register(map[model.ChaosID]model.ChaosResult{})
 	return nil
 }
 
