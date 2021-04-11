@@ -392,9 +392,9 @@ func (server *APIServer) Start(router *mux.Router) {
 	router.HandleFunc("/tests", handleTestReadAll).Methods(http.MethodGet)
 	router.HandleFunc("/tests/{testid}", handleTestRead).Methods(http.MethodGet)
 	router.HandleFunc("/tests/{testid}", handleTestDelete).Methods(http.MethodDelete)
-	router.HandleFunc("tests/{testid}/start", handleTestStartBuilder(server)).
+	router.HandleFunc("/tests/{testid}/start", handleTestStartBuilder(server)).
 		Methods(http.MethodPost)
-	router.HandleFunc("tests/{testid}/stop", handleTestStopBuilder(server)).
+	router.HandleFunc("/tests/{testid}/stop", handleTestStopBuilder(server)).
 		Methods(http.MethodPost)
 
 	// test-instances
@@ -409,7 +409,7 @@ func (server *APIServer) Start(router *mux.Router) {
 		Methods(http.MethodGet).Queries("testid", "{testid}")
 	router.HandleFunc("/test-schedules", handleTestScheduleReadAll).
 		Methods(http.MethodGet)
-	router.HandleFunc("test-schedules/{scheduleid}", handleTestScheduleDeleteBuilder(server)).
+	router.HandleFunc("/test-schedules/{scheduleid}", handleTestScheduleDeleteBuilder(server)).
 		Methods(http.MethodDelete)
 
 	// Get grafana dashboard metadata
