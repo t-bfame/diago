@@ -9,6 +9,8 @@ type TestInstance struct {
 	Status    string
 	CreatedAt int64
 	Metrics   interface{} // TODO: decide how to store metrics long-term
+	ChaosResult map[ChaosID]ChaosResult
+	Error string
 }
 
 func (instance *TestInstance) IsTerminal() bool {

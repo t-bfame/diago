@@ -21,6 +21,8 @@ type ChaosManager struct {
 
 	podMap map[string]bool
 	pmux   sync.Mutex
+
+	chMap map[string] chan error
 }
 
 func getLabelString(lm map[string]string) (labels string) {
@@ -78,14 +80,14 @@ func (cm *ChaosManager) deletePod(name string, namespace string, timeout uint64,
 }
 
 // Simulate simulates disaster!!
-func (cm *ChaosManager) Simulate(instance *m.ChaosInstance) (chan error, error) {
+func (cm *ChaosManager) Simulate(testId m.TestID, instance *m.ChaosInstance, testDuration uint64) (chan error, []string, error) {
 	// Fetch names of pods that we can simulate disaster for
 	p, err := cm.relevantPodNames(instance)
 
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	} else if len(p) == 0 {
-		return nil, errors.New("No pods found for simulating disaster, recheck pod label selectors")
+		return nil, nil, errors.New("No pods found for simulating disaster, recheck pod label selectors")
 	}
 
 	// Check if pod is in a test, else register it
@@ -100,25 +102,27 @@ func (cm *ChaosManager) Simulate(instance *m.ChaosInstance) (chan error, error) 
 	}
 
 	if len(allowedPodNames) == 0 {
-		return nil, errors.New("All pods are currently occupied in other tests, disaster will not be simulated")
+		return nil, nil, errors.New("All pods are currently occupied in other tests, disaster will not be simulated")
 	}
 
 	// If duration of test is less than the pod death timeout
-	if instance.Duration <= instance.Timeout {
-		return nil, errors.New("Pod time of death is after end of test, disaster will not be simulated")
+	if testDuration <= instance.Timeout {
+		return nil, nil, errors.New("Pod time of death is after end of test, disaster will not be simulated")
 	}
 
 	if instance.Count > len(allowedPodNames) {
-		return nil, errors.New("Not enough pods avaialble for deletion, disaster will not be simulated")
+		return nil, nil, errors.New("Not enough pods avaialble for deletion, disaster will not be simulated")
 	}
 
 	var wg sync.WaitGroup
 	wg.Add(instance.Count)
 
 	funnelCh := make(chan error)
+	var deletedPodNames []string
 
 	for i := 0; i < instance.Count; i++ {
 		podName := allowedPodNames[i]
+		deletedPodNames = append(deletedPodNames, podName)
 		cm.podMap[fmt.Sprintf("%s-%s", podName, instance.Namespace)] = true
 
 		go cm.deletePod(podName, instance.Namespace, instance.Timeout, &wg, funnelCh)
@@ -137,8 +141,16 @@ func (cm *ChaosManager) Simulate(instance *m.ChaosInstance) (chan error, error) 
 		}
 	}()
 
+	cm.chMap[fmt.Sprintf("%s-%s", testId, instance.ID)] = funnelCh
+
 	log.WithField("pods", allowedPodNames).Info("Pods selected for deletion during chaos")
-	return funnelCh, nil
+	return funnelCh, deletedPodNames, nil
+}
+
+func (cm *ChaosManager) Stop(testId m.TestID, instanceID m.ChaosID) {
+	funnelCh := cm.chMap[fmt.Sprintf("%s-%s", testId, instanceID)]
+	delete(cm.chMap, fmt.Sprintf("%s-%s", testId, instanceID))
+	close(funnelCh)
 }
 
 // NewChaosManager laalala
@@ -158,6 +170,7 @@ func NewChaosManager() *ChaosManager {
 	cm := new(ChaosManager)
 	cm.clientset = clientset
 	cm.podMap = make(map[string]bool)
+	cm.chMap = make(map[string]chan error)
 
 	if err != nil {
 		panic(err.Error())

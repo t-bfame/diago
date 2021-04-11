@@ -13,6 +13,7 @@ import (
 	m "github.com/t-bfame/diago/internal/model"
 	s "github.com/t-bfame/diago/internal/scheduler"
 	sto "github.com/t-bfame/diago/internal/storage"
+	"github.com/t-bfame/diago/internal/tools"
 )
 
 // JobFunnel is used to interface with the Scheduler while
@@ -38,6 +39,51 @@ func (jf *JobFunnel) startOp(key string) {
 func (jf *JobFunnel) endOp(key string) {
 	jf.testLocks[key].Unlock()
 }
+
+func (jf *JobFunnel) RunChaosSimulation(testID m.TestID, chaosInstances []m.ChaosInstance, testDuration uint64) map[m.ChaosID]m.ChaosResult {
+	result := make(map[m.ChaosID]m.ChaosResult)
+	chaosGroup := sync.WaitGroup{}
+
+	for _, c := range chaosInstances {
+
+		chaosch, deletedPodNames, err := jf.chaosmgr.Simulate(testID, &c, testDuration)
+
+		if err != nil {
+			log.WithError(err).WithField("chaosInstance", c.ID).Error("Unable to simulate chaos for instance")
+			result[c.ID] = m.ChaosResult{
+				Status: m.ChaosFail,
+				Error: err.Error(),
+			}
+			continue
+		}
+
+		chaosGroup.Add(1)
+
+		go func(id m.ChaosID, deletedPodNames []string) {
+			defer chaosGroup.Done()
+			err := <-chaosch
+
+			if err != nil {
+				log.WithError(err).WithField("chaosInstance", id).Error("Chaos simulation failed")
+				result[id] = m.ChaosResult{
+					Status: m.ChaosFail,
+					Error: err.Error(),
+				}
+				return
+			}
+
+			result[id] = m.ChaosResult{
+				Status: m.ChaosSuccess,
+				DeletedPods: deletedPodNames,
+				Error: "",
+			}
+		}(c.ID, deletedPodNames)
+	}
+
+	chaosGroup.Wait()
+	return result
+}
+
 
 // BeginTest creates a TestInstance for the Test with the specified TestID
 // if another instance of the same Test is not already ongoing
@@ -74,13 +120,17 @@ func (jf *JobFunnel) BeginTest(testID m.TestID, testType string) error {
 
 	jobGroup := sync.WaitGroup{}
 	jobMAggs := map[string]*metrics.Metrics{}
+	jobGroupStart := sync.WaitGroup{}
+	var testDuration uint64 = 0
 
 	for i, v := range test.Jobs {
+		testDuration = tools.Max(testDuration, v.Duration)
+
 		// attempt to submit jobs to scheduler
 		ch, err := jf.scheduler.Submit(v)
 		if err != nil {
 			instance.Status = "failed"
-
+			instance.Error = err.Error()
 			// save instance
 			sto.AddTestInstance(instance)
 
@@ -100,6 +150,8 @@ func (jf *JobFunnel) BeginTest(testID m.TestID, testType string) error {
 		}
 
 		jobGroup.Add(1)
+		jobGroupStart.Add(1)
+
 		mAgg := metrics.NewMetricAggregator(
 			string(testID),
 			string(instance.ID),
@@ -116,29 +168,7 @@ func (jf *JobFunnel) BeginTest(testID m.TestID, testType string) error {
 					mAgg.Add(&x)
 				case s.Start:
 					log.WithField("Start event", msg).Info("Starting job")
-
-					var selector = map[string]string{
-						// "app.kubernetes.io/name": "diago",
-						"app": "dummy",
-					}
-
-					chaosch, err := jf.chaosmgr.Simulate(&m.ChaosInstance{
-						Namespace: "default",
-						Count:     1,
-						Selectors: selector,
-						Timeout:   10,
-						Duration:  30,
-					})
-
-					if err != nil {
-						log.WithError(err).Error("Job Funnel man")
-					}
-
-					go func() {
-						<-chaosch
-						log.Info("Chaos simulation complete")
-					}()
-
+					jobGroupStart.Done()
 				default:
 				}
 			}
@@ -153,6 +183,12 @@ func (jf *JobFunnel) BeginTest(testID m.TestID, testType string) error {
 
 	// wait for all jobs to finish or stop
 	go func() {
+		// Wait for jobs to start
+		jobGroupStart.Wait()
+		
+		// Complete Chaos simulation with result
+		chaosResult := jf.RunChaosSimulation(testID, test.Chaos, testDuration)
+
 		jobGroup.Wait()
 		jf.startOp(key)
 		defer jf.endOp(key)
@@ -168,6 +204,7 @@ func (jf *JobFunnel) BeginTest(testID m.TestID, testType string) error {
 			// save instance
 			instance.Status = "done"
 			instance.Metrics = jobMAggs
+			instance.ChaosResult = chaosResult
 			sto.AddTestInstance(instance)
 		}
 
@@ -206,6 +243,10 @@ func (jf *JobFunnel) StopTest(testID m.TestID) error {
 
 	if !jf.ongoing[key] {
 		return fmt.Errorf("No instance of Test<%s> is currently ongoing", testID)
+	}
+
+	for _, c := range test.Chaos {
+		jf.chaosmgr.Stop(testID, c.ID)
 	}
 
 	for _, v := range test.Jobs {
