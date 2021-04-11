@@ -17,9 +17,9 @@ func NewUIBox(router *mux.Router) {
 	router.PathPrefix("/manifest.json").Handler(http.FileServer(box))
 	router.PathPrefix("/robots.txt").Handler(http.FileServer(box))
 
-	index, _ := box.Open("index.html");
+	index, _ := box.Open("index.html")
 	router.PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fs, _ := index.Stat()
 		http.ServeContent(w, r, "index.html", fs.ModTime(), index)
-    })
+	})
 }
