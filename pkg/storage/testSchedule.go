@@ -48,11 +48,18 @@ func AddTestSchedule(testSchedule *model.TestSchedule) error {
 
 func DeleteTestSchedule(testScheduleID model.TestScheduleID) error {
 	if err := db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(TestScheduleBucketName))
-		if b == nil {
-			return fmt.Errorf("missing bucket '%s'", TestScheduleBucketName)
+		var testID model.TestID
+		if instance, err := doGetTestSchedule(tx, testScheduleID); err != nil {
+			return err
+		} else {
+			testID = instance.TestID
 		}
-		if err := b.Delete([]byte(testScheduleID)); err != nil {
+
+		if err := doDeleteTestSchedule(tx, testScheduleID); err != nil {
+			return err
+		}
+
+		if err := doRemoveTestScheduleIndex(tx, testID, testScheduleID); err != nil {
 			return err
 		}
 		return nil
@@ -66,15 +73,12 @@ func DeleteTestSchedule(testScheduleID model.TestScheduleID) error {
 func GetTestSchedule(testScheduleID model.TestScheduleID) (*model.TestSchedule, error) {
 	var result *model.TestSchedule
 	if err := db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(TestScheduleBucketName))
-		data := b.Get([]byte(testScheduleID))
-		if data == nil {
+		if instance, err := doGetTestSchedule(tx, testScheduleID); err != nil {
+			return err
+		} else {
+			result = instance
 			return nil
 		}
-		if err := tools.GobDecode(&result, data); err != nil {
-			return fmt.Errorf("failed to decode TestSchedule due to: %s", err)
-		}
-		return nil
 	}); err != nil {
 		log.WithError(err).WithField("testScheduleID", testScheduleID).Error("Failed to GetTestSchedule")
 		return nil, err
@@ -147,6 +151,19 @@ func GetTestSchedulesByTestID(testID model.TestID) ([]*model.TestSchedule, error
 	return result, nil
 }
 
+func doGetTestSchedule(tx *bolt.Tx, testScheduleID model.TestScheduleID) (*model.TestSchedule, error) {
+	var result *model.TestSchedule
+	b := tx.Bucket([]byte(TestScheduleBucketName))
+	data := b.Get([]byte(testScheduleID))
+	if data == nil {
+		return nil, nil
+	}
+	if err := tools.GobDecode(&result, data); err != nil {
+		return nil, fmt.Errorf("failed to decode TestSchedule due to: %s", err)
+	}
+	return result, nil
+}
+
 func doAddTestSchedule(tx *bolt.Tx, testSchedule *model.TestSchedule) error {
 	b := tx.Bucket([]byte(TestScheduleBucketName))
 	if b == nil {
@@ -157,6 +174,17 @@ func doAddTestSchedule(tx *bolt.Tx, testSchedule *model.TestSchedule) error {
 		return fmt.Errorf("failed to encode TestSchedule due to: %s", err)
 	}
 	if err := b.Put([]byte(testSchedule.ID), enc); err != nil {
+		return err
+	}
+	return nil
+}
+
+func doDeleteTestSchedule(tx *bolt.Tx, testScheduleID model.TestScheduleID) error {
+	b := tx.Bucket([]byte(TestScheduleBucketName))
+	if b == nil {
+		return fmt.Errorf("missing bucket '%s'", TestScheduleBucketName)
+	}
+	if err := b.Delete([]byte(testScheduleID)); err != nil {
 		return err
 	}
 	return nil
@@ -182,7 +210,7 @@ func doGetTestScheduleIndex(tx *bolt.Tx, testID model.TestID) (*IdxTestID2TestSc
 
 func doAddTestScheduleIndex(tx *bolt.Tx, testSchedule *model.TestSchedule) error {
 	testID := testSchedule.TestID
-	scheduleID := testSchedule.ID
+	testScheduleID := testSchedule.ID
 
 	b := tx.Bucket([]byte(IdxTestID2TestScheduleIDBucketName))
 	if b == nil {
@@ -202,7 +230,36 @@ func doAddTestScheduleIndex(tx *bolt.Tx, testSchedule *model.TestSchedule) error
 		}
 	}
 
-	index.TestScheduleIds[scheduleID] = true
+	index.TestScheduleIds[testScheduleID] = true
+
+	enc, err := tools.GobEncode(index)
+	if err != nil {
+		return fmt.Errorf("failed to encode IdxTestID2TestScheduleID due to: %s", err)
+	}
+	if err := b.Put([]byte(testID), enc); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func doRemoveTestScheduleIndex(tx *bolt.Tx, testID model.TestID, testScheduleID model.TestScheduleID) error {
+	b := tx.Bucket([]byte(IdxTestID2TestScheduleIDBucketName))
+	if b == nil {
+		return fmt.Errorf("missing bucket '%s'", IdxTestID2TestScheduleIDBucketName)
+	}
+
+	var index *IdxTestID2TestScheduleID
+	if value, err := doGetTestScheduleIndex(tx, testID); err != nil {
+		return err
+	} else {
+		index = value
+		if index == nil {
+			return nil
+		}
+	}
+
+	delete(index.TestScheduleIds, testScheduleID)
 
 	enc, err := tools.GobEncode(index)
 	if err != nil {
