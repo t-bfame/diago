@@ -11,14 +11,14 @@ type ChaosInstance struct {
 }
 
 type ChaosResult struct {
-	Status ChaosStatus
+	Status      ChaosStatus
 	DeletedPods []string
-	Error string
+	Error       string
 }
 
 type ChaosStatus string
 
 const (
-	ChaosFail ChaosStatus = "failed"
+	ChaosFail    ChaosStatus = "failed"
 	ChaosSuccess ChaosStatus = "success"
 )

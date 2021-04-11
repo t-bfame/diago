@@ -10,14 +10,20 @@ import (
 	sto "github.com/t-bfame/diago/internal/storage"
 )
 
-type ScheduleManager struct {
+type ScheduleManager interface {
+	Add(schedule *m.TestSchedule, store bool) error
+	Remove(id m.TestScheduleID) error
+	ValidateSpec(spec string) error
+}
+
+type ScheduleManagerImpl struct {
 	specParser cron.Parser
 	entries    map[m.TestScheduleID]cron.EntryID
 	cronRunner *cron.Cron
-	jf         *JobFunnel
+	jf         JobFunnel
 }
 
-func (sm *ScheduleManager) Add(schedule *m.TestSchedule, store bool) error {
+func (sm *ScheduleManagerImpl) Add(schedule *m.TestSchedule, store bool) error {
 	if store {
 		if err := sto.AddTestSchedule(schedule); err != nil {
 			return err
@@ -49,7 +55,7 @@ func (sm *ScheduleManager) Add(schedule *m.TestSchedule, store bool) error {
 	return nil
 }
 
-func (sm *ScheduleManager) Remove(id m.TestScheduleID) error {
+func (sm *ScheduleManagerImpl) Remove(id m.TestScheduleID) error {
 	entryID, exists := sm.entries[id]
 	if !exists {
 		return fmt.Errorf("TestSchedule<%s> is not currently running", id)
@@ -68,12 +74,12 @@ func (sm *ScheduleManager) Remove(id m.TestScheduleID) error {
 	return nil
 }
 
-func (sm *ScheduleManager) ValidateSpec(spec string) error {
+func (sm *ScheduleManagerImpl) ValidateSpec(spec string) error {
 	_, err := sm.specParser.Parse(spec)
 	return err
 }
 
-func (sm *ScheduleManager) onStart() {
+func (sm *ScheduleManagerImpl) onStart() {
 	schedules, err := sto.GetAllTestSchedules()
 	if err != nil {
 		log.WithError(err).Error("ScheduleManager failed to retrieve schedules")
@@ -85,8 +91,8 @@ func (sm *ScheduleManager) onStart() {
 	log.Info("ScheduleManager started cron runner")
 }
 
-func NewScheduleManager(jf *JobFunnel) *ScheduleManager {
-	sm := &ScheduleManager{
+func NewScheduleManager(jf JobFunnel) ScheduleManager {
+	sm := &ScheduleManagerImpl{
 		// standardParser according to https://github.com/robfig/cron/blob/v3.0.1/parser.go#L217
 		cron.NewParser(
 			cron.Minute | cron.Hour | cron.Dom | cron.Month |
@@ -98,4 +104,28 @@ func NewScheduleManager(jf *JobFunnel) *ScheduleManager {
 	}
 	sm.onStart()
 	return sm
+}
+
+type TestingScheduleManager struct {
+	Added   []m.TestScheduleID
+	Removed []m.TestScheduleID
+}
+
+func (sm *TestingScheduleManager) Add(
+	schedule *m.TestSchedule,
+	store bool,
+) error {
+	sm.Added = append(sm.Added, schedule.ID)
+	return nil
+}
+func (sm *TestingScheduleManager) Remove(
+	id m.TestScheduleID,
+) error {
+	sm.Removed = append(sm.Removed, id)
+	return nil
+}
+func (sm *TestingScheduleManager) ValidateSpec(
+	spec string,
+) error {
+	return nil
 }

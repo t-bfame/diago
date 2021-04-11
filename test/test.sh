@@ -10,17 +10,17 @@ get_test() {
 }
 
 submit_test() {
-  curl "$base:30007/api/start-test/$testid" | python3 -m json.tool
+  curl "$base:30007/api/$testid/start" | python3 -m json.tool
   pad
 }
 
 stop_test() {
-  curl "$base:30007/api/stop-test/$testid" | python3 -m json.tool
+  curl "$base:30007/api/$testid/stop" | python3 -m json.tool
   pad
 }
 
 get_instance() {
-  curl "$base:30007/api/test-instances/$testid" | python3 -m json.tool
+  curl "$base:30007/api/test-instances?testid=$testid" | python3 -m json.tool
   pad
 }
 

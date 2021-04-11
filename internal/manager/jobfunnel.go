@@ -18,7 +18,14 @@ import (
 
 // JobFunnel is used to interface with the Scheduler while
 // keeping track of ongoing Tests
-type JobFunnel struct {
+type JobFunnel interface {
+	startOp(key string)
+	endOp(key string)
+	BeginTest(testID m.TestID, testType string) error
+	StopTest(testID m.TestID) error
+}
+
+type JobFunnelImpl struct {
 	globalLock *sync.Mutex
 	testLocks  map[string]*sync.Mutex
 	ongoing    map[string]bool
@@ -26,7 +33,7 @@ type JobFunnel struct {
 	chaosmgr   *cm.ChaosManager
 }
 
-func (jf *JobFunnel) startOp(key string) {
+func (jf *JobFunnelImpl) startOp(key string) {
 	jf.globalLock.Lock()
 	_, exists := jf.testLocks[key]
 	if !exists {
@@ -36,11 +43,11 @@ func (jf *JobFunnel) startOp(key string) {
 	jf.testLocks[key].Lock()
 }
 
-func (jf *JobFunnel) endOp(key string) {
+func (jf *JobFunnelImpl) endOp(key string) {
 	jf.testLocks[key].Unlock()
 }
 
-func (jf *JobFunnel) RunChaosSimulation(testID m.TestID, chaosInstances []m.ChaosInstance, testDuration uint64) map[m.ChaosID]m.ChaosResult {
+func (jf *JobFunnelImpl) RunChaosSimulation(testID m.TestID, chaosInstances []m.ChaosInstance, testDuration uint64) map[m.ChaosID]m.ChaosResult {
 	result := make(map[m.ChaosID]m.ChaosResult)
 	chaosGroup := sync.WaitGroup{}
 
@@ -52,7 +59,7 @@ func (jf *JobFunnel) RunChaosSimulation(testID m.TestID, chaosInstances []m.Chao
 			log.WithError(err).WithField("chaosInstance", c.ID).Error("Unable to simulate chaos for instance")
 			result[c.ID] = m.ChaosResult{
 				Status: m.ChaosFail,
-				Error: err.Error(),
+				Error:  err.Error(),
 			}
 			continue
 		}
@@ -67,15 +74,15 @@ func (jf *JobFunnel) RunChaosSimulation(testID m.TestID, chaosInstances []m.Chao
 				log.WithError(err).WithField("chaosInstance", id).Error("Chaos simulation failed")
 				result[id] = m.ChaosResult{
 					Status: m.ChaosFail,
-					Error: err.Error(),
+					Error:  err.Error(),
 				}
 				return
 			}
 
 			result[id] = m.ChaosResult{
-				Status: m.ChaosSuccess,
+				Status:      m.ChaosSuccess,
 				DeletedPods: deletedPodNames,
-				Error: "",
+				Error:       "",
 			}
 		}(c.ID, deletedPodNames)
 	}
@@ -84,10 +91,9 @@ func (jf *JobFunnel) RunChaosSimulation(testID m.TestID, chaosInstances []m.Chao
 	return result
 }
 
-
 // BeginTest creates a TestInstance for the Test with the specified TestID
 // if another instance of the same Test is not already ongoing
-func (jf *JobFunnel) BeginTest(testID m.TestID, testType string) error {
+func (jf *JobFunnelImpl) BeginTest(testID m.TestID, testType string) error {
 	key := string(testID)
 	jf.startOp(key)
 	defer jf.endOp(key)
@@ -185,7 +191,7 @@ func (jf *JobFunnel) BeginTest(testID m.TestID, testType string) error {
 	go func() {
 		// Wait for jobs to start
 		jobGroupStart.Wait()
-		
+
 		// Complete Chaos simulation with result
 		chaosResult := jf.RunChaosSimulation(testID, test.Chaos, testDuration)
 
@@ -231,7 +237,7 @@ func (jf *JobFunnel) BeginTest(testID m.TestID, testType string) error {
 
 // StopTest stops the running TestInstance for the Test corresponding
 // to the given TestID, if it exists
-func (jf *JobFunnel) StopTest(testID m.TestID) error {
+func (jf *JobFunnelImpl) StopTest(testID m.TestID) error {
 	key := string(testID)
 	jf.startOp(key)
 	defer jf.endOp(key)
@@ -277,13 +283,34 @@ func (jf *JobFunnel) StopTest(testID m.TestID) error {
 }
 
 // NewJobFunnel creates a new JobFunnel
-func NewJobFunnel(scheduler *s.Scheduler, cm *cm.ChaosManager) *JobFunnel {
-	jf := JobFunnel{
+func NewJobFunnel(scheduler *s.Scheduler, cm *cm.ChaosManager) JobFunnel {
+	jf := &JobFunnelImpl{
 		&sync.Mutex{},
 		map[string]*sync.Mutex{},
 		map[string]bool{},
 		scheduler,
 		cm,
 	}
-	return &jf
+	return jf
+}
+
+type TestingJobFunnel struct {
+	Starts []m.TestID
+	Stops  []m.TestID
+}
+
+func (jf *TestingJobFunnel) startOp(key string) {}
+func (jf *TestingJobFunnel) endOp(key string)   {}
+func (jf *TestingJobFunnel) BeginTest(
+	testID m.TestID,
+	testType string,
+) error {
+	jf.Starts = append(jf.Starts, testID)
+	return nil
+}
+func (jf *TestingJobFunnel) StopTest(
+	testID m.TestID,
+) error {
+	jf.Stops = append(jf.Stops, testID)
+	return nil
 }
