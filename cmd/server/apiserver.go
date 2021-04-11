@@ -6,23 +6,20 @@ import (
 	"io/ioutil"
 	"net/http"
 	"reflect"
-	"strings"
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
+	dash "github.com/t-bfame/diago/internal/dashboard"
 	mgr "github.com/t-bfame/diago/internal/manager"
 	m "github.com/t-bfame/diago/internal/model"
-	sch "github.com/t-bfame/diago/internal/scheduler"
 	sto "github.com/t-bfame/diago/internal/storage"
-	dash "github.com/t-bfame/diago/internal/dashboard"
 )
 
 // APIServer serves API calls over HTTP
 type APIServer struct {
-	scheduler *sch.Scheduler
-	jf        *mgr.JobFunnel
-	sm        *mgr.ScheduleManager
-	db	      *dash.Dashboard
+	jf mgr.JobFunnel
+	sm mgr.ScheduleManager
+	db *dash.Dashboard
 }
 
 func preResponse(next http.Handler) http.Handler {
@@ -62,149 +59,132 @@ func buildFailure(msg string, code int, w http.ResponseWriter) []byte {
 	return json
 }
 
-// Start starts the APIServer
-func (server *APIServer) Start(router *mux.Router) {
-	router.Use(preResponse)
+func handleTestCreate(w http.ResponseWriter, r *http.Request) {
+	bodyContent, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
+		return
+	}
 
-	// Test C
-	router.HandleFunc("/tests", func(w http.ResponseWriter, r *http.Request) {
-		bodyContent, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
-			return
-		}
+	err = m.Validate(reflect.TypeOf(m.Test{}), bodyContent)
+	if err != nil {
+		w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
+		return
+	}
 
-		err = m.Validate(reflect.TypeOf(m.Test{}), bodyContent)
-		if err != nil {
-			w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
-			return
-		}
+	var test m.Test
+	err = json.Unmarshal(bodyContent, &test)
+	if err != nil {
+		w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
+		return
+	}
 
-		var test m.Test
-		err = json.Unmarshal(bodyContent, &test)
-		if err != nil {
-			w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
-			return
-		}
+	testid := test.Name
+	test.ID = m.TestID(testid)
 
-		testid := test.Name
-		test.ID = m.TestID(testid)
+	for i := range test.Jobs {
+		test.Jobs[i].ID = m.JobID(fmt.Sprintf("%s-%d", test.ID, i))
+	}
 
-		for i := range test.Jobs {
-			test.Jobs[i].ID = m.JobID(fmt.Sprintf("%s-%d", test.ID, i))
-		}
+	err = sto.AddTest(&test)
+	if err != nil {
+		w.Write(buildFailure(err.Error(), http.StatusInternalServerError, w))
+		return
+	}
 
-		err = sto.AddTest(&test)
-		if err != nil {
-			w.Write(buildFailure(err.Error(), http.StatusInternalServerError, w))
-			return
-		}
+	w.Write(
+		buildSuccess(
+			map[string]string{
+				"testid": testid,
+			},
+			w,
+		),
+	)
+}
 
+func handleTestReadForPrefix(w http.ResponseWriter, r *http.Request) {
+	prefix := r.FormValue("prefix")
+	tests, err := sto.GetAllTestsWithPrefix(prefix)
+	if err != nil {
 		w.Write(
-			buildSuccess(
-				map[string]string{
-					"testid": testid,
-				},
-				w,
-			),
+			buildFailure(err.Error(), http.StatusInternalServerError, w),
 		)
+		return
+	}
+	w.Write(buildSuccess(tests, w))
+}
 
-		log.WithField("TestID", testid).Info("Test created")
+func handleTestReadAll(w http.ResponseWriter, r *http.Request) {
+	tests, err := sto.GetAllTests()
+	if err != nil {
+		w.Write(
+			buildFailure(err.Error(), http.StatusInternalServerError, w),
+		)
+		return
+	}
+	w.Write(buildSuccess(tests, w))
+}
 
-	}).Methods(http.MethodPost)
+func handleTestRead(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	testid := vars["testid"]
 
-	// Test RD
-	router.HandleFunc("/tests/{id}", func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		testid := vars["id"]
+	test, err := sto.GetTestByTestId(m.TestID(testid))
+	if err != nil {
+		w.Write(buildFailure(err.Error(), http.StatusInternalServerError, w))
+		return
+	} else if test == nil {
+		w.Write(buildFailure(
+			fmt.Sprintf("Cannot find Test<%s>", testid),
+			http.StatusNotFound,
+			w,
+		))
+		return
+	}
 
-		// Handle prefix search
-		// TODO: prevent "*" from being a valid character in TestIDs
-		if strings.HasSuffix(testid, "*") {
-			tests, err := sto.GetAllTestsWithPrefix(testid[:len(testid)-1])
-			if err != nil {
-				w.Write(
-					buildFailure(err.Error(), http.StatusInternalServerError, w),
-				)
-				return
-			}
-			w.Write(buildSuccess(tests, w))
-			return
-		}
+	w.Write(buildSuccess(test, w))
+}
 
-		// make sure Test exists
-		test, err := sto.GetTestByTestId(m.TestID(testid))
-		if err != nil {
-			w.Write(buildFailure(err.Error(), http.StatusInternalServerError, w))
-			return
-		} else if test == nil {
-			w.Write(buildFailure(
-				fmt.Sprintf("Cannot find Test<%s>", testid),
-				http.StatusNotFound,
-				w,
-			))
-			return
-		}
+func handleTestDelete(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	testid := vars["testid"]
 
-		switch r.Method {
-		case http.MethodGet:
-			w.Write(buildSuccess(test, w))
-			log.WithField("TestID", testid).Info("Test retrieved")
-		case http.MethodDelete:
-			if err := sto.DeleteTest(m.TestID(testid)); err != nil {
-				w.Write(
-					buildFailure(err.Error(), http.StatusInternalServerError, w),
-				)
-				return
-			}
-			w.Write(
-				buildSuccess(
-					map[string]string{
-						"testid": testid,
-					},
-					w,
-				),
-			)
-		default:
-			w.Write(buildFailure("Request not supported", http.StatusBadRequest, w))
-		}
-	}).Methods(http.MethodGet, http.MethodDelete)
+	test, err := sto.GetTestByTestId(m.TestID(testid))
+	if err != nil {
+		w.Write(buildFailure(err.Error(), http.StatusInternalServerError, w))
+		return
+	} else if test == nil {
+		w.Write(buildFailure(
+			fmt.Sprintf("Cannot find Test<%s>", testid),
+			http.StatusNotFound,
+			w,
+		))
+		return
+	}
 
-	// Get TestInstances by TestID
-	router.HandleFunc("/test-instances/{testid}", func(w http.ResponseWriter, r *http.Request) {
+	if err := sto.DeleteTest(m.TestID(testid)); err != nil {
+		w.Write(
+			buildFailure(err.Error(), http.StatusInternalServerError, w),
+		)
+		return
+	}
+
+	w.Write(
+		buildSuccess(
+			map[string]string{
+				"testid": testid,
+			},
+			w,
+		),
+	)
+}
+
+func handleTestStartBuilder(
+	server *APIServer,
+) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		testid := vars["testid"]
-
-		// TODO: prevent "all" from being a useable TestID
-		if testid == "all" {
-			tis, err := sto.GetAllTestInstances()
-			if err != nil {
-				w.Write(
-					buildFailure(err.Error(), http.StatusInternalServerError, w),
-				)
-				return
-			}
-			w.Write(buildSuccess(tis, w))
-			return
-		}
-
-		instances, err := sto.GetTestInstancesByTestID(m.TestID(testid))
-		if err != nil {
-			w.Write(buildFailure(err.Error(), http.StatusInternalServerError, w))
-			return
-		} else if instances == nil {
-			// empty
-			instances = []*m.TestInstance{}
-		}
-		w.Write(buildSuccess(instances, w))
-
-		log.WithField("TestID", testid).Info("Test instances retrieved")
-	}).Methods(http.MethodGet)
-
-	// Start adhoc
-	router.HandleFunc("/start-test/{id}", func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		testid := vars["id"]
 		err := server.jf.BeginTest(m.TestID(testid), "adhoc")
 		if err != nil {
 			w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
@@ -217,12 +197,15 @@ func (server *APIServer) Start(router *mux.Router) {
 				w,
 			),
 		)
-	})
+	}
+}
 
-	// stop TestInstance by TestID
-	router.HandleFunc("/stop-test/{id}", func(w http.ResponseWriter, r *http.Request) {
+func handleTestStopBuilder(
+	server *APIServer,
+) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		testid := vars["id"]
+		testid := vars["testid"]
 		err := server.jf.StopTest(m.TestID(testid))
 		if err != nil {
 			w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
@@ -235,33 +218,58 @@ func (server *APIServer) Start(router *mux.Router) {
 				w,
 			),
 		)
-	})
+	}
+}
 
-	prepareTestSchedule := func(w http.ResponseWriter, r *http.Request) *m.TestSchedule {
+func handleTestInstanceReadForTest(w http.ResponseWriter, r *http.Request) {
+	testid := r.FormValue("testid")
+	instances, err := sto.GetTestInstancesByTestID(m.TestID(testid))
+	if err != nil {
+		w.Write(buildFailure(err.Error(), http.StatusInternalServerError, w))
+		return
+	}
+	w.Write(buildSuccess(instances, w))
+}
+
+func handleTestInstanceReadAll(w http.ResponseWriter, r *http.Request) {
+	tis, err := sto.GetAllTestInstances()
+	if err != nil {
+		w.Write(
+			buildFailure(err.Error(), http.StatusInternalServerError, w),
+		)
+		return
+	}
+	w.Write(buildSuccess(tis, w))
+}
+
+func handleTestScheduleCreateBuilder(
+	server *APIServer,
+) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		bodyContent, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
-			return nil
+			return
 		}
 
 		err = m.Validate(reflect.TypeOf(m.TestSchedule{}), bodyContent)
 		if err != nil {
 			w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
-			return nil
+			return
 		}
 
 		var schedule m.TestSchedule
 		err = json.Unmarshal(bodyContent, &schedule)
 		if err != nil {
 			w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
-			return nil
+			return
 		}
 
 		// make sure cron spec is valid
 		err = server.sm.ValidateSpec(schedule.CronSpec)
 		if err != nil {
 			w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
-			return nil
+			return
 		}
 
 		// make sure specified Test exists
@@ -270,28 +278,18 @@ func (server *APIServer) Start(router *mux.Router) {
 			w.Write(
 				buildFailure(err.Error(), http.StatusInternalServerError, w),
 			)
-			return nil
+			return
 		} else if test == nil {
 			w.Write(buildFailure(
 				fmt.Sprintf("Cannot find Test<%s>", schedule.TestID),
 				http.StatusBadRequest,
 				w,
 			))
-			return nil
-		}
-
-		schedule.ID = m.TestScheduleID(schedule.Name)
-
-		return &schedule
-	}
-
-	router.HandleFunc("/test-schedules", func(w http.ResponseWriter, r *http.Request) {
-		schedule := prepareTestSchedule(w, r)
-		if schedule == nil {
 			return
 		}
 
-		if err := server.sm.Add(schedule, true); err != nil {
+		schedule.ID = m.TestScheduleID(schedule.Name)
+		if err := server.sm.Add(&schedule, true); err != nil {
 			w.Write(
 				buildFailure(err.Error(), http.StatusInternalServerError, w),
 			)
@@ -306,51 +304,42 @@ func (server *APIServer) Start(router *mux.Router) {
 				w,
 			),
 		)
-	}).Methods(http.MethodPost)
+	}
+}
 
-	// Get TestSchedules by TestID
-	router.HandleFunc("/test-schedules/{testid}", func(w http.ResponseWriter, r *http.Request) {
+func handleTestScheduleReadForTest(w http.ResponseWriter, r *http.Request) {
+	testid := r.FormValue("testid")
+
+	schedules, err := sto.GetTestSchedulesByTestID(m.TestID(testid))
+	if err != nil {
+		w.Write(
+			buildFailure(err.Error(), http.StatusInternalServerError, w),
+		)
+		return
+	}
+
+	w.Write(
+		buildSuccess(schedules, w),
+	)
+}
+
+func handleTestScheduleReadAll(w http.ResponseWriter, r *http.Request) {
+	schedules, err := sto.GetAllTestSchedules()
+	if err != nil {
+		w.Write(
+			buildFailure(err.Error(), http.StatusInternalServerError, w),
+		)
+		return
+	}
+	w.Write(buildSuccess(schedules, w))
+}
+
+func handleTestScheduleDeleteBuilder(
+	server *APIServer,
+) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		testid := vars["testid"]
-
-		// TODO: prevent "all" from being a useable TestID
-		if testid == "all" {
-			schedules, err := sto.GetAllTestSchedules()
-			if err != nil {
-				w.Write(
-					buildFailure(err.Error(), http.StatusInternalServerError, w),
-				)
-				return
-			}
-			w.Write(buildSuccess(schedules, w))
-			return
-		}
-
-		// schedules exist?
-		schedules, err := sto.GetTestSchedulesByTestID(m.TestID(testid))
-		if err != nil {
-			w.Write(
-				buildFailure(err.Error(), http.StatusInternalServerError, w),
-			)
-			return
-		} else if schedules == nil {
-			schedules = []*m.TestSchedule{}
-		}
-
-		switch r.Method {
-		case http.MethodGet:
-			w.Write(
-				buildSuccess(schedules, w),
-			)
-		default:
-			w.Write(buildFailure("Request not supported", http.StatusBadRequest, w))
-		}
-	}).Methods(http.MethodGet)
-
-	// Delete a test schedule given a testscheduleid
-	router.HandleFunc("/test-schedules/{id}", func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		scheduleid := vars["id"]
+		scheduleid := vars["scheduleid"]
 
 		// schedule exists?
 		schedule, err := sto.GetTestSchedule(m.TestScheduleID(scheduleid))
@@ -370,27 +359,54 @@ func (server *APIServer) Start(router *mux.Router) {
 			return
 		}
 
-		switch r.Method {
-		case http.MethodDelete:
-			if err := server.sm.Remove(m.TestScheduleID(scheduleid)); err != nil {
-				w.Write(
-					buildFailure(err.Error(), http.StatusInternalServerError, w),
-				)
-				return
-			}
-
+		if err := server.sm.Remove(m.TestScheduleID(scheduleid)); err != nil {
 			w.Write(
-				buildSuccess(
-					map[string]string{
-						"scheduleid": scheduleid,
-					},
-					w,
-				),
+				buildFailure(err.Error(), http.StatusInternalServerError, w),
 			)
-		default:
-			w.Write(buildFailure("Request not supported", http.StatusBadRequest, w))
+			return
 		}
-	}).Methods(http.MethodDelete)
+
+		w.Write(
+			buildSuccess(
+				map[string]string{
+					"scheduleid": scheduleid,
+				},
+				w,
+			),
+		)
+	}
+}
+
+// Start starts the APIServer
+func (server *APIServer) Start(router *mux.Router) {
+	router.Use(preResponse)
+
+	// tests
+	router.HandleFunc("/tests", handleTestCreate).Methods(http.MethodPost)
+	router.HandleFunc("/tests", handleTestReadForPrefix).Methods(http.MethodGet).
+		Queries("prefix", "{prefix}")
+	router.HandleFunc("/tests", handleTestReadAll).Methods(http.MethodGet)
+	router.HandleFunc("/tests/{testid}", handleTestRead).Methods(http.MethodGet)
+	router.HandleFunc("/tests/{testid}", handleTestDelete).Methods(http.MethodDelete)
+	router.HandleFunc("tests/{testid}/start", handleTestStartBuilder(server)).
+		Methods(http.MethodPost)
+	router.HandleFunc("tests/{testid}/stop", handleTestStopBuilder(server)).
+		Methods(http.MethodPost)
+
+	// test-instances
+	router.HandleFunc("/test-instances", handleTestInstanceReadForTest).
+		Methods(http.MethodGet).Queries("testid", "{testid}")
+	router.HandleFunc("/test-instances", handleTestInstanceReadAll).Methods(http.MethodGet)
+
+	// test-schedules
+	router.HandleFunc("/test-schedules", handleTestScheduleCreateBuilder(server)).
+		Methods(http.MethodPost)
+	router.HandleFunc("/test-schedules", handleTestScheduleReadForTest).
+		Methods(http.MethodGet).Queries("testid", "{testid}")
+	router.HandleFunc("/test-schedules", handleTestScheduleReadAll).
+		Methods(http.MethodGet)
+	router.HandleFunc("test-schedules/{scheduleid}", handleTestScheduleDeleteBuilder(server)).
+		Methods(http.MethodDelete)
 
 	// Get grafana dashboard metadata
 	router.HandleFunc("/dashboard-metadata", func(w http.ResponseWriter, r *http.Request) {
@@ -409,7 +425,7 @@ func (server *APIServer) Start(router *mux.Router) {
 }
 
 // NewAPIServer create a new APIServer
-func NewAPIServer(sched *sch.Scheduler, jf *mgr.JobFunnel, sm *mgr.ScheduleManager) *APIServer {
+func NewAPIServer(jf mgr.JobFunnel, sm mgr.ScheduleManager) *APIServer {
 	db, _ := dash.NewDashboard()
-	return &APIServer{sched, jf, sm, db}
+	return &APIServer{jf, sm, db}
 }

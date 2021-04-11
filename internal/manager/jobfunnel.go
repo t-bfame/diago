@@ -17,7 +17,14 @@ import (
 
 // JobFunnel is used to interface with the Scheduler while
 // keeping track of ongoing Tests
-type JobFunnel struct {
+type JobFunnel interface {
+	startOp(key string)
+	endOp(key string)
+	BeginTest(testID m.TestID, testType string) error
+	StopTest(testID m.TestID) error
+}
+
+type JobFunnelImpl struct {
 	globalLock *sync.Mutex
 	testLocks  map[string]*sync.Mutex
 	ongoing    map[string]bool
@@ -25,7 +32,7 @@ type JobFunnel struct {
 	chaosmgr   *cm.ChaosManager
 }
 
-func (jf *JobFunnel) startOp(key string) {
+func (jf *JobFunnelImpl) startOp(key string) {
 	jf.globalLock.Lock()
 	_, exists := jf.testLocks[key]
 	if !exists {
@@ -35,13 +42,13 @@ func (jf *JobFunnel) startOp(key string) {
 	jf.testLocks[key].Lock()
 }
 
-func (jf *JobFunnel) endOp(key string) {
+func (jf *JobFunnelImpl) endOp(key string) {
 	jf.testLocks[key].Unlock()
 }
 
 // BeginTest creates a TestInstance for the Test with the specified TestID
 // if another instance of the same Test is not already ongoing
-func (jf *JobFunnel) BeginTest(testID m.TestID, testType string) error {
+func (jf *JobFunnelImpl) BeginTest(testID m.TestID, testType string) error {
 	key := string(testID)
 	jf.startOp(key)
 	defer jf.endOp(key)
@@ -194,7 +201,7 @@ func (jf *JobFunnel) BeginTest(testID m.TestID, testType string) error {
 
 // StopTest stops the running TestInstance for the Test corresponding
 // to the given TestID, if it exists
-func (jf *JobFunnel) StopTest(testID m.TestID) error {
+func (jf *JobFunnelImpl) StopTest(testID m.TestID) error {
 	key := string(testID)
 	jf.startOp(key)
 	defer jf.endOp(key)
@@ -236,13 +243,34 @@ func (jf *JobFunnel) StopTest(testID m.TestID) error {
 }
 
 // NewJobFunnel creates a new JobFunnel
-func NewJobFunnel(scheduler *s.Scheduler, cm *cm.ChaosManager) *JobFunnel {
-	jf := JobFunnel{
+func NewJobFunnel(scheduler *s.Scheduler, cm *cm.ChaosManager) JobFunnel {
+	jf := &JobFunnelImpl{
 		&sync.Mutex{},
 		map[string]*sync.Mutex{},
 		map[string]bool{},
 		scheduler,
 		cm,
 	}
-	return &jf
+	return jf
+}
+
+type TestingJobFunnel struct {
+	Starts []m.TestID
+	Stops  []m.TestID
+}
+
+func (jf *TestingJobFunnel) startOp(key string) {}
+func (jf *TestingJobFunnel) endOp(key string)   {}
+func (jf *TestingJobFunnel) BeginTest(
+	testID m.TestID,
+	testType string,
+) error {
+	jf.Starts = append(jf.Starts, testID)
+	return nil
+}
+func (jf *TestingJobFunnel) StopTest(
+	testID m.TestID,
+) error {
+	jf.Stops = append(jf.Stops, testID)
+	return nil
 }

@@ -40,7 +40,7 @@ func main() {
 
 		// Set prefix for api paths
 		apiRouter := router.PathPrefix("/api").Subrouter()
-		apiServer := server.NewAPIServer(s, jf, sm)
+		apiServer := server.NewAPIServer(jf, sm)
 		apiServer.Start(apiRouter)
 
 		server.NewUIBox(router)
