@@ -57,14 +57,14 @@ make_dummy_test3() {
   output=$(curl "$base:30007/api/tests"\
         -H "Content-Type: application/json"\
         -d "{
-            \"Name\": \"Test5\",
+            \"Name\": \"Test1\",
             \"Jobs\": [
               {
                 \"Name\": \"alpha\",
-                \"Group\": \"tests-worker\",
+                \"Group\": \"test-worker\",
                 \"Priority\": 0,
                 \"Frequency\":  50,
-			          \"Duration\":   60,
+			          \"Duration\":   300,
 			          \"HTTPMethod\": \"GET\",
 			          \"HTTPUrl\":    \"http://dummy-service.default.svc.cluster.local:8080\"
               }
@@ -75,8 +75,8 @@ make_dummy_test3() {
                 \"Selectors\": {
                   \"app\": \"dummy\"
                 },
-                \"Timeout\":  10,
-			          \"Count\":   1
+                \"Timeout\":  20,
+			          \"Count\":   2
               }
             ]
           }")
