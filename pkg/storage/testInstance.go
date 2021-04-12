@@ -52,11 +52,18 @@ func AddTestInstance(testInstance *model.TestInstance) error {
 
 func DeleteTestInstance(testInstanceID model.TestInstanceID) error {
 	if err := db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(TestInstanceBucketName))
-		if b == nil {
-			return fmt.Errorf("missing bucket '%s'", TestInstanceBucketName)
+		var testID model.TestID
+		if instance, err := doGetTestInstance(tx, testInstanceID); err != nil {
+			return err
+		} else {
+			testID = instance.TestID
 		}
-		if err := b.Delete([]byte(testInstanceID)); err != nil {
+
+		if err := doDeleteTestInstance(tx, testInstanceID); err != nil {
+			return err
+		}
+
+		if err := doRemoveTestInstanceIndex(tx, testID, testInstanceID); err != nil {
 			return err
 		}
 		return nil
@@ -70,15 +77,12 @@ func DeleteTestInstance(testInstanceID model.TestInstanceID) error {
 func GetTestInstance(testInstanceID model.TestInstanceID) (*model.TestInstance, error) {
 	var result *model.TestInstance
 	if err := db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(TestInstanceBucketName))
-		data := b.Get([]byte(testInstanceID))
-		if data == nil {
+		if instance, err := doGetTestInstance(tx, testInstanceID); err != nil {
+			return err
+		} else {
+			result = instance
 			return nil
 		}
-		if err := tools.GobDecode(&result, data); err != nil {
-			return fmt.Errorf("failed to decode TestInstance due to: %s", err)
-		}
-		return nil
 	}); err != nil {
 		log.WithError(err).WithField("testInstanceID", testInstanceID).Error("Failed to GetTestInstance")
 		return nil, err
@@ -151,6 +155,19 @@ func GetTestInstancesByTestID(testID model.TestID) ([]*model.TestInstance, error
 	return result, nil
 }
 
+func doGetTestInstance(tx *bolt.Tx, testInstanceID model.TestInstanceID) (*model.TestInstance, error) {
+	var result *model.TestInstance
+	b := tx.Bucket([]byte(TestInstanceBucketName))
+	data := b.Get([]byte(testInstanceID))
+	if data == nil {
+		return nil, nil
+	}
+	if err := tools.GobDecode(&result, data); err != nil {
+		return nil, fmt.Errorf("failed to decode TestInstance due to: %s", err)
+	}
+	return result, nil
+}
+
 func doAddTestInstance(tx *bolt.Tx, testInstance *model.TestInstance) error {
 	b := tx.Bucket([]byte(TestInstanceBucketName))
 	if b == nil {
@@ -161,6 +178,17 @@ func doAddTestInstance(tx *bolt.Tx, testInstance *model.TestInstance) error {
 		return fmt.Errorf("failed to encode TestInstance due to: %s", err)
 	}
 	if err := b.Put([]byte(testInstance.ID), enc); err != nil {
+		return err
+	}
+	return nil
+}
+
+func doDeleteTestInstance(tx *bolt.Tx, testInstanceID model.TestInstanceID) error {
+	b := tx.Bucket([]byte(TestInstanceBucketName))
+	if b == nil {
+		return fmt.Errorf("missing bucket '%s'", TestInstanceBucketName)
+	}
+	if err := b.Delete([]byte(testInstanceID)); err != nil {
 		return err
 	}
 	return nil
@@ -207,6 +235,35 @@ func doAddTestInstanceIndex(tx *bolt.Tx, testInstance *model.TestInstance) error
 	}
 
 	index.TestInstanceIds[instanceID] = true
+
+	enc, err := tools.GobEncode(index)
+	if err != nil {
+		return fmt.Errorf("failed to encode IdxTestID2TestInstanceID due to: %s", err)
+	}
+	if err := b.Put([]byte(testID), enc); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func doRemoveTestInstanceIndex(tx *bolt.Tx, testID model.TestID, instanceID model.TestInstanceID) error {
+	b := tx.Bucket([]byte(IdxTestID2TestInstanceIDBucketName))
+	if b == nil {
+		return fmt.Errorf("missing bucket '%s'", IdxTestID2TestInstanceIDBucketName)
+	}
+
+	var index *IdxTestID2TestInstanceID
+	if value, err := doGetTestInstanceIndex(tx, testID); err != nil {
+		return err
+	} else {
+		index = value
+		if index == nil {
+			return nil
+		}
+	}
+
+	delete(index.TestInstanceIds, instanceID)
 
 	enc, err := tools.GobEncode(index)
 	if err != nil {

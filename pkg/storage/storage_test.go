@@ -1,11 +1,10 @@
-package internal
+package storage
 
 import (
 	"os"
 	"testing"
 
 	"github.com/t-bfame/diago/pkg/model"
-	sto "github.com/t-bfame/diago/pkg/storage"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -94,11 +93,11 @@ func TestAddAndGetJob(t *testing.T) {
 	initTestDB(t)
 	defer removeTestDB()
 
-	if err := sto.AddJob(job1); err != nil {
+	if err := AddJob(job1); err != nil {
 		t.Error("Failed to add job 1")
 	}
 
-	retrievedJob, err := sto.GetJobByJobId(jobId1)
+	retrievedJob, err := GetJobByJobId(jobId1)
 	if err != nil {
 		t.Error("Error getting job 1")
 	} else {
@@ -110,14 +109,14 @@ func TestAddAndGetAllJobs(t *testing.T) {
 	initTestDB(t)
 	defer removeTestDB()
 
-	if err := sto.AddJob(job1); err != nil {
+	if err := AddJob(job1); err != nil {
 		t.Error("Failed to add job 1")
 	}
-	if err := sto.AddJob(job2); err != nil {
+	if err := AddJob(job2); err != nil {
 		t.Error("Failed to add job 2")
 	}
 
-	retrievedJobs, err := sto.GetAllJobs()
+	retrievedJobs, err := GetAllJobs()
 	if err != nil {
 		t.Error("Error getting all jobs")
 	} else {
@@ -129,15 +128,15 @@ func TestAddAndDeleteJob(t *testing.T) {
 	initTestDB(t)
 	defer removeTestDB()
 
-	if err := sto.AddJob(job1); err != nil {
+	if err := AddJob(job1); err != nil {
 		t.Error("Failed to add job 1")
 	}
 
-	if err := sto.DeleteJob(jobId1); err != nil {
+	if err := DeleteJob(jobId1); err != nil {
 		t.Error("Failed to delete job 1")
 	}
 
-	retrievedJob, err := sto.GetJobByJobId(jobId1)
+	retrievedJob, err := GetJobByJobId(jobId1)
 	if err != nil {
 		t.Error("Error getting job 1")
 	} else {
@@ -149,11 +148,11 @@ func TestAddAndGetTest(t *testing.T) {
 	initTestDB(t)
 	defer removeTestDB()
 
-	if err := sto.AddTest(test1); err != nil {
+	if err := AddTest(test1); err != nil {
 		t.Error("Failed to add test 1")
 	}
 
-	retrievedTest, err := sto.GetTestByTestId(testId1)
+	retrievedTest, err := GetTestByTestId(testId1)
 	if err != nil {
 		t.Error("Error getting test 1")
 	} else {
@@ -165,14 +164,14 @@ func TestAddAndGetAllTests(t *testing.T) {
 	initTestDB(t)
 	defer removeTestDB()
 
-	if err := sto.AddTest(test1); err != nil {
+	if err := AddTest(test1); err != nil {
 		t.Error("Failed to add test 1")
 	}
-	if err := sto.AddTest(test2); err != nil {
+	if err := AddTest(test2); err != nil {
 		t.Error("Failed to add test 2")
 	}
 
-	retrievedTests, err := sto.GetAllTests()
+	retrievedTests, err := GetAllTests()
 	if err != nil {
 		t.Error("Error getting all tests")
 	} else {
@@ -184,14 +183,14 @@ func TestAddAndGetAllTestsWithPrefix(t *testing.T) {
 	initTestDB(t)
 	defer removeTestDB()
 
-	if err := sto.AddTest(test1); err != nil {
+	if err := AddTest(test1); err != nil {
 		t.Error("Failed to add test 1")
 	}
-	if err := sto.AddTest(test2); err != nil {
+	if err := AddTest(test2); err != nil {
 		t.Error("Failed to add test 2")
 	}
 
-	retrievedTests, err := sto.GetAllTestsWithPrefix(testIdPrefix)
+	retrievedTests, err := GetAllTestsWithPrefix(testIdPrefix)
 	if err != nil {
 		t.Error("Error getting all tests")
 	} else {
@@ -203,7 +202,7 @@ func TestGetAllTestsWithPrefixDoesNotReturn(t *testing.T) {
 	initTestDB(t)
 	defer removeTestDB()
 
-	retrievedTests, err := sto.GetAllTestsWithPrefix(testIdPrefix)
+	retrievedTests, err := GetAllTestsWithPrefix(testIdPrefix)
 	if err != nil {
 		t.Error("Error getting all tests")
 	} else {
@@ -215,15 +214,15 @@ func TestAddAndDeleteTest(t *testing.T) {
 	initTestDB(t)
 	defer removeTestDB()
 
-	if err := sto.AddTest(test1); err != nil {
+	if err := AddTest(test1); err != nil {
 		t.Error("Failed to add test 1")
 	}
 
-	if err := sto.DeleteTest(testId1); err != nil {
+	if err := DeleteTest(testId1); err != nil {
 		t.Error("Failed to delete test 1")
 	}
 
-	retrievedTest, err := sto.GetTestByTestId(testId1)
+	retrievedTest, err := GetTestByTestId(testId1)
 	if err != nil {
 		t.Error("Error getting test 1")
 	} else {
@@ -235,11 +234,11 @@ func TestAddAndGetTestInstance(t *testing.T) {
 	initTestDB(t)
 	defer removeTestDB()
 
-	if err := sto.AddTestInstance(testInstance1); err != nil {
+	if err := AddTestInstance(testInstance1); err != nil {
 		t.Error("Failed to add test instance 1")
 	}
 
-	retrievedTestInstance, err := sto.GetTestInstance(testInstanceId1)
+	retrievedTestInstance, err := GetTestInstance(testInstanceId1)
 	if err != nil {
 		t.Error("Error getting test instance 1")
 	} else {
@@ -251,14 +250,14 @@ func TestAddAndGetAllTestInstances(t *testing.T) {
 	initTestDB(t)
 	defer removeTestDB()
 
-	if err := sto.AddTestInstance(testInstance1); err != nil {
+	if err := AddTestInstance(testInstance1); err != nil {
 		t.Error("Failed to add test instance 1")
 	}
-	if err := sto.AddTestInstance(testInstance2); err != nil {
+	if err := AddTestInstance(testInstance2); err != nil {
 		t.Error("Failed to add test instance 2")
 	}
 
-	retrievedTestInstances, err := sto.GetAllTestInstances()
+	retrievedTestInstances, err := GetAllTestInstances()
 	if err != nil {
 		t.Error("Error getting all test instances")
 	} else {
@@ -270,14 +269,14 @@ func TestAddAndGetTestInstances(t *testing.T) {
 	initTestDB(t)
 	defer removeTestDB()
 
-	if err := sto.AddTestInstance(testInstance1); err != nil {
+	if err := AddTestInstance(testInstance1); err != nil {
 		t.Error("Failed to add test instance 1")
 	}
-	if err := sto.AddTestInstance(testInstance2); err != nil {
+	if err := AddTestInstance(testInstance2); err != nil {
 		t.Error("Failed to add test instance 2")
 	}
 
-	retrievedTestInstances, err := sto.GetTestInstances([]model.TestInstanceID{testInstanceId1, testInstanceId2})
+	retrievedTestInstances, err := GetTestInstances([]model.TestInstanceID{testInstanceId1, testInstanceId2})
 	if err != nil {
 		t.Error("Error getting test instances")
 	} else {
@@ -289,14 +288,14 @@ func TestAddAndGetTestInstancesByTestID(t *testing.T) {
 	initTestDB(t)
 	defer removeTestDB()
 
-	if err := sto.AddTestInstance(testInstance1); err != nil {
+	if err := AddTestInstance(testInstance1); err != nil {
 		t.Error("Failed to add test instance 1")
 	}
-	if err := sto.AddTestInstance(testInstance2); err != nil {
+	if err := AddTestInstance(testInstance2); err != nil {
 		t.Error("Failed to add test instance 2")
 	}
 
-	retrievedTestInstances, err := sto.GetTestInstancesByTestID(testId1)
+	retrievedTestInstances, err := GetTestInstancesByTestID(testId1)
 	if err != nil {
 		t.Error("Error getting test instances")
 	} else {
@@ -308,22 +307,22 @@ func TestAddAndDeleteTestInstance(t *testing.T) {
 	initTestDB(t)
 	defer removeTestDB()
 
-	if err := sto.AddTestInstance(testInstance1); err != nil {
+	if err := AddTestInstance(testInstance1); err != nil {
 		t.Error("Failed to add test instance 1")
 	}
 
-	if err := sto.DeleteTestInstance(testInstanceId1); err != nil {
+	if err := DeleteTestInstance(testInstanceId1); err != nil {
 		t.Error("Failed to delete test instance 1")
 	}
 
-	retrievedTestInstance, err := sto.GetTestInstance(testInstanceId1)
+	retrievedTestInstance, err := GetTestInstance(testInstanceId1)
 	if err != nil {
 		t.Error("Failed to get test instance 1")
 	} else {
 		assert.Nil(t, retrievedTestInstance)
 	}
 
-	retrievedTestInstances, err := sto.GetTestInstancesByTestID(testId1)
+	retrievedTestInstances, err := GetTestInstancesByTestID(testId1)
 	if err != nil {
 		t.Error("Error getting test instance 1")
 	} else {
@@ -335,11 +334,11 @@ func TestAddAndGetTestSchedule(t *testing.T) {
 	initTestDB(t)
 	defer removeTestDB()
 
-	if err := sto.AddTestSchedule(testSchedule1); err != nil {
+	if err := AddTestSchedule(testSchedule1); err != nil {
 		t.Error("Failed to add test schedule 1")
 	}
 
-	retrievedTestSchedule, err := sto.GetTestSchedule(testScheduleId1)
+	retrievedTestSchedule, err := GetTestSchedule(testScheduleId1)
 	if err != nil {
 		t.Error("Error getting test schedule 1")
 	} else {
@@ -351,14 +350,14 @@ func TestAddAndGetAllTestSchedules(t *testing.T) {
 	initTestDB(t)
 	defer removeTestDB()
 
-	if err := sto.AddTestSchedule(testSchedule1); err != nil {
+	if err := AddTestSchedule(testSchedule1); err != nil {
 		t.Error("Failed to add test schedule 1")
 	}
-	if err := sto.AddTestSchedule(testSchedule2); err != nil {
+	if err := AddTestSchedule(testSchedule2); err != nil {
 		t.Error("Failed to add test schedule 2")
 	}
 
-	retrievedTestSchedules, err := sto.GetAllTestSchedules()
+	retrievedTestSchedules, err := GetAllTestSchedules()
 	if err != nil {
 		t.Error("Error getting all test schedules")
 	} else {
@@ -370,14 +369,14 @@ func TestAddAndGetTestSchedules(t *testing.T) {
 	initTestDB(t)
 	defer removeTestDB()
 
-	if err := sto.AddTestSchedule(testSchedule1); err != nil {
+	if err := AddTestSchedule(testSchedule1); err != nil {
 		t.Error("Failed to add test schedule 1")
 	}
-	if err := sto.AddTestSchedule(testSchedule2); err != nil {
+	if err := AddTestSchedule(testSchedule2); err != nil {
 		t.Error("Failed to add test schedule 2")
 	}
 
-	retrievedTestSchedules, err := sto.GetTestSchedules([]model.TestScheduleID{testScheduleId1, testScheduleId2})
+	retrievedTestSchedules, err := GetTestSchedules([]model.TestScheduleID{testScheduleId1, testScheduleId2})
 	if err != nil {
 		t.Error("Error getting test schedules")
 	} else {
@@ -389,14 +388,14 @@ func TestAddAndGetTestSchedulesByTestID(t *testing.T) {
 	initTestDB(t)
 	defer removeTestDB()
 
-	if err := sto.AddTestSchedule(testSchedule1); err != nil {
+	if err := AddTestSchedule(testSchedule1); err != nil {
 		t.Error("Failed to add test schedule 1")
 	}
-	if err := sto.AddTestSchedule(testSchedule2); err != nil {
+	if err := AddTestSchedule(testSchedule2); err != nil {
 		t.Error("Failed to add test schedule 2")
 	}
 
-	retrievedTestSchedules, err := sto.GetTestSchedulesByTestID(testId1)
+	retrievedTestSchedules, err := GetTestSchedulesByTestID(testId1)
 	if err != nil {
 		t.Error("Error getting test schedules")
 	} else {
@@ -408,22 +407,22 @@ func TestAddAndDeleteTestSchedule(t *testing.T) {
 	initTestDB(t)
 	defer removeTestDB()
 
-	if err := sto.AddTestSchedule(testSchedule1); err != nil {
+	if err := AddTestSchedule(testSchedule1); err != nil {
 		t.Error("Failed to add test schedule 1")
 	}
 
-	if err := sto.DeleteTestSchedule(testScheduleId1); err != nil {
+	if err := DeleteTestSchedule(testScheduleId1); err != nil {
 		t.Error("Failed to delete test schedule 1")
 	}
 
-	retrievedTestSchedule, err := sto.GetTestSchedule(testScheduleId1)
+	retrievedTestSchedule, err := GetTestSchedule(testScheduleId1)
 	if err != nil {
 		t.Error("Error getting test schedule 1")
 	} else {
 		assert.Nil(t, retrievedTestSchedule)
 	}
 
-	retrievedTestSchedules, err := sto.GetTestSchedulesByTestID(testId1)
+	retrievedTestSchedules, err := GetTestSchedulesByTestID(testId1)
 	if err != nil {
 		t.Error("Error getting test schedules")
 	} else {
@@ -432,7 +431,7 @@ func TestAddAndDeleteTestSchedule(t *testing.T) {
 }
 
 func initTestDB(t *testing.T) {
-	if err := sto.InitDatabase(testDBName); err != nil {
+	if err := InitDatabase(testDBName); err != nil {
 		t.Error("Failed to init database")
 	}
 }
