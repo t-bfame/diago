@@ -11,8 +11,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// This is the boltDB bucket name for storing "model/Test".
 const TestBucketName = "Test"
 
+// Initializes boltDB for "model/Test" storage.
 func initStorageTest(db *bolt.DB) error {
 	if err := db.Update(createInitBucketFunc(TestBucketName)); err != nil {
 		return err
@@ -20,6 +22,7 @@ func initStorageTest(db *bolt.DB) error {
 	return nil
 }
 
+// Add a "model/Test" to the storage.
 func AddTest(test *model.Test) error {
 	if err := db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(TestBucketName))
@@ -41,6 +44,7 @@ func AddTest(test *model.Test) error {
 	return nil
 }
 
+// Delete a "model/Test" with the specified TestID from the storage.
 func DeleteTest(testID model.TestID) error {
 	if err := db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(TestBucketName))
@@ -58,6 +62,7 @@ func DeleteTest(testID model.TestID) error {
 	return nil
 }
 
+// Retrieve a "model/Test" with the specified TestID from the storage.
 func GetTestByTestId(testId model.TestID) (*model.Test, error) {
 	var result *model.Test
 	if err := db.View(func(tx *bolt.Tx) error {
@@ -78,6 +83,7 @@ func GetTestByTestId(testId model.TestID) (*model.Test, error) {
 	return result, nil
 }
 
+// Retrieve all "model/Test" stored in the storage.
 func GetAllTests() ([]*model.Test, error) {
 	var tests = make([]*model.Test, 0)
 	if err := db.View(func(tx *bolt.Tx) error {
@@ -100,6 +106,7 @@ func GetAllTests() ([]*model.Test, error) {
 	return tests, nil
 }
 
+// Retrieve all "model/Test" with the specified JobID prefix from the storage.
 func GetAllTestsWithPrefix(prefixStr string) ([]*model.Test, error) {
 	var tests = make([]*model.Test, 0)
 	if err := db.View(func(tx *bolt.Tx) error {

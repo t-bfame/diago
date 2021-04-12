@@ -13,15 +13,19 @@ import (
 )
 
 const (
-	TestInstanceBucketName             = "TestInstance"
+	// This is the boltDB bucket name for storing "model/TestInstance".
+	TestInstanceBucketName = "TestInstance"
+	// This is the boltDB bucket name for storing "IdxTestID2TestInstanceID".
 	IdxTestID2TestInstanceIDBucketName = "TestInstanceIdx"
 )
 
+// IdxTestID2TestInstanceID stores mapping from one TestID to multiple TestInstanceID.
 type IdxTestID2TestInstanceID struct {
 	TestId          model.TestID
 	TestInstanceIds map[model.TestInstanceID]bool
 }
 
+// Initialize boltDB for "model/TestInstance" storage.
 func initStorageTestInstance(db *bolt.DB) error {
 	if err := db.Update(createInitBucketFunc(TestInstanceBucketName)); err != nil {
 		return err
@@ -34,6 +38,7 @@ func initStorageTestInstance(db *bolt.DB) error {
 	return nil
 }
 
+// Add a "model/TestInstance" to the storage.
 func AddTestInstance(testInstance *model.TestInstance) error {
 	if err := db.Update(func(tx *bolt.Tx) error {
 		if err := doAddTestInstance(tx, testInstance); err != nil {
@@ -50,6 +55,7 @@ func AddTestInstance(testInstance *model.TestInstance) error {
 	return nil
 }
 
+// Delete a "model/TestInstance" with the specified TestInstanceID from the storage.
 func DeleteTestInstance(testInstanceID model.TestInstanceID) error {
 	if err := db.Update(func(tx *bolt.Tx) error {
 		var testID model.TestID
@@ -74,6 +80,7 @@ func DeleteTestInstance(testInstanceID model.TestInstanceID) error {
 	return nil
 }
 
+// Retrieve a "model/TestInstance" with the specified TestInstanceID from the storage.
 func GetTestInstance(testInstanceID model.TestInstanceID) (*model.TestInstance, error) {
 	var result *model.TestInstance
 	if err := db.View(func(tx *bolt.Tx) error {
@@ -90,6 +97,7 @@ func GetTestInstance(testInstanceID model.TestInstanceID) (*model.TestInstance, 
 	return result, nil
 }
 
+// Retrieve all "model/TestInstance" stored in the storage.
 func GetAllTestInstances() ([]*model.TestInstance, error) {
 	var instances = make([]*model.TestInstance, 0)
 	if err := db.View(func(tx *bolt.Tx) error {
@@ -112,6 +120,7 @@ func GetAllTestInstances() ([]*model.TestInstance, error) {
 	return instances, nil
 }
 
+// Retrieve an array of "model/TestInstance" with the specified array of TestInstanceID from the storage.
 func GetTestInstances(testInstanceIDs []model.TestInstanceID) ([]*model.TestInstance, error) {
 	var result = make([]*model.TestInstance, 0)
 	if err := db.View(func(tx *bolt.Tx) error {
@@ -128,6 +137,7 @@ func GetTestInstances(testInstanceIDs []model.TestInstanceID) ([]*model.TestInst
 	return result, nil
 }
 
+// Retrieve all "model/TestInstance" with specified TestID from the storage.
 func GetTestInstancesByTestID(testID model.TestID) ([]*model.TestInstance, error) {
 	var result = make([]*model.TestInstance, 0)
 	if err := db.View(func(tx *bolt.Tx) error {
@@ -155,6 +165,7 @@ func GetTestInstancesByTestID(testID model.TestID) ([]*model.TestInstance, error
 	return result, nil
 }
 
+// Internal function used to retrieve a "model/TestInstance" with the specified TestInstanceID using a provided boltDB transaction.
 func doGetTestInstance(tx *bolt.Tx, testInstanceID model.TestInstanceID) (*model.TestInstance, error) {
 	var result *model.TestInstance
 	b := tx.Bucket([]byte(TestInstanceBucketName))
@@ -168,6 +179,7 @@ func doGetTestInstance(tx *bolt.Tx, testInstanceID model.TestInstanceID) (*model
 	return result, nil
 }
 
+// Internal function used to add a "model/TestInstance" using the provided boltDB transaction.
 func doAddTestInstance(tx *bolt.Tx, testInstance *model.TestInstance) error {
 	b := tx.Bucket([]byte(TestInstanceBucketName))
 	if b == nil {
@@ -183,6 +195,7 @@ func doAddTestInstance(tx *bolt.Tx, testInstance *model.TestInstance) error {
 	return nil
 }
 
+// Internal function used to delete a "model/TestInstance" with the specified TestInstanceID using the provided boltDB transaction.
 func doDeleteTestInstance(tx *bolt.Tx, testInstanceID model.TestInstanceID) error {
 	b := tx.Bucket([]byte(TestInstanceBucketName))
 	if b == nil {
@@ -194,6 +207,7 @@ func doDeleteTestInstance(tx *bolt.Tx, testInstanceID model.TestInstanceID) erro
 	return nil
 }
 
+// Internal function used to retrieve a IdxTestID2TestInstanceID with the specified TestID from the storage.
 func doGetTestInstanceIndex(tx *bolt.Tx, testID model.TestID) (*IdxTestID2TestInstanceID, error) {
 	b := tx.Bucket([]byte(IdxTestID2TestInstanceIDBucketName))
 	if b == nil {
@@ -212,6 +226,7 @@ func doGetTestInstanceIndex(tx *bolt.Tx, testID model.TestID) (*IdxTestID2TestIn
 	return index, nil
 }
 
+// Internal function used to add a IdxTestID2TestInstanceID to the storage.
 func doAddTestInstanceIndex(tx *bolt.Tx, testInstance *model.TestInstance) error {
 	testID := testInstance.TestID
 	instanceID := testInstance.ID
@@ -247,6 +262,7 @@ func doAddTestInstanceIndex(tx *bolt.Tx, testInstance *model.TestInstance) error
 	return nil
 }
 
+// Internal function used to remove a index mapping from the specified TestID to the specified TestInstanceID from the storage.
 func doRemoveTestInstanceIndex(tx *bolt.Tx, testID model.TestID, instanceID model.TestInstanceID) error {
 	b := tx.Bucket([]byte(IdxTestID2TestInstanceIDBucketName))
 	if b == nil {
@@ -276,6 +292,7 @@ func doRemoveTestInstanceIndex(tx *bolt.Tx, testID model.TestID, instanceID mode
 	return nil
 }
 
+// Internal function used to get all "model/TestInstance" with specified array of TestInstanceID stored in the storage using the provided boltDB transaction.
 func doGetTestInstances(tx *bolt.Tx, testInstanceIDs []model.TestInstanceID) ([]*model.TestInstance, error) {
 	instances := make([]*model.TestInstance, 0)
 	b := tx.Bucket([]byte(TestInstanceBucketName))
@@ -293,6 +310,7 @@ func doGetTestInstances(tx *bolt.Tx, testInstanceIDs []model.TestInstanceID) ([]
 	return instances, nil
 }
 
+// Internal function used to retrieve a list of "model/TestInstance" with TestInstanceID in the specified map.
 func doGetTestInstancesByIDMap(tx *bolt.Tx, testInstanceIDs map[model.TestInstanceID]bool) ([]*model.TestInstance, error) {
 	instances := make([]*model.TestInstance, 0)
 	b := tx.Bucket([]byte(TestInstanceBucketName))

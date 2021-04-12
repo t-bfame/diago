@@ -18,6 +18,7 @@ type SchedulerModel struct {
 	client *v1alpha1.DiagoV1Alpha1Client
 }
 
+// Internal function used to create a v1 container using the specified name, image, and env variables.
 func (sm SchedulerModel) createContainerSpec(name string, image string, env map[string]string) (containers []v1.Container) {
 	envVars := []v1.EnvVar{}
 
@@ -38,6 +39,7 @@ func (sm SchedulerModel) createContainerSpec(name string, image string, env map[
 	return []v1.Container{container}
 }
 
+// Internal function used to retrieves a SchedulerModel's env variables for a specified group and instance.
 func (sm SchedulerModel) getEnvs(group string, instance InstanceID) map[string]string {
 	workerConfig, err := sm.client.WorkerGroups(c.Diago.DefaultNamespace).Get(group)
 
@@ -58,6 +60,7 @@ func (sm SchedulerModel) getEnvs(group string, instance InstanceID) map[string]s
 	return envs
 }
 
+// Internal function used to retrieves labels for a specified group and instance.
 func (sm SchedulerModel) getLabels(group string, instance InstanceID) map[string]string {
 	labels := map[string]string{
 		"group":    group,
@@ -67,6 +70,7 @@ func (sm SchedulerModel) getLabels(group string, instance InstanceID) map[string
 	return labels
 }
 
+// Internal function used to retrieve a SchedulerModel's configs for a specified group and instance.
 func (sm SchedulerModel) getConfigs(group string, instance InstanceID) (image string, env map[string]string, labels map[string]string, err error) {
 	workerConfig, err := sm.client.WorkerGroups(c.Diago.DefaultNamespace).Get(group)
 
@@ -79,6 +83,7 @@ func (sm SchedulerModel) getConfigs(group string, instance InstanceID) (image st
 	return image, sm.getEnvs(group, instance), sm.getLabels(group, instance), nil
 }
 
+// Internal function used to create a SchedulerModel's v1 pod config for a specified group and instance.
 func (sm SchedulerModel) createPodConfig(group string, instance InstanceID) (podConfig *v1.Pod, err error) {
 	name := group + "-" + string(instance)
 	image, env, labels, err := sm.getConfigs(group, instance)
@@ -104,6 +109,7 @@ func (sm SchedulerModel) createPodConfig(group string, instance InstanceID) (pod
 	return pod, nil
 }
 
+// Internal function used to get a SchedulerModel's capacity.
 func (sm SchedulerModel) getCapacity(group string) (uint64, error) {
 
 	workerConfig, err := sm.client.WorkerGroups(c.Diago.DefaultNamespace).Get(group)
@@ -116,6 +122,7 @@ func (sm SchedulerModel) getCapacity(group string) (uint64, error) {
 	return uint64(workerConfig.Spec.Capacity), nil
 }
 
+// Internal function used to check if a specified group exists in a SchedulerModel.
 func (sm SchedulerModel) checkExists(group string) bool {
 	_, err := sm.client.WorkerGroups(c.Diago.DefaultNamespace).Get(group)
 
@@ -127,6 +134,7 @@ func (sm SchedulerModel) checkExists(group string) bool {
 	return true
 }
 
+// Creates a new SchedulerModel using the provided config.
 func NewSchedulerModel(config *rest.Config) (*SchedulerModel, error) {
 	crdclient, err := v1alpha1.NewClient(config)
 

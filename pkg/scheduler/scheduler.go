@@ -11,7 +11,7 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-// Scheduler lalalal
+// Scheduler stores data belonging to a scheduler.
 type Scheduler struct {
 	clientset *kubernetes.Clientset
 	model     *SchedulerModel
@@ -20,6 +20,7 @@ type Scheduler struct {
 	pgmux sync.Mutex
 }
 
+// Internal function used to create a pod group in a Scheduler for a group
 func (s *Scheduler) createPodGroup(groupName string, failNonExistentGroup bool) (pg *PodGroup, err error) {
 	pg, ok := s.podGroups[groupName]
 
@@ -55,7 +56,7 @@ func (s *Scheduler) createPodGroup(groupName string, failNonExistentGroup bool) 
 	return s.podGroups[groupName], nil
 }
 
-// Submit dingdingi
+// Submit submits a job in a Scheduler
 func (s *Scheduler) Submit(j m.Job) (events chan Event, err error) {
 	events = make(chan Event, 2)
 
@@ -74,7 +75,7 @@ func (s *Scheduler) Submit(j m.Job) (events chan Event, err error) {
 	return events, err
 }
 
-// Stop dongdongdong
+// Stop stops a job in a Scheduler
 func (s *Scheduler) Stop(j m.Job) (err error) {
 	groupName := j.Group
 	pg, ok := s.podGroups[groupName]
@@ -88,7 +89,7 @@ func (s *Scheduler) Stop(j m.Job) (err error) {
 	return nil
 }
 
-// Register something
+// Register registers a WorkerGroup as a PopGroup to the Scheduler.
 func (s *Scheduler) Register(group string, instance InstanceID, frequency uint64) (chan Incoming, chan Outgoing, error) {
 	// If WorkerGroup does not exist while registration
 	// the worker must have been created dynamically
@@ -99,7 +100,7 @@ func (s *Scheduler) Register(group string, instance InstanceID, frequency uint64
 	return pg.registerPod(group, instance, frequency)
 }
 
-// NewScheduler laalala
+// NewScheduler creates a new scheduler using in cluster config.
 func NewScheduler() *Scheduler {
 	// creates the in-cluster config
 	config, err := rest.InClusterConfig()
