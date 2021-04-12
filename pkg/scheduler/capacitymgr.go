@@ -23,8 +23,13 @@ type CapacityManager struct {
 	model *SchedulerModel
 }
 
-// Calculate the number of instances that should be spun up
-// TODO: Maxes out at a certain number
+/**
+* Calculate the number of instances that should be spun up
+* TODO: Maxes out at a certain number
+*
+* @param  frequency  the new frequency that needs to be satisfied
+* @return  number of new instances needed
+ */
 func (cm *CapacityManager) calculateInstanceCount(frequency uint64) (int, error) {
 	cm.capmux.Lock()
 	defer cm.capmux.Unlock()
@@ -37,6 +42,7 @@ func (cm *CapacityManager) calculateInstanceCount(frequency uint64) (int, error)
 		return 0, errors.New("No new pods are required, capacity can be fulfilled")
 	}
 
+	// Calculate number of new instances that needs to be spun up to satisfy new frequency
 	remaining := frequency - maxCapacity
 	rdr := remaining % capacity
 	var count uint64 = 0
@@ -50,6 +56,13 @@ func (cm *CapacityManager) calculateInstanceCount(frequency uint64) (int, error)
 	return int(count), nil
 }
 
+/**
+* Assign a new job to a specific instance in the manager. Try to assign to the instance as much job as possible without
+* exceeding its max capacity.
+*
+* @return  amount of job that was successfully assigned
+* @return  amount of job that was left unassigned
+ */
 func (cm *CapacityManager) assignCapacity(instance InstanceID, jobID m.JobID, required uint64) (uint64, uint64, error) {
 	cm.capmux.Lock()
 	defer cm.capmux.Unlock()
@@ -78,6 +91,9 @@ func (cm *CapacityManager) assignCapacity(instance InstanceID, jobID m.JobID, re
 	return workload, required, nil
 }
 
+/**
+* Remove a job from an instance in the manager and free the corresponding capacity.
+ */
 func (cm *CapacityManager) reclaimCapacity(instance InstanceID, jobID m.JobID) error {
 	cm.capmux.Lock()
 	defer cm.capmux.Unlock()
@@ -96,6 +112,10 @@ func (cm *CapacityManager) reclaimCapacity(instance InstanceID, jobID m.JobID) e
 	return nil
 }
 
+/**
+* Non-blocking version
+* @return  the total available capacity of all instances in the manager
+ */
 func (cm *CapacityManager) nonBlockingCurrentCapacity() uint64 {
 	var sum uint64 = 0
 	for _, freq := range cm.currentCapacities {
@@ -105,6 +125,10 @@ func (cm *CapacityManager) nonBlockingCurrentCapacity() uint64 {
 	return sum
 }
 
+/**
+* Blocking version
+* @return  the total available capacity of all instances in the manager
+ */
 func (cm *CapacityManager) currentCapacity() uint64 {
 	cm.capmux.Lock()
 	defer cm.capmux.Unlock()
@@ -112,6 +136,9 @@ func (cm *CapacityManager) currentCapacity() uint64 {
 	return cm.nonBlockingCurrentCapacity()
 }
 
+/**
+* Remove an instance from the manager and adjust the capacity counters
+ */
 func (cm *CapacityManager) removeInstance(instance InstanceID) {
 	cm.capmux.Lock()
 	defer cm.capmux.Unlock()
@@ -127,6 +154,9 @@ func (cm *CapacityManager) removeInstance(instance InstanceID) {
 	delete(cm.workloadDistribution, instance)
 }
 
+/**
+* Add a new instance to the manager. Increment the capacity counters by the given capacity.
+ */
 func (cm *CapacityManager) addInstance(instance InstanceID, capacity uint64) error {
 	cm.capmux.Lock()
 	defer cm.capmux.Unlock()
@@ -144,6 +174,11 @@ func (cm *CapacityManager) addInstance(instance InstanceID, capacity uint64) err
 	return nil
 }
 
+/**
+* Locate the instances that the given job was assigned to.
+*
+* @return  list of instance ids that the job was assigned to
+ */
 func (cm *CapacityManager) getPodAssignment(jobID m.JobID) *[]InstanceID {
 	cm.capmux.Lock()
 	defer cm.capmux.Unlock()
@@ -159,7 +194,9 @@ func (cm *CapacityManager) getPodAssignment(jobID m.JobID) *[]InstanceID {
 	return &arr
 }
 
-// NewCapacityManager returns a new capacity manager
+/**
+* NewCapacityManager returns a new capacity manager
+ */
 func NewCapacityManager(group string, model *SchedulerModel) *CapacityManager {
 	var capmgr CapacityManager
 
@@ -171,6 +208,7 @@ func NewCapacityManager(group string, model *SchedulerModel) *CapacityManager {
 	capmgr.workloadDistribution = make(map[InstanceID]*map[m.JobID]uint64)
 	capmgr.podMetrics = make(map[InstanceID]*PodMetrics)
 
+	// Assign capacity based on the given scheduler model and group
 	capmgr.capacity, _ = model.getCapacity(group)
 
 	return &capmgr
