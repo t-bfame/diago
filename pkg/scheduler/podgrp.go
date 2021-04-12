@@ -293,9 +293,7 @@ func (pg *PodGroup) distribute() {
 	}
 }
 
-/**
-* NewPodGroup Allocates a new podGroup
- */
+// NewPodGroup Allocates a new podGroup
 func NewPodGroup(group string, clientset *kubernetes.Clientset, model *SchedulerModel, cleanup chan struct{}, failNonExistentGroup bool) (pg *PodGroup, err error) {
 
 	// If we want to fail when WorkerGroup doesnt exist in K8s

@@ -194,9 +194,7 @@ func (cm *CapacityManager) getPodAssignment(jobID m.JobID) *[]InstanceID {
 	return &arr
 }
 
-/**
-* NewCapacityManager returns a new capacity manager
- */
+// NewCapacityManager returns a new capacity manager
 func NewCapacityManager(group string, model *SchedulerModel) *CapacityManager {
 	var capmgr CapacityManager
 
