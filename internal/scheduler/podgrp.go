@@ -35,11 +35,16 @@ type PodGroup struct {
 	cleanupChannel chan struct{}
 }
 
-// Instances are 0 indexed
+/**
+* Add new instances to the podgroup to satisfy the given frequency. (Instances are 0 indexed)
+*
+* @param  frequency  the new frequency that needs to be satisfied
+ */
 func (pg *PodGroup) addInstances(frequency uint64) (err error) {
 	pg.podmux.Lock()
 	defer pg.podmux.Unlock()
 
+	// Calculate the number of new instances that need to be added
 	count, err := pg.capmgr.calculateInstanceCount(frequency)
 
 	if err != nil {
@@ -87,6 +92,11 @@ func (pg *PodGroup) addInstances(frequency uint64) (err error) {
 	}
 }
 
+/**
+* Remove a specific instance from the podGroup. Also update the capacity manager and clean up if there is no more worker remaining
+*
+* @param  the instance id of the target instance
+ */
 func (pg *PodGroup) removeInstance(instance InstanceID) (err error) {
 	pg.podmux.Lock()
 	defer pg.podmux.Unlock()
@@ -117,6 +127,12 @@ func (pg *PodGroup) removeInstance(instance InstanceID) (err error) {
 	return nil
 }
 
+/**
+* Accept a new job assignment to the podGroup. Store the job's output channel and queue job, add new workers if needed then try to distribute the job.
+*
+* @param  j        the given job
+* @param  events   the corresponding channel of the job
+ */
 func (pg *PodGroup) addJob(j m.Job, events chan Event) (err error) {
 	pg.qmux.Lock()
 	defer pg.qmux.Unlock()
@@ -131,15 +147,29 @@ func (pg *PodGroup) addJob(j m.Job, events chan Event) (err error) {
 	return nil
 }
 
+/**
+* Remove a job from podGroup
+*
+* @param  id       the given job id
+ */
 func (pg *PodGroup) removeJob(id m.JobID) (err error) {
 
+	// Locate all workers that handle the specified job
 	for _, instance := range *(pg.capmgr.getPodAssignment(id)) {
+		// Send stop message
 		pg.scheduledPods[instance] <- Stop{id}
 	}
 
 	return nil
 }
 
+/**
+* Add a new worker to the podGroup.
+*
+* @param  the group type
+* @param  the instance id
+* @param  the frequency of the new worker
+ */
 func (pg *PodGroup) registerPod(group string, instance InstanceID, frequency uint64) (leader chan Incoming, worker chan Outgoing, err error) {
 	pg.qmux.Lock()
 	defer pg.qmux.Unlock()
@@ -156,6 +186,7 @@ func (pg *PodGroup) registerPod(group string, instance InstanceID, frequency uin
 
 			jobID := msg.getJobID()
 
+			// Locate the output channel for this job
 			output, ok := pg.outputChannels[jobID]
 			if !ok {
 				log.WithField("jobID", jobID).Error("Could not find registered channel for job, discarding event")
@@ -163,6 +194,7 @@ func (pg *PodGroup) registerPod(group string, instance InstanceID, frequency uin
 			}
 
 			switch msg.(type) {
+			// If get a message of job finished, then clean up the worker. If all workloads are finished, then close channel.
 			case Finish:
 				pg.workloadCount[jobID]--
 
@@ -190,8 +222,11 @@ func (pg *PodGroup) registerPod(group string, instance InstanceID, frequency uin
 	return leader, worker, nil
 }
 
-// TODO: for every jobID, keep track of which pod has been assigned what frequency
-// and cleanup this information when finish event from that pod is received
+/**
+* Distribute the next queued job. Loop through workers and assign job.
+* TODO: for every jobID, keep track of which pod has been assigned what frequency
+*		and cleanup this information when finish event from that pod is received
+ */
 func (pg *PodGroup) distribute() {
 	if len(*pg.jobQueue) == 0 {
 		return
@@ -258,7 +293,9 @@ func (pg *PodGroup) distribute() {
 	}
 }
 
-// NewPodGroup Allocates a new podGroup
+/**
+* NewPodGroup Allocates a new podGroup
+ */
 func NewPodGroup(group string, clientset *kubernetes.Clientset, model *SchedulerModel, cleanup chan struct{}, failNonExistentGroup bool) (pg *PodGroup, err error) {
 
 	// If we want to fail when WorkerGroup doesnt exist in K8s
