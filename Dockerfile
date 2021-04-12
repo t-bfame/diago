@@ -24,7 +24,6 @@ COPY api api
 COPY cmd cmd
 COPY config config
 COPY pkg pkg
-COPY internal internal
 
 RUN GOOS=linux GO111MODULE=on packr2 --ignore-imports -v
 RUN CGO_ENABLED=0 GOOS=linux go build cmd/main.go

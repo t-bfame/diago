@@ -8,7 +8,7 @@ import (
 	// rank-based statistics such as quantiles and trimmed means
 	"github.com/influxdata/tdigest"
 
-	"github.com/t-bfame/diago/internal/scheduler"
+	"github.com/t-bfame/diago/pkg/scheduler"
 )
 
 // Metrics holds metrics computed out of a slice of Results

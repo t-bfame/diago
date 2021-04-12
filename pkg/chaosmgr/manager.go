@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	m "github.com/t-bfame/diago/internal/model"
+	m "github.com/t-bfame/diago/pkg/model"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"

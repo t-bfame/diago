@@ -8,12 +8,12 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	cm "github.com/t-bfame/diago/internal/chaosmgr"
-	"github.com/t-bfame/diago/internal/metrics"
-	m "github.com/t-bfame/diago/internal/model"
-	s "github.com/t-bfame/diago/internal/scheduler"
-	sto "github.com/t-bfame/diago/internal/storage"
-	"github.com/t-bfame/diago/internal/tools"
+	cm "github.com/t-bfame/diago/pkg/chaosmgr"
+	"github.com/t-bfame/diago/pkg/metrics"
+	m "github.com/t-bfame/diago/pkg/model"
+	s "github.com/t-bfame/diago/pkg/scheduler"
+	sto "github.com/t-bfame/diago/pkg/storage"
+	"github.com/t-bfame/diago/pkg/tools"
 )
 
 // JobFunnel is used to interface with the Scheduler while

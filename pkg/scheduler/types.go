@@ -6,7 +6,7 @@ import (
 	"time"
 
 	pytypes "github.com/golang/protobuf/ptypes"
-	m "github.com/t-bfame/diago/internal/model"
+	m "github.com/t-bfame/diago/pkg/model"
 	worker "github.com/t-bfame/diago/proto-gen/worker"
 )
 

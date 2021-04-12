@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	log "github.com/sirupsen/logrus"
-	m "github.com/t-bfame/diago/internal/model"
+	m "github.com/t-bfame/diago/pkg/model"
 )
 
 // CapacityManager Data structure for keeping track of worker capacities

@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	c "github.com/t-bfame/diago/config"
-	m "github.com/t-bfame/diago/internal/model"
+	m "github.com/t-bfame/diago/pkg/model"
 	"github.com/t-bfame/diago/pkg/utils"
 
 	log "github.com/sirupsen/logrus"

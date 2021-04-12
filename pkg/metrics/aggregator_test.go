@@ -7,7 +7,7 @@ import (
 
 	bmizerany "github.com/bmizerany/perks/quantile"
 	gk "github.com/dgryski/go-gk"
-	"github.com/t-bfame/diago/internal/scheduler"
+	"github.com/t-bfame/diago/pkg/scheduler"
 )
 
 func TestMetrics_Add(t *testing.T) {

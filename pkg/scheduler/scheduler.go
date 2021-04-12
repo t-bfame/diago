@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	log "github.com/sirupsen/logrus"
-	m "github.com/t-bfame/diago/internal/model"
+	m "github.com/t-bfame/diago/pkg/model"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"

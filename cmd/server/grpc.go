@@ -6,7 +6,7 @@ import (
 	"io"
 	"net"
 
-	"github.com/t-bfame/diago/internal/scheduler"
+	"github.com/t-bfame/diago/pkg/scheduler"
 
 	log "github.com/sirupsen/logrus"
 

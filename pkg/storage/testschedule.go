@@ -3,8 +3,8 @@ package storage
 import (
 	"fmt"
 
-	"github.com/t-bfame/diago/internal/model"
-	"github.com/t-bfame/diago/internal/tools"
+	"github.com/t-bfame/diago/pkg/model"
+	"github.com/t-bfame/diago/pkg/tools"
 
 	"github.com/boltdb/bolt"
 	log "github.com/sirupsen/logrus"

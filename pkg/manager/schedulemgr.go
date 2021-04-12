@@ -6,8 +6,8 @@ import (
 	"github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
 
-	m "github.com/t-bfame/diago/internal/model"
-	sto "github.com/t-bfame/diago/internal/storage"
+	m "github.com/t-bfame/diago/pkg/model"
+	sto "github.com/t-bfame/diago/pkg/storage"
 )
 
 type ScheduleManager interface {

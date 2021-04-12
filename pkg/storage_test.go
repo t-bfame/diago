@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/t-bfame/diago/internal/model"
-	sto "github.com/t-bfame/diago/internal/storage"
+	"github.com/t-bfame/diago/pkg/model"
+	sto "github.com/t-bfame/diago/pkg/storage"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"

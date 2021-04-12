@@ -9,10 +9,10 @@ import (
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
-	dash "github.com/t-bfame/diago/internal/dashboard"
-	mgr "github.com/t-bfame/diago/internal/manager"
-	m "github.com/t-bfame/diago/internal/model"
-	sto "github.com/t-bfame/diago/internal/storage"
+	dash "github.com/t-bfame/diago/pkg/dashboard"
+	mgr "github.com/t-bfame/diago/pkg/manager"
+	m "github.com/t-bfame/diago/pkg/model"
+	sto "github.com/t-bfame/diago/pkg/storage"
 )
 
 // APIServer serves API calls over HTTP

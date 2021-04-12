@@ -10,9 +10,9 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
-	mgr "github.com/t-bfame/diago/internal/manager"
-	m "github.com/t-bfame/diago/internal/model"
-	sto "github.com/t-bfame/diago/internal/storage"
+	mgr "github.com/t-bfame/diago/pkg/manager"
+	m "github.com/t-bfame/diago/pkg/model"
+	sto "github.com/t-bfame/diago/pkg/storage"
 )
 
 const (
