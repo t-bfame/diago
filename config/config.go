@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/gobuffalo/packr/v2"
 	"github.com/kelseyhightower/envconfig"
 	log "github.com/sirupsen/logrus"
 )
@@ -20,7 +21,7 @@ type Config struct {
 
 	GrafanaBasePath     string `envconfig:"DIAGO_GRAFANA_BASE_PATH" default:""`
 	GrafanaAPIKey     string `envconfig:"DIAGO_GRAFANA_API_KEY" default:""`
-	GrafanaDashboardConfig     string `envconfig:"DIAGO_GRAFANA_DASHBOARD_CONFIG" default:"default"`
+	GrafanaDashboardConfig     string `envconfig:"DIAGO_GRAFANA_DASHBOARD_CONFIG"`
 }
 
 var Diago *Config
@@ -34,6 +35,12 @@ func Init() error {
 	}
 
 	Diago = &c
+
+	if Diago.GrafanaDashboardConfig == "" {
+		box := packr.New("grafana", "../static")
+		config, _ := box.FindString("grafana-dash.json")
+		c.GrafanaDashboardConfig = string(config)
+	}
 
 	return nil
 }

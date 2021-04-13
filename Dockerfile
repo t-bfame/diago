@@ -19,11 +19,12 @@ RUN go mod verify
 RUN go get -u github.com/gobuffalo/packr/v2/packr2
 
 COPY --from=ui /build dist
-COPY proto-gen proto-gen
 COPY api api
 COPY cmd cmd
 COPY config config
 COPY pkg pkg
+COPY proto-gen proto-gen
+COPY static static
 
 RUN GOOS=linux GO111MODULE=on packr2 --ignore-imports -v
 RUN CGO_ENABLED=0 GOOS=linux go build cmd/main.go

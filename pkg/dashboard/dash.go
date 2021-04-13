@@ -4,7 +4,6 @@ import (
 	"errors"
 	"bytes"
 	"io/ioutil"
-	"encoding/base64"
 	"encoding/json"
 	"net/http"
 
@@ -97,11 +96,7 @@ func createDashboard(body []byte) error {
 }
 
 func NewDashboard() (*Dashboard, error) {
-	js, err := base64.StdEncoding.DecodeString(c.Diago.GrafanaDashboardConfig)
-	if err != nil {
-		log.Error("Incorrect Grafana format config")
-		return nil, err
-	}
+	js := []byte(c.Diago.GrafanaDashboardConfig)
 
 	conf := new(DashConf)
 	json.Unmarshal(js, conf)
