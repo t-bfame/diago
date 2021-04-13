@@ -22,7 +22,7 @@ spec:
       serviceAccountName: diago-sa
       containers:
       - name: leader
-        image: diago
+        image: tbfame/diago:latest
         imagePullPolicy: Never
         volumeMounts:
         - name: diago-storage

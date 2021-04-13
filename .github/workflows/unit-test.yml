@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: true
 
     - name: Set up Go
       uses: actions/setup-go@v2
@@ -17,7 +19,7 @@ jobs:
         go-version: 1.15
 
     - name: Build
-      run: make docker
+      run: docker build .
 
     - name: Test
       run: |
