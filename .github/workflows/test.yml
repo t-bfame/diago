@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - dev
 
 jobs:
 
@@ -21,5 +20,5 @@ jobs:
     - name: Test
       run: |
         make test
-        mv cover.out coverage.txt
+        mv coverage.out coverage.txt
         bash <(curl -s https://codecov.io/bash)
