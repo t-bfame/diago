@@ -9,7 +9,7 @@ Diago is a Performance Testing Framework, designed to run on Kubernetes. It inte
 - **Integrated UI**: Diago comes with a UI which is designed to be minimal and easy to use. Not only does the UI show detailed reports generated after the test results, but it also integrates with Kubernetes based tools like Grafana to display useful metrics that were captured during the load test.
 - Integration with Prometheus: Diago can exposes aggregated Prometheus style metrics for monitoring systems to scrape. Users extract these metrics and use them with a monitoring system of their choice.
 - **Automation Friendly**: Diago exposes REST APIs for automating creation, running, deletion of tests, disaster simulations etc.
-- **Expandable**: Diago's worker use gRPC for communication and are designed to be completely decoupled from the Leader. This allows users to write their own workers for custom load tests, which use the gRPC protobufs in https://github.com/t-bfame/diago-idl.
+- **Expandable**: Diago's worker use gRPC for communication and are designed to be completely decoupled from the Leader. This allows users to write their own workers for custom load tests, which use the gRPC protobufs in [diago-idl](https://github.com/t-bfame/diago-idl).
 
 ## Install 
 Refer to the wiki for [Installing Diago](https://github.com/t-bfame/diago/wiki/Installation).
@@ -54,7 +54,6 @@ docker build -t diago .
 ## More Information
 - Diago uses github workflows for CI, check the actions tab.
 - Pushes to docker hub are made by the organization members with new releases.
-- 
 
 ## License
 [Apache License 2.0](https://github.com/t-bfame/diago/blob/main/LICENSE)
