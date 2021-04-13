@@ -1,7 +1,9 @@
 .PHONY:	build run
 
+BRANCH := $(shell git branch --show-current)
+
 docker:
-	docker build -t diago .
+	docker build -t tbfame/diago:${BRANCH} .
 
 PROTOC := protoc
 
