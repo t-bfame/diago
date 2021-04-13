@@ -1,0 +1,9 @@
+apiVersion: diago.app/v1alpha1
+kind: WorkerGroup
+metadata:
+  name: default-worker
+  namespace: diago
+spec:
+  image: diago-worker
+  capacity: 10000
+  allowedInactivityPeriod: 120

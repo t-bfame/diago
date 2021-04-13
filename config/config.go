@@ -12,7 +12,7 @@ type Config struct {
 	APIPort        uint64 `envconfig:"DIAGO_API_PORT" default:"80"`
 	PrometheusPort uint64 `envconfig:"DIAGO_PROMETHEUS_PORT" default:"2112"`
 
-	DefaultGroupCapacity uint64 `envconfig:"DIAGO_DEFAULT_GROUP_CAPACITY" default:"20"`
+	DefaultGroupCapacity uint64 `envconfig:"DIAGO_DEFAULT_GROUP_CAPACITY" default:"200"`
 	DefaultNamespace     string `envconfig:"DIAGO_DEFAULT_NAMESPACE" default:"default"`
 
 	StoragePath string `envconfig:"DIAGO_STORAGE_PATH" default:"diago.db"`
