@@ -5,6 +5,9 @@ BRANCH := $(shell git branch --show-current)
 docker:
 	docker build -t tbfame/diago:${BRANCH} .
 
+push:
+	docker push tbfame/diago:${BRANCH}
+
 PROTOC := protoc
 
 packr:
