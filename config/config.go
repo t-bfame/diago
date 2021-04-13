@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/gobuffalo/packr/v2"
 	"github.com/kelseyhightower/envconfig"
 	log "github.com/sirupsen/logrus"
 )
@@ -11,7 +12,7 @@ type Config struct {
 	APIPort        uint64 `envconfig:"DIAGO_API_PORT" default:"80"`
 	PrometheusPort uint64 `envconfig:"DIAGO_PROMETHEUS_PORT" default:"2112"`
 
-	DefaultGroupCapacity uint64 `envconfig:"DIAGO_DEFAULT_GROUP_CAPACITY" default:"20"`
+	DefaultGroupCapacity uint64 `envconfig:"DIAGO_DEFAULT_GROUP_CAPACITY" default:"200"`
 	DefaultNamespace     string `envconfig:"DIAGO_DEFAULT_NAMESPACE" default:"default"`
 
 	StoragePath string `envconfig:"DIAGO_STORAGE_PATH" default:"diago.db"`
@@ -20,7 +21,7 @@ type Config struct {
 
 	GrafanaBasePath     string `envconfig:"DIAGO_GRAFANA_BASE_PATH" default:""`
 	GrafanaAPIKey     string `envconfig:"DIAGO_GRAFANA_API_KEY" default:""`
-	GrafanaDashboardConfig     string `envconfig:"DIAGO_GRAFANA_DASHBOARD_CONFIG" default:"default"`
+	GrafanaDashboardConfig     string `envconfig:"DIAGO_GRAFANA_DASHBOARD_CONFIG"`
 }
 
 var Diago *Config
@@ -34,6 +35,12 @@ func Init() error {
 	}
 
 	Diago = &c
+
+	if Diago.GrafanaDashboardConfig == "" {
+		box := packr.New("grafana", "../static")
+		config, _ := box.FindString("grafana-dash.json")
+		c.GrafanaDashboardConfig = string(config)
+	}
 
 	return nil
 }

@@ -13,3 +13,4 @@ resources:
 - diago-svc.yaml
 - diago-pvc.yaml
 - diago-sts.yaml
+- diago-default-worker.yaml

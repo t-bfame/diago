@@ -32,6 +32,8 @@ spec:
           valueFrom:
               fieldRef:
                 fieldPath: status.podIP
+        - name: "DIAGO_DEFAULT_NAMESPACE"
+          value: "diago"
         - name: "DIAGO_STORAGE_PATH"
           value: "/storage/diago.db"
         envFrom:
