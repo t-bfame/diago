@@ -32,7 +32,6 @@ func (sm SchedulerModel) createContainerSpec(name string, image string, env map[
 		Name:            name,
 		Image:           image,
 		Env:             envVars,
-		ImagePullPolicy: v1.PullNever,
 	}
 
 	return []v1.Container{container}
