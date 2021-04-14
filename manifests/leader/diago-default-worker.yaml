@@ -5,5 +5,5 @@ metadata:
   namespace: diago
 spec:
   image: tbfame/diago-worker:latest
-  capacity: 10000
+  capacity: 1000
   allowedInactivityPeriod: 120
