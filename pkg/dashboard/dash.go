@@ -107,6 +107,7 @@ func NewDashboard() (*Dashboard, error) {
 		if err != nil {
 			return nil, err
 		}
+		conf = checkDashBoard(conf.Uid)
 	}
 
 	var varArray []string
