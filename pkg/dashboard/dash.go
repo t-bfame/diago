@@ -101,13 +101,14 @@ func NewDashboard() (*Dashboard, error) {
 	conf := new(DashConf)
 	json.Unmarshal(js, conf)
 
-	conf = checkDashBoard(conf.Uid)
+	uid := conf.Uid
+	conf = checkDashBoard(uid)
 	if conf == nil {
 		err := createDashboard(js)
 		if err != nil {
 			return nil, err
 		}
-		conf = checkDashBoard(conf.Uid)
+		conf = checkDashBoard(uid)
 	}
 
 	var varArray []string
