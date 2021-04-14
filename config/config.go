@@ -26,6 +26,9 @@ type Config struct {
 
 var Diago *Config
 
+// Initializes a new Diago config
+// For GrafanaDashboardConfig, if the env variable is not set then defaults
+// to the default grafana-dash.json from packr2
 func Init() error {
 	var c Config
 

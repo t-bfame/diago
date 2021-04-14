@@ -12,6 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// Represents fields to form ipanels for embedding the grafana dashboard
 type Dashboard struct {
 	BaseUrl string `json:"url"`
 	Panels []struct {
@@ -21,6 +22,7 @@ type Dashboard struct {
 	VarNames []string `json:"fields"`
 }
 
+// Represents the configuration of a Grafana dashboard
 type DashConf struct {
 	Uid string `json:"uid"`
 	Panels []struct {
@@ -34,6 +36,7 @@ type DashConf struct {
 	}
 }
 
+// Represents fields for the json payload to create the dashboard
 type DashCreate struct {
 	Dashboard interface{} `json:"dashboard"`
 	FolderId int `json:"folderId"`
@@ -41,10 +44,12 @@ type DashCreate struct {
 	Overwrite bool `json:"overwrite"`
 }
 
+// returns the json version of Dashboard struct
 func (d *Dashboard) ToJSON() ([]byte, error) {
 	return json.Marshal(*d)
 }
 
+// Checks whether a dashboard with the given UID exsists in Grafaana
 func checkDashBoard(uid string) *DashConf {
 	req, err := http.NewRequest("GET", c.Diago.GrafanaBasePath + "/api/dashboards/uid/" + uid, nil)
 
@@ -67,6 +72,7 @@ func checkDashBoard(uid string) *DashConf {
 	return &config.Dashboard
 }
 
+// Creates a new Dashboard with the provided configurations
 func createDashboard(body []byte) error {
 	var dashboard interface{}
 	json.Unmarshal(body, &dashboard)
@@ -95,6 +101,9 @@ func createDashboard(body []byte) error {
 	return nil
 }
 
+// Creates a new Grafana dashboard config
+// If the diago grafana dashboard doesnt exist, then a new one is created
+// using the Grafana API, esle the existing onces configurations are fetched
 func NewDashboard() (*Dashboard, error) {
 	js := []byte(c.Diago.GrafanaDashboardConfig)
 
