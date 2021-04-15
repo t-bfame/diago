@@ -1,3 +1,5 @@
+// Package storage implements a storage API used to store Diago objects.
+// It uses boltDB as the underlying storage management.
 package storage
 
 import (
@@ -10,6 +12,7 @@ var (
 	db *bolt.DB
 )
 
+// Initializes storage file
 func InitDatabase(dbName string) error {
 	value, err := bolt.Open(dbName, 0600, nil)
 	if err != nil {
@@ -33,6 +36,7 @@ func InitDatabase(dbName string) error {
 	return nil
 }
 
+// Internal helper function used to generate a function creating a bucket with given name
 func createInitBucketFunc(bucketName string) func(tx *bolt.Tx) error {
 	return func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists([]byte(bucketName))

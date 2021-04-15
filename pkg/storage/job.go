@@ -10,8 +10,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// This is the boltDB bucket name for storing "model/Job".
 const JobBucketName = "Job"
 
+// Initialize botDB for "model/Job" storage.
 func initStorageJob(db *bolt.DB) error {
 	if err := db.Update(createInitBucketFunc(JobBucketName)); err != nil {
 		return err
@@ -19,6 +21,7 @@ func initStorageJob(db *bolt.DB) error {
 	return nil
 }
 
+// Add a "model/Job" to the storage.
 func AddJob(job *model.Job) error {
 	if err := db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(JobBucketName))
@@ -40,6 +43,7 @@ func AddJob(job *model.Job) error {
 	return nil
 }
 
+// Delete a "model/Job" with the specified JobID from the storage.
 func DeleteJob(jobID model.JobID) error {
 	if err := db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(JobBucketName))
@@ -57,6 +61,7 @@ func DeleteJob(jobID model.JobID) error {
 	return nil
 }
 
+// Retrieve a "model/Job" with the specified JobID from the storage.
 func GetJobByJobId(jobId model.JobID) (*model.Job, error) {
 	var result *model.Job
 	if err := db.View(func(tx *bolt.Tx) error {
@@ -76,6 +81,7 @@ func GetJobByJobId(jobId model.JobID) (*model.Job, error) {
 	return result, nil
 }
 
+// Retrieve all "model/Job" stored in the storage.
 func GetAllJobs() ([]*model.Job, error) {
 	var jobs = make([]*model.Job, 0)
 	if err := db.View(func(tx *bolt.Tx) error {
