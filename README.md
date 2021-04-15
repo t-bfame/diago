@@ -24,7 +24,7 @@ Refer to the wiki for [Documentation](https://github.com/t-bfame/diago/wiki).
 
 ## Building from source
 
-### Submdoules
+### Submodules
 Diago contains submodules for the following:
 - `ui`: The Diago UI React App
 - `idl`: The Diago Protobuf files
