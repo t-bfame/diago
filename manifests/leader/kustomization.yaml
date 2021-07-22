@@ -14,3 +14,15 @@ resources:
 - diago-pvc.yaml
 - diago-sts.yaml
 - diago-default-worker.yaml
+- intranet-networkpolicy.yaml
+- kratos-claim1-persistentvolumeclaim.yaml
+- kratos-deployment.yaml
+- kratos-migrate-claim1-persistentvolumeclaim.yaml
+- kratos-migrate-pod.yaml
+- kratos-selfservice-ui-node-pod.yaml
+- kratos-selfservice-ui-node-deployment.yaml
+- kratos-selfservice-ui-node-service.yaml
+- kratos-service.yaml
+- kratos-sqlite-persistentvolumeclaim.yaml
+- mailslurper-deployment.yaml
+- mailslurper-service.yaml

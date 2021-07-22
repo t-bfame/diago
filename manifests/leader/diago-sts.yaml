@@ -23,14 +23,17 @@ spec:
       containers:
       - name: leader
         image: tbfame/diago:latest
+        # image: diago
+        # imagePullPolicy: Never
         volumeMounts:
         - name: diago-storage
           mountPath: "/storage"
         env:
         - name: "DIAGO_HOST"
-          valueFrom:
-              fieldRef:
-                fieldPath: status.podIP
+          value: "0.0.0.0"
+          # valueFrom:
+          #     fieldRef:
+          #       fieldPath: status.podIP
         - name: "DIAGO_DEFAULT_NAMESPACE"
           value: "diago"
         - name: "DIAGO_STORAGE_PATH"

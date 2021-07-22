@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.23.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.network/intranet: "true"
+    io.kompose.service: kratos-migrate
+  name: kratos-migrate
+spec:
+  containers:
+    - args:
+        - -c
+        - /etc/config/kratos/kratos.yml
+        - migrate
+        - sql
+        - -e
+        - --yes
+      env:
+        - name: DSN
+          value: sqlite:///var/lib/sqlite/db.sqlite?_fk=true&mode=rwc
+      image: oryd/kratos:v0.6.3-alpha.1-sqlite
+      name: kratos-migrate
+      resources: {}
+      volumeMounts:
+        - mountPath: /var/lib/sqlite
+          name: kratos-sqlite
+        - mountPath: /etc/config/kratos
+          name: kratos-migrate-claim1
+  restartPolicy: OnFailure
+  volumes:
+    - name: kratos-sqlite
+      persistentVolumeClaim:
+        claimName: kratos-sqlite
+    - name: kratos-migrate-claim1
+      persistentVolumeClaim:
+        claimName: kratos-migrate-claim1
+status: {}

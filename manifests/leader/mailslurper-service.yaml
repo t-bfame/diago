@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.23.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: mailslurper
+  name: mailslurper
+spec:
+  ports:
+    - name: "4436"
+      port: 4436
+      targetPort: 4436
+    - name: "4437"
+      port: 4437
+      targetPort: 4437
+  selector:
+    io.kompose.service: mailslurper
+status:
+  loadBalancer: {}

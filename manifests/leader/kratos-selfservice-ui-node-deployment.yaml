@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.23.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: kratos-selfservice-ui-node
+  name: kratos-selfservice-ui-node
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: kratos-selfservice-ui-node
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.23.0 (HEAD)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: kratos-selfservice-ui-node
+    spec:
+      containers:
+        - env:
+            - name: KRATOS_BROWSER_URL
+              value: http://127.0.0.1:4433/
+            - name: PORT
+              value: "4455"
+            - name: SECURITY_MODE
+          image: kratos-selfservice-ui-node
+          name: kratos-selfservice-ui-node
+          ports:
+            - containerPort: 4455
+          resources: {}
+      restartPolicy: Always
+status: {}
