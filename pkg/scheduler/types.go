@@ -89,12 +89,13 @@ type Outgoing interface {
 
 // Start message
 type Start struct {
-	ID         m.JobID
-	Frequency  uint64
-	Duration   uint64
-	HTTPMethod string
-	HTTPUrl    string
-	HTTPBody   string
+	JobID                   m.JobID
+	Frequency               uint64
+	Duration                uint64
+	HTTPMethod              string
+	HTTPUrl                 string
+	HTTPBody                string
+	PersistResponseSampling m.SamplingRate
 }
 
 // Stop message
@@ -103,7 +104,7 @@ type Stop struct {
 }
 
 func (m Start) getJobID() m.JobID {
-	return m.ID
+	return m.JobID
 }
 
 // ToProto convert Outgoing to protobuf messages
@@ -118,6 +119,9 @@ func (m Start) ToProto() *worker.Message {
 					Method: m.HTTPMethod,
 					Url:    m.HTTPUrl,
 					Body:   &m.HTTPBody,
+				},
+				PersistResponseSamplingRate: &worker.SamplingRate{
+					Period: m.PersistResponseSampling.Period,
 				},
 			},
 		},
