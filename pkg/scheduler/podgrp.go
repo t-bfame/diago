@@ -258,15 +258,16 @@ func (pg *PodGroup) distribute() {
 			continue
 		}
 
-		// Increment the worload count
+		// Increment the workload count
 		pg.workloadCount[j.ID]++
 		out <- Start{
-			ID:         j.ID,
-			Frequency:  workload,
-			Duration:   j.Duration,
-			HTTPMethod: j.HTTPMethod,
-			HTTPUrl:    j.HTTPUrl,
-			HTTPBody:   j.HTTPBody,
+			JobID:                   j.ID,
+			Frequency:               workload,
+			Duration:                j.Duration,
+			HTTPMethod:              j.HTTPMethod,
+			HTTPUrl:                 j.HTTPUrl,
+			HTTPBody:                j.HTTPBody,
+			PersistResponseSampling: j.PersistResponseSampling,
 		}
 
 		if frequency == 0 {
@@ -286,12 +287,13 @@ func (pg *PodGroup) distribute() {
 	}
 
 	output <- Start{
-		ID:         j.ID,
-		Frequency:  j.Frequency - frequency,
-		Duration:   j.Duration,
-		HTTPMethod: j.HTTPMethod,
-		HTTPUrl:    j.HTTPUrl,
-		HTTPBody:   j.HTTPBody,
+		JobID:                   j.ID,
+		Frequency:               j.Frequency - frequency,
+		Duration:                j.Duration,
+		HTTPMethod:              j.HTTPMethod,
+		HTTPUrl:                 j.HTTPUrl,
+		HTTPBody:                j.HTTPBody,
+		PersistResponseSampling: j.PersistResponseSampling,
 	}
 }
 
