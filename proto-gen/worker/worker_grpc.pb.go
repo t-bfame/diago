@@ -11,7 +11,8 @@ import (
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
+// Requires gRPC-Go v1.32.0 or later.
+const _ = grpc.SupportPackageIsVersion7
 
 // WorkerClient is the client API for Worker service.
 //
@@ -29,7 +30,7 @@ func NewWorkerClient(cc grpc.ClientConnInterface) WorkerClient {
 }
 
 func (c *workerClient) Coordinate(ctx context.Context, opts ...grpc.CallOption) (Worker_CoordinateClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_Worker_serviceDesc.Streams[0], "/Worker/Coordinate", opts...)
+	stream, err := c.cc.NewStream(ctx, &Worker_ServiceDesc.Streams[0], "/Worker/Coordinate", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -71,13 +72,20 @@ type WorkerServer interface {
 type UnimplementedWorkerServer struct {
 }
 
-func (*UnimplementedWorkerServer) Coordinate(Worker_CoordinateServer) error {
+func (UnimplementedWorkerServer) Coordinate(Worker_CoordinateServer) error {
 	return status.Errorf(codes.Unimplemented, "method Coordinate not implemented")
 }
-func (*UnimplementedWorkerServer) mustEmbedUnimplementedWorkerServer() {}
+func (UnimplementedWorkerServer) mustEmbedUnimplementedWorkerServer() {}
 
-func RegisterWorkerServer(s *grpc.Server, srv WorkerServer) {
-	s.RegisterService(&_Worker_serviceDesc, srv)
+// UnsafeWorkerServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to WorkerServer will
+// result in compilation errors.
+type UnsafeWorkerServer interface {
+	mustEmbedUnimplementedWorkerServer()
+}
+
+func RegisterWorkerServer(s grpc.ServiceRegistrar, srv WorkerServer) {
+	s.RegisterService(&Worker_ServiceDesc, srv)
 }
 
 func _Worker_Coordinate_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -106,7 +114,10 @@ func (x *workerCoordinateServer) Recv() (*Message, error) {
 	return m, nil
 }
 
-var _Worker_serviceDesc = grpc.ServiceDesc{
+// Worker_ServiceDesc is the grpc.ServiceDesc for Worker service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var Worker_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "Worker",
 	HandlerType: (*WorkerServer)(nil),
 	Methods:     []grpc.MethodDesc{},
@@ -118,5 +129,5 @@ var _Worker_serviceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "idl/proto/worker.proto",
+	Metadata: "worker.proto",
 }

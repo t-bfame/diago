@@ -266,6 +266,7 @@ func (pg *PodGroup) distribute() {
 			Duration:   j.Duration,
 			HTTPMethod: j.HTTPMethod,
 			HTTPUrl:    j.HTTPUrl,
+			HTTPBody:   j.HTTPBody,
 		}
 
 		if frequency == 0 {
@@ -290,6 +291,7 @@ func (pg *PodGroup) distribute() {
 		Duration:   j.Duration,
 		HTTPMethod: j.HTTPMethod,
 		HTTPUrl:    j.HTTPUrl,
+		HTTPBody:   j.HTTPBody,
 	}
 }
 

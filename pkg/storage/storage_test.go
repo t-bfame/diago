@@ -438,6 +438,6 @@ func initTestDB(t *testing.T) {
 
 func removeTestDB() {
 	if err := os.Remove(testDBName); err != nil {
-		log.Error("Failed to remove testDB after running a test1")
+		log.Error("Failed to remove testDB after running a test")
 	}
 }
