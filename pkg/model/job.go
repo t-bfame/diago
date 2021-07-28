@@ -13,4 +13,5 @@ type Job struct {
 	Duration   uint64
 	HTTPMethod string
 	HTTPUrl    string
+	HTTPBody   string
 }

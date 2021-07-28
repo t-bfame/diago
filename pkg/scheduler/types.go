@@ -94,6 +94,7 @@ type Start struct {
 	Duration   uint64
 	HTTPMethod string
 	HTTPUrl    string
+	HTTPBody   string
 }
 
 // Stop message
@@ -116,6 +117,7 @@ func (m Start) ToProto() *worker.Message {
 				Request: &worker.HTTPRequest{
 					Method: m.HTTPMethod,
 					Url:    m.HTTPUrl,
+					Body:   &m.HTTPBody,
 				},
 			},
 		},
