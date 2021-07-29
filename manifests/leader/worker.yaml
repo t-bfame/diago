@@ -1,0 +1,10 @@
+apiVersion: diago.app/v1alpha1
+kind: WorkerGroup
+metadata:
+  name: myworkerv2
+  namespace: diago
+spec:
+  image: myworkerv2:1
+  imagePullPolicy: Never
+  capacity: 1000
+  allowedInactivityPeriod: 120
