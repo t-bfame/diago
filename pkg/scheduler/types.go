@@ -90,6 +90,8 @@ type Outgoing interface {
 // Start message
 type Start struct {
 	JobID                   m.JobID
+	TestID                  m.TestID
+	TestInstanceID          m.TestInstanceID
 	Frequency               uint64
 	Duration                uint64
 	HTTPMethod              string
@@ -112,9 +114,11 @@ func (m Start) ToProto() *worker.Message {
 	return &worker.Message{
 		Payload: &worker.Message_Start{
 			Start: &worker.Start{
-				JobId:     string(m.getJobID()),
-				Frequency: m.Frequency,
-				Duration:  m.Duration,
+				JobId:          string(m.getJobID()),
+				TestId:         string(m.TestID),
+				TestInstanceId: string(m.TestInstanceID),
+				Frequency:      m.Frequency,
+				Duration:       m.Duration,
 				Request: &worker.HTTPRequest{
 					Method: m.HTTPMethod,
 					Url:    m.HTTPUrl,

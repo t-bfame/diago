@@ -57,7 +57,7 @@ func (s *Scheduler) createPodGroup(groupName string, failNonExistentGroup bool) 
 }
 
 // Submit submits a job in a Scheduler
-func (s *Scheduler) Submit(j m.Job) (events chan Event, err error) {
+func (s *Scheduler) Submit(j m.Job, testInstanceID m.TestInstanceID, testID m.TestID) (events chan Event, err error) {
 	events = make(chan Event, 2)
 
 	// If WorkerGroup does not exist while submitting a Job
@@ -70,7 +70,7 @@ func (s *Scheduler) Submit(j m.Job) (events chan Event, err error) {
 	}
 
 	// Add channel for receiving events
-	pg.addJob(j, events)
+	pg.addJob(j, testInstanceID, testID, events)
 
 	return events, err
 }
