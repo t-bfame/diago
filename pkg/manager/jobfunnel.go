@@ -133,7 +133,7 @@ func (jf *JobFunnelImpl) BeginTest(testID m.TestID, testType string) error {
 		testDuration = tools.Max(testDuration, v.Duration)
 
 		// attempt to submit jobs to scheduler
-		ch, err := jf.scheduler.Submit(v)
+		ch, err := jf.scheduler.Submit(v, instance.ID, testID)
 		if err != nil {
 			instance.Status = "failed"
 			instance.Error = err.Error()
