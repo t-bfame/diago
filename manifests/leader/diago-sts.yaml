@@ -22,9 +22,9 @@ spec:
       serviceAccountName: diago-sa
       containers:
       - name: leader
-        image: tbfame/diago:latest
-        # image: diago
-        # imagePullPolicy: Never
+        # image: tbfame/diago:latest
+        image: diago
+        imagePullPolicy: Never
         volumeMounts:
         - name: diago-storage
           mountPath: "/storage"

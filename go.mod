@@ -12,6 +12,7 @@ require (
 	github.com/influxdata/tdigest v0.0.1
 	github.com/karrick/godirwalk v1.16.1 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0
+	github.com/ory/kratos-client-go v0.6.2-alpha.1 // indirect
 	github.com/prometheus/client_golang v1.9.0
 	github.com/robfig/cron/v3 v3.0.0
 	github.com/rogpeppe/go-internal v1.7.0 // indirect

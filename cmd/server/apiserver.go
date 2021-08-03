@@ -8,6 +8,7 @@ import (
 	"reflect"
 
 	"github.com/gorilla/mux"
+	kratos "github.com/ory/kratos-client-go/client"
 	log "github.com/sirupsen/logrus"
 	dash "github.com/t-bfame/diago/pkg/dashboard"
 	mgr "github.com/t-bfame/diago/pkg/manager"
@@ -17,9 +18,10 @@ import (
 
 // APIServer serves API calls over HTTP
 type APIServer struct {
-	jf mgr.JobFunnel
-	sm mgr.ScheduleManager
-	db *dash.Dashboard
+	jf   mgr.JobFunnel
+	sm   mgr.ScheduleManager
+	db   *dash.Dashboard
+	auth *kratos.OryKratos
 }
 
 func preResponse(next http.Handler) http.Handler {
@@ -59,7 +61,11 @@ func buildFailure(msg string, code int, w http.ResponseWriter) []byte {
 	return json
 }
 
-func handleTestCreate(w http.ResponseWriter, r *http.Request) {
+func handleTestCreateBuilder(
+	server *APIServer,
+) func(w http.ResponseWriter, r *http.Request) {
+	server.auth.Public.
+
 	bodyContent, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
@@ -431,5 +437,11 @@ func (server *APIServer) Start(router *mux.Router) {
 // NewAPIServer create a new APIServer
 func NewAPIServer(jf mgr.JobFunnel, sm mgr.ScheduleManager) *APIServer {
 	db, _ := dash.NewDashboard()
-	return &APIServer{jf, sm, db}
+
+	auth, err := NewKratosClient()
+	if err != nil {
+		log.Fatal("Creating kratos client failed")
+	}
+
+	return &APIServer{jf, sm, db, auth}
 }
