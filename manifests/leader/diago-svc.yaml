@@ -25,8 +25,8 @@ spec:
     targetPort: 2112
   - name: grpc
     protocol: TCP
-    port: 6969
-    targetPort: 6969
+    port: 5000
+    targetPort: 5000
   - name: mongod
     protocol: TCP
     port: 27017

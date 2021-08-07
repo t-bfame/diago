@@ -23,7 +23,6 @@ spec:
       containers:
       - name: leader
         image: tbfame/diago:latest
-        imagePullPolicy: Never
         volumeMounts:
         - name: diago-storage
           mountPath: "/storage"
