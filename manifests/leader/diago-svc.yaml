@@ -27,4 +27,7 @@ spec:
     protocol: TCP
     port: 5000
     targetPort: 5000
-  
+  - name: mongod
+    protocol: TCP
+    port: 27017
+    targetPort: 27017

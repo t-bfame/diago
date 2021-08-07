@@ -40,6 +40,8 @@ spec:
             name: diago-cm
         - secretRef:
             name: diago-secret
+      - name: mymongo
+        image: mongo:latest
       volumes:
         - name: diago-storage
           persistentVolumeClaim:
