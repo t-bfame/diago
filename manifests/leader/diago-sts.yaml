@@ -22,23 +22,20 @@ spec:
       serviceAccountName: diago-sa
       containers:
       - name: leader
-        image: mydiago:v1
+        image: tbfame/diago:latest
         imagePullPolicy: Never
         volumeMounts:
         - name: diago-storage
           mountPath: "/storage"
         env:
         - name: "DIAGO_HOST"
-          # valueFrom:
-          #     fieldRef:
-          #       fieldPath: status.podIP
-          value: "0.0.0.0"
+          valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
         - name: "DIAGO_DEFAULT_NAMESPACE"
           value: "diago"
         - name: "DIAGO_STORAGE_PATH"
           value: "/storage/diago.db"
-        - name: "DIAGO_GRPC_PORT"
-          value: "6969"
         envFrom:
         - configMapRef:
             name: diago-cm
