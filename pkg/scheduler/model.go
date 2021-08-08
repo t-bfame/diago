@@ -30,9 +30,9 @@ func (sm SchedulerModel) createContainerSpec(name string, image string, env map[
 	}
 
 	container := v1.Container{
-		Name:            name,
-		Image:           image,
-		Env:             envVars,
+		Name:  name,
+		Image: image,
+		Env:   envVars,
 	}
 
 	return []v1.Container{container}
@@ -52,6 +52,7 @@ func (sm SchedulerModel) getEnvs(group string, instance InstanceID) map[string]s
 		"DIAGO_WORKER_GROUP_INSTANCE":          string(instance),
 		"DIAGO_LEADER_HOST":                    c.Diago.Host,
 		"DIAGO_LEADER_PORT":                    fmt.Sprintf("%d", c.Diago.GRPCPort),
+		"MONGO_DB_PORT":                        fmt.Sprintf("%d", c.Diago.MongoDBPort),
 		"ALLOWED_INACTIVITY_PERIOD_SECONDS":    fmt.Sprintf("%d", workerConfig.Spec.AllowedInactivityPeriod),
 		"DIAGO_WORKER_GROUP_INSTANCE_CAPACITY": fmt.Sprintf("%d", workerConfig.Spec.Capacity),
 	}
