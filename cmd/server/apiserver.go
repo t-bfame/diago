@@ -403,19 +403,19 @@ func handleLoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	foundUser, err := sto.GetUserByUserId(user.username.(m.UserID))
+	foundUser, err := sto.GetUserByUserId(m.UserID(user.Username))
 
 	if err != nil {
 		w.Write(buildFailure(err.Error(), http.StatusForbidden, w))
 		return
 	}
 
-	if !CheckPasswordHash(user.password, foundUser.Password) {
+	if !CheckPasswordHash(user.Password, foundUser.Password) {
 		w.Write(buildFailure(err.Error(), http.StatusForbidden, w))
 		return
 	}
 
-	token, err := auth.GenerateToken(user.username)
+	token, err := auth.GenerateToken(user.Username)
 	if err != nil {
 		w.Write(buildFailure(err.Error(), http.StatusInternalServerError, w))
 		return
@@ -451,9 +451,9 @@ func handleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = sto.AddUser(user)
+	err = sto.AddUser(&user)
 
-	token, err := auth.GenerateToken(user.username)
+	token, err := auth.GenerateToken(user.Username)
 	if err != nil {
 		w.Write(buildFailure(err.Error(), http.StatusInternalServerError, w))
 		return
@@ -488,8 +488,8 @@ func (server *APIServer) Start(router *mux.Router) {
 	// cors from "github.com/rs/cors"
 
 	// users
-	router.HandleFunc("/user", handleTestCreate).Methods(http.MethodPost)
-	router.HandleFunc("/user/login", handleTestCreate).Methods(http.MethodPost)
+	router.HandleFunc("/user", handleCreateUser).Methods(http.MethodPost)
+	router.HandleFunc("/login", handleLoginUser).Methods(http.MethodPost)
 
 	// tests
 	router.HandleFunc("/tests", handleTestCreate).Methods(http.MethodPost)

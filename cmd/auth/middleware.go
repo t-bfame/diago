@@ -34,7 +34,7 @@ func Middleware() func(http.Handler) http.Handler {
 			}
 
 			// create user and check if user exists in db
-			foundUser, err := sto.GetUserByUserId(username.(m.UserID))
+			foundUser, err := sto.GetUserByUserId(m.UserID(username))
 			if err != nil {
 				next.ServeHTTP(w, r)
 				return

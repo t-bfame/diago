@@ -8,6 +8,7 @@ import (
 )
 
 // secret key being used to sign tokens
+// TODO replace with actual secret key
 var (
 	SecretKey = []byte("secret")
 )
