@@ -9,10 +9,12 @@ import (
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
+	"github.com/t-bfame/diago/cmd/auth"
 	dash "github.com/t-bfame/diago/pkg/dashboard"
 	mgr "github.com/t-bfame/diago/pkg/manager"
 	m "github.com/t-bfame/diago/pkg/model"
 	sto "github.com/t-bfame/diago/pkg/storage"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // APIServer serves API calls over HTTP
@@ -381,9 +383,113 @@ func handleTestScheduleDeleteBuilder(
 	}
 }
 
+func handleLoginUser(w http.ResponseWriter, r *http.Request) {
+	bodyContent, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
+		return
+	}
+
+	err = m.Validate(reflect.TypeOf(m.User{}), bodyContent)
+	if err != nil {
+		w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
+		return
+	}
+
+	var user m.User
+	err = json.Unmarshal(bodyContent, &user)
+	if err != nil {
+		w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
+		return
+	}
+
+	foundUser, err := sto.GetUserByUserId(user.username.(m.UserID))
+
+	if err != nil {
+		w.Write(buildFailure(err.Error(), http.StatusForbidden, w))
+		return
+	}
+
+	if !CheckPasswordHash(user.password, foundUser.Password) {
+		w.Write(buildFailure(err.Error(), http.StatusForbidden, w))
+		return
+	}
+
+	token, err := auth.GenerateToken(user.username)
+	if err != nil {
+		w.Write(buildFailure(err.Error(), http.StatusInternalServerError, w))
+		return
+	}
+
+	w.Write(
+		buildSuccess(
+			map[string]string{
+				"token": token,
+			},
+			w,
+		),
+	)
+}
+
+func handleCreateUser(w http.ResponseWriter, r *http.Request) {
+	bodyContent, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
+		return
+	}
+
+	err = m.Validate(reflect.TypeOf(m.User{}), bodyContent)
+	if err != nil {
+		w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
+		return
+	}
+
+	var user m.User
+	err = json.Unmarshal(bodyContent, &user)
+	if err != nil {
+		w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
+		return
+	}
+
+	err = sto.AddUser(user)
+
+	token, err := auth.GenerateToken(user.username)
+	if err != nil {
+		w.Write(buildFailure(err.Error(), http.StatusInternalServerError, w))
+		return
+	}
+
+	w.Write(
+		buildSuccess(
+			map[string]string{
+				"token": token,
+			},
+			w,
+		),
+	)
+}
+
+func HashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	return string(bytes), err
+}
+
+func CheckPasswordHash(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
+}
+
 // Start starts the APIServer
 func (server *APIServer) Start(router *mux.Router) {
 	router.Use(preResponse)
+	router.Use(auth.Middleware())
+	// consider using:
+	// router.Use(auth.Middleware(), cors.Default().Handler)
+	// cors from "github.com/rs/cors"
+
+	// users
+	router.HandleFunc("/user", handleTestCreate).Methods(http.MethodPost)
+	router.HandleFunc("/user/login", handleTestCreate).Methods(http.MethodPost)
 
 	// tests
 	router.HandleFunc("/tests", handleTestCreate).Methods(http.MethodPost)
