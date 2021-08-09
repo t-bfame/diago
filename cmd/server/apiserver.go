@@ -497,9 +497,6 @@ func CheckPasswordHash(password, hash string) bool {
 func (server *APIServer) Start(router *mux.Router) {
 	router.Use(preResponse)
 	router.Use(auth.Middleware())
-	// consider using:
-	// router.Use(auth.Middleware(), cors.Default().Handler)
-	// cors from "github.com/rs/cors"
 
 	// users
 	router.HandleFunc("/user", handleCreateUser).Methods(http.MethodPost)
