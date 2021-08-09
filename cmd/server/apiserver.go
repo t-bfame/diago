@@ -227,7 +227,7 @@ func handleTestStopBuilder(
 
 func handleTestInstanceReadForTest(w http.ResponseWriter, r *http.Request) {
 	testid := r.FormValue("testid")
-	instances, err := sto.GetTestInstancesByTestID(m.TestID(testid))
+	instances, err := sto.GetTestInstancesByTestIDWithLogs(m.TestID(testid))
 	if err != nil {
 		w.Write(buildFailure(err.Error(), http.StatusInternalServerError, w))
 		return
@@ -236,7 +236,7 @@ func handleTestInstanceReadForTest(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleTestInstanceReadAll(w http.ResponseWriter, r *http.Request) {
-	tis, err := sto.GetAllTestInstances()
+	tis, err := sto.GetAllTestInstancesWithLogs()
 	if err != nil {
 		w.Write(
 			buildFailure(err.Error(), http.StatusInternalServerError, w),

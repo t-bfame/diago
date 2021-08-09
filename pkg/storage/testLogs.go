@@ -2,8 +2,6 @@ package storage
 
 import (
 	"context"
-	"fmt"
-	"log"
 
 	m "github.com/t-bfame/diago/pkg/model"
 
@@ -11,17 +9,19 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func GetTestLogs(ctx context.Context, testID m.TestID, testInstanceID m.TestInstanceID) ([]m.TestInstanceLog, error) {
+func GetTestLogs(ctx context.Context, testID m.TestID, testInstanceID m.TestInstanceID) (map[m.JobID][]m.TestInstanceLog, error) {
 	filter := bson.M{
 		"testinstance_id": testInstanceID,
 	}
 
 	var testInstances []struct {
 		Response string `bson:"response"`
+		JobID    string `bson:"job_id"`
 	}
 
 	projection := bson.D{
 		{"response", 1},
+		{"job_id", 2},
 	}
 
 	cur, err := mongoClient.Database("diago-worker").Collection("responsedata").Find(ctx, filter, options.Find().SetProjection(projection))
@@ -30,10 +30,12 @@ func GetTestLogs(ctx context.Context, testID m.TestID, testInstanceID m.TestInst
 	}
 
 	cur.All(ctx, &testInstances)
-	log.Println(fmt.Sprintf("found test instances are : %s,  %b", testInstances, cur.Next(ctx)))
-	var testInstanceLogs []m.TestInstanceLog
+
+	var logsByID = make(map[m.JobID][]m.TestInstanceLog)
 	for _, testInstance := range testInstances {
-		testInstanceLogs = append(testInstanceLogs, m.TestInstanceLog(testInstance.Response))
+		jobID := m.JobID(testInstance.JobID)
+		logsByID[jobID] = append(logsByID[jobID], m.TestInstanceLog(testInstance.Response))
 	}
-	return testInstanceLogs, nil
+
+	return logsByID, nil
 }
