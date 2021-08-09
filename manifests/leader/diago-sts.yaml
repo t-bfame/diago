@@ -47,9 +47,7 @@ spec:
         - name: "DIAGO_STORAGE_PATH"
           value: "/storage/diago.db"
         - name: "MONGO_DB_HOST"
-          valueFrom:
-              fieldRef:
-                fieldPath: status.podIP
+          value: "mongodb"
         - name: "MONGO_DB_PORT"
           value: "27017"
         envFrom:
@@ -57,8 +55,6 @@ spec:
             name: diago-cm
         - secretRef:
             name: diago-secret
-      - name: mymongo
-        image: mongo:latest
       volumes:
         - name: diago-storage
           persistentVolumeClaim:
