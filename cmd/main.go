@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -22,6 +23,11 @@ func main() {
 
 	if err := storage.InitDatabase(config.Diago.StoragePath); err != nil {
 		panic("Failed to init database.")
+	}
+
+	mongoPath := fmt.Sprintf("mongodb://%s:%d", config.Diago.MongoDBHost, config.Diago.MongoDBPort)
+	if err := storage.ConnectToMongoDB(context.Background(), mongoPath); err != nil {
+		panic(fmt.Sprintf("Failed to init mongo at %s.", mongoPath))
 	}
 
 	if config.Diago.Debug {
