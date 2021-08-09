@@ -411,7 +411,7 @@ func handleLoginUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !CheckPasswordHash(user.Password, foundUser.Password) {
-		w.Write(buildFailure(err.Error(), http.StatusForbidden, w))
+		w.Write(buildFailure("Incorrect password", http.StatusForbidden, w))
 		return
 	}
 
@@ -450,7 +450,21 @@ func handleCreateUser(w http.ResponseWriter, r *http.Request) {
 		w.Write(buildFailure(err.Error(), http.StatusBadRequest, w))
 		return
 	}
+	user.ID = m.UserID(user.Username)
 
+	_, err = sto.GetUserByUserId(user.ID)
+	if err == nil {
+		w.Write(buildFailure("User already exists", http.StatusBadRequest, w))
+		return
+	}
+
+	hash, err := HashPassword(user.Password)
+	if err != nil {
+		w.Write(buildFailure(err.Error(), http.StatusInternalServerError, w))
+		return
+	}
+
+	user.Password = hash
 	err = sto.AddUser(&user)
 
 	token, err := auth.GenerateToken(user.Username)

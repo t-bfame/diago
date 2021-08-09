@@ -69,14 +69,15 @@ func GetUserByUserId(userId model.UserID) (*model.User, error) {
 		b := tx.Bucket([]byte(UserBucketName))
 		data := b.Get([]byte(userId))
 		if data == nil {
-			return nil
+			return fmt.Errorf("no such user exists")
 		}
 		if err = tools.GobDecode(&result, data); err != nil {
 			return fmt.Errorf("failed to decode User due to: %s", err)
 		}
 		return nil
 	}); err != nil {
-		log.WithError(err).WithField("userId", userId).Error("Failed to GetUserById")
+		// log.WithError(err).WithField("userId", userId).Error("Failed to GetUserById")
+		return nil, err
 	}
 	return result, nil
 }
