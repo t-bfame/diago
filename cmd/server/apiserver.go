@@ -14,7 +14,6 @@ import (
 	mgr "github.com/t-bfame/diago/pkg/manager"
 	m "github.com/t-bfame/diago/pkg/model"
 	sto "github.com/t-bfame/diago/pkg/storage"
-	"golang.org/x/crypto/bcrypt"
 )
 
 // APIServer serves API calls over HTTP
@@ -59,6 +58,17 @@ func buildFailure(msg string, code int, w http.ResponseWriter) []byte {
 		return make([]byte, 0)
 	}
 	return json
+}
+
+func checkAuth(f func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user := auth.GetUserForContext(r.Context())
+		if user == nil {
+			w.Write(buildFailure("Not authenticated", http.StatusForbidden, w))
+			return
+		}
+		f(w, r)
+	}
 }
 
 func handleTestCreate(w http.ResponseWriter, r *http.Request) {
@@ -410,7 +420,7 @@ func handleLoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !CheckPasswordHash(user.Password, foundUser.Password) {
+	if !auth.CheckPasswordHash(user.Password, foundUser.Password) {
 		w.Write(buildFailure("Incorrect password", http.StatusForbidden, w))
 		return
 	}
@@ -458,7 +468,7 @@ func handleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hash, err := HashPassword(user.Password)
+	hash, err := auth.HashPassword(user.Password)
 	if err != nil {
 		w.Write(buildFailure(err.Error(), http.StatusInternalServerError, w))
 		return
@@ -466,6 +476,10 @@ func handleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 	user.Password = hash
 	err = sto.AddUser(&user)
+	if err != nil {
+		w.Write(buildFailure(err.Error(), http.StatusInternalServerError, w))
+		return
+	}
 
 	token, err := auth.GenerateToken(user.Username)
 	if err != nil {
@@ -483,16 +497,6 @@ func handleCreateUser(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
-func HashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
-	return string(bytes), err
-}
-
-func CheckPasswordHash(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
-}
-
 // Start starts the APIServer
 func (server *APIServer) Start(router *mux.Router) {
 	router.Use(preResponse)
@@ -503,34 +507,34 @@ func (server *APIServer) Start(router *mux.Router) {
 	router.HandleFunc("/login", handleLoginUser).Methods(http.MethodPost)
 
 	// tests
-	router.HandleFunc("/tests", handleTestCreate).Methods(http.MethodPost)
-	router.HandleFunc("/tests", handleTestReadForPrefix).Methods(http.MethodGet).
+	router.HandleFunc("/tests", checkAuth(handleTestCreate)).Methods(http.MethodPost)
+	router.HandleFunc("/tests", checkAuth(handleTestReadForPrefix)).Methods(http.MethodGet).
 		Queries("prefix", "{prefix}")
-	router.HandleFunc("/tests", handleTestReadAll).Methods(http.MethodGet)
-	router.HandleFunc("/tests/{testid}", handleTestRead).Methods(http.MethodGet)
-	router.HandleFunc("/tests/{testid}", handleTestDelete).Methods(http.MethodDelete)
-	router.HandleFunc("/tests/{testid}/start", handleTestStartBuilder(server)).
+	router.HandleFunc("/tests", checkAuth(handleTestReadAll)).Methods(http.MethodGet)
+	router.HandleFunc("/tests/{testid}", checkAuth(handleTestRead)).Methods(http.MethodGet)
+	router.HandleFunc("/tests/{testid}", checkAuth(handleTestDelete)).Methods(http.MethodDelete)
+	router.HandleFunc("/tests/{testid}/start", checkAuth(handleTestStartBuilder(server))).
 		Methods(http.MethodPost)
-	router.HandleFunc("/tests/{testid}/stop", handleTestStopBuilder(server)).
+	router.HandleFunc("/tests/{testid}/stop", checkAuth(handleTestStopBuilder(server))).
 		Methods(http.MethodPost)
 
 	// test-instances
-	router.HandleFunc("/test-instances", handleTestInstanceReadForTest).
+	router.HandleFunc("/test-instances", checkAuth(handleTestInstanceReadForTest)).
 		Methods(http.MethodGet).Queries("testid", "{testid}")
-	router.HandleFunc("/test-instances", handleTestInstanceReadAll).Methods(http.MethodGet)
+	router.HandleFunc("/test-instances", checkAuth(handleTestInstanceReadAll)).Methods(http.MethodGet)
 
 	// test-schedules
-	router.HandleFunc("/test-schedules", handleTestScheduleCreateBuilder(server)).
+	router.HandleFunc("/test-schedules", checkAuth(handleTestScheduleCreateBuilder(server))).
 		Methods(http.MethodPost)
-	router.HandleFunc("/test-schedules", handleTestScheduleReadForTest).
+	router.HandleFunc("/test-schedules", checkAuth(handleTestScheduleReadForTest)).
 		Methods(http.MethodGet).Queries("testid", "{testid}")
-	router.HandleFunc("/test-schedules", handleTestScheduleReadAll).
+	router.HandleFunc("/test-schedules", checkAuth(handleTestScheduleReadAll)).
 		Methods(http.MethodGet)
-	router.HandleFunc("/test-schedules/{scheduleid}", handleTestScheduleDeleteBuilder(server)).
+	router.HandleFunc("/test-schedules/{scheduleid}", checkAuth(handleTestScheduleDeleteBuilder(server))).
 		Methods(http.MethodDelete)
 
 	// Get grafana dashboard metadata
-	router.HandleFunc("/dashboard-metadata", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/dashboard-metadata", checkAuth(func(w http.ResponseWriter, r *http.Request) {
 		if server.db == nil {
 			w.Write(buildFailure("Grafana dashboards are not available", http.StatusNotFound, w))
 			return
@@ -542,7 +546,7 @@ func (server *APIServer) Start(router *mux.Router) {
 			return
 		}
 		w.Write(body)
-	}).Methods(http.MethodGet)
+	})).Methods(http.MethodGet)
 }
 
 // NewAPIServer create a new APIServer
