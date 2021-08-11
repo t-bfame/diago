@@ -5,6 +5,7 @@ go 1.15
 require (
 	github.com/bmizerany/perks v0.0.0-20141205001514-d9a9656a3a4b
 	github.com/boltdb/bolt v1.3.1
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/dgryski/go-gk v0.0.0-20200319235926-a69029f61654
 	github.com/gobuffalo/packr/v2 v2.8.1
 	github.com/golang/protobuf v1.4.3

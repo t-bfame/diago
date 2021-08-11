@@ -46,6 +46,9 @@ func InitDatabase(dbName string) error {
 	if err := initStorageTestSchedule(db); err != nil {
 		return err
 	}
+	if err := initStorageUser(db); err != nil {
+		return err
+	}
 	return nil
 }
 
