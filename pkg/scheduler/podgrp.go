@@ -17,9 +17,11 @@ const hashSize = 6
 
 // PodGroup indicates kind of pod
 type PodGroup struct {
-	group     string
-	clientset *kubernetes.Clientset
-	model     *SchedulerModel
+	group     	string
+	testId		string
+	instanceId	string
+	clientset 	*kubernetes.Clientset
+	model     	*SchedulerModel
 
 	scheduledPods map[InstanceID]chan Outgoing
 	podmux        sync.Mutex
@@ -261,6 +263,8 @@ func (pg *PodGroup) distribute() {
 		// Increment the worload count
 		pg.workloadCount[j.ID]++
 		out <- Start{
+			TestID: 	pg.testId,
+			InstanceID: pg.instanceId,
 			ID:         j.ID,
 			Frequency:  workload,
 			Duration:   j.Duration,
@@ -285,6 +289,8 @@ func (pg *PodGroup) distribute() {
 	}
 
 	output <- Start{
+		TestID: 	pg.testId,
+		InstanceId: pg.instanceId,
 		ID:         j.ID,
 		Frequency:  j.Frequency - frequency,
 		Duration:   j.Duration,

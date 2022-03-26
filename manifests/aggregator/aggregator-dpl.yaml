@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: diago-aggregator
+  labels:
+    app.kubernetes.io/name: diago-aggregator
+spec:
+  replicas: 1
+  serviceName: diago-aggregator
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: diago
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: diago-aggregator
+    spec:
+      serviceAccountName: diago-sa
+      containers:
+      - name: aggregator
+        image: tbfame/diago:latest
+        env:
+        - name: "DIAGO_LEADER_HOST"
+          valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        - name: "DIAGO_HOST"
+          value: ""
+        - name: "DIAGO_LEADER_AGGREGATOR_PORT"
+          value: "6000"
+        - name: "REPORT_METRICS_FREQUENCY"
+          value: 5
+        envFrom:
+        - configMapRef:
+            name: diago-cm
+        - secretRef:
+            name: diago-secret
+      terminationGracePeriodSeconds: 0

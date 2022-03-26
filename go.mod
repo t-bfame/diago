@@ -1,4 +1,4 @@
-module github.com/t-bfame/diago
+module github.com/t-bfame/diago-aggregator
 
 go 1.15
 

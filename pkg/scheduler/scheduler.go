@@ -57,13 +57,16 @@ func (s *Scheduler) createPodGroup(groupName string, failNonExistentGroup bool) 
 }
 
 // Submit submits a job in a Scheduler
-func (s *Scheduler) Submit(j m.Job) (events chan Event, err error) {
+func (s *Scheduler) Submit(j m.Job) (events chan Event, testId string, instanceId string, err error) {
 	events = make(chan Event, 2)
 
 	// If WorkerGroup does not exist while submitting a Job
 	// then Job is orphaned and cannot make progress therefore
 	// call must fail
 	pg, err := s.createPodGroup(j.Group, true)
+
+	*pg.testId := testId
+	*pg.instanceId := instanceId
 
 	if err != nil {
 		return nil, err

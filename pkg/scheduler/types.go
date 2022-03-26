@@ -89,6 +89,8 @@ type Outgoing interface {
 
 // Start message
 type Start struct {
+	TestID:    string
+	InstanceID string
 	ID         m.JobID
 	Frequency  uint64
 	Duration   uint64

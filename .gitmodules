@@ -1,6 +1,7 @@
 [submodule "idl"]
 	path = idl
 	url = https://github.com/t-bfame/diago-idl.git
+	branch = kyle/aggregator
 [submodule "ui"]
 	path = ui
 	url = https://github.com/t-bfame/diago-ui
