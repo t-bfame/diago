@@ -23,9 +23,11 @@ type JobInstance struct {
 
 // PodGroup indicates kind of pod
 type PodGroup struct {
-	group     string
-	clientset *kubernetes.Clientset
-	model     *SchedulerModel
+	group      string
+	testId     string
+	instanceId string
+	clientset  *kubernetes.Clientset
+	model      *SchedulerModel
 
 	scheduledPods map[InstanceID]chan Outgoing
 	podmux        sync.Mutex

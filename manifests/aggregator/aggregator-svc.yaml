@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: diago-aggregator
+  labels:
+    app.kubernetes.io/name: diago-aggregator
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/path: /metrics
+    prometheus.io/port: "2112"
+spec:
+  selector:
+    app.kubernetes.io/name: diago-aggregator
+  type: ClusterIP
+  ports:
+  - name: aggregate
+    protocol: TCP
+    port: 6000
+    targetPort: 6000
+  
