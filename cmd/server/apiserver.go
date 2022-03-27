@@ -327,6 +327,22 @@ func handleTestScheduleReadForTest(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
+// func handleTestLogsRead(w http.ResponseWriter, r *http.Request) {
+// 	testid := r.FormValue("testid")
+
+// 	logs, err := sto.GetTestLogs(m.TestID(testid))
+// 	if err != nil {
+// 		w.Write(
+// 			buildFailure(err.Error(), http.StatusInternalServerError, w),
+// 		)
+// 		return
+// 	}
+
+// 	w.Write(
+// 		buildSuccess(logs, w),
+// 	)
+// }
+
 func handleTestScheduleReadAll(w http.ResponseWriter, r *http.Request) {
 	schedules, err := sto.GetAllTestSchedules()
 	if err != nil {

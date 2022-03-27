@@ -13,18 +13,23 @@ metadata:
 spec:
   selector:
     app.kubernetes.io/name: diago
-  type: ClusterIP
+  type: NodePort
   ports:
   - name: api
     protocol: TCP
     port: 80
     targetPort: 80
+    nodePort: 30007
   - name: prom
     protocol: TCP
     port: 2112
     targetPort: 2112
+    nodePort: 30017
   - name: grpc
     protocol: TCP
     port: 5000
     targetPort: 5000
-  
+  - name: mongod
+    protocol: TCP
+    port: 27017
+    targetPort: 27017

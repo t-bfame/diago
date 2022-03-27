@@ -22,7 +22,16 @@ spec:
       serviceAccountName: diago-sa
       containers:
       - name: leader
-        image: tbfame/diago:latest
+        # image: tbfame/diago:latest
+        image: ldr:v1
+        imagePullPolicy: Never
+        ports:
+        - name: api
+          containerPort: 80
+        - name: prom
+          containerPort: 2112
+        - name: grpc
+          containerPort: 5000
         volumeMounts:
         - name: diago-storage
           mountPath: "/storage"
@@ -31,15 +40,38 @@ spec:
           valueFrom:
               fieldRef:
                 fieldPath: status.podIP
+          # value: "0.0.0.0"
+        - name: "DIAGO_GRPC_PORT"
+          value: "5000"
+        - name: "DIAGO_API_PORT"
+          value: "80"
         - name: "DIAGO_DEFAULT_NAMESPACE"
           value: "diago"
         - name: "DIAGO_STORAGE_PATH"
           value: "/storage/diago.db"
+        - name: "DIAGO_DEBUG"
+          value: "true"
+        - name: "MONGO_DB_PORT"
+          value: "27017"
         envFrom:
         - configMapRef:
             name: diago-cm
         - secretRef:
             name: diago-secret
+      - name: mymongo
+        image: mongo:latest
+      # - name: worker-test
+      #   image: worker-test:v1
+      #   imagePullPolicy: Never
+      #   env:
+      #   - name: "DIAGO_LEADER_PORT"
+      #     value: "80"
+      #   - name: "DIAGO_LEADER_HOST"
+      #     value: "172.17.0.4"
+      #   - name: "DIAGO_WORKER_GROUP_INSTANCE"
+      #     value: "test-worker-instance"
+      #   - name: "DIAGO_WORKER_GROUP"
+      #     value: "test-worker-group"
       volumes:
         - name: diago-storage
           persistentVolumeClaim:

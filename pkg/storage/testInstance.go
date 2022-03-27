@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"encoding/gob"
 	"fmt"
 
@@ -93,6 +94,13 @@ func GetTestInstance(testInstanceID model.TestInstanceID) (*model.TestInstance, 
 	}); err != nil {
 		log.WithError(err).WithField("testInstanceID", testInstanceID).Error("Failed to GetTestInstance")
 		return nil, err
+	}
+
+	logs, err := GetTestLogs(context.Background(), result.TestID, result.ID)
+	result.Logs = logs
+	log.Printf("Got %d logs for %s", len(logs), result.ID)
+	if err != nil {
+		log.WithError(err)
 	}
 	return result, nil
 }

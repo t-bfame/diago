@@ -89,11 +89,15 @@ type Outgoing interface {
 
 // Start message
 type Start struct {
-	ID         m.JobID
-	Frequency  uint64
-	Duration   uint64
-	HTTPMethod string
-	HTTPUrl    string
+	JobID                   m.JobID
+	TestID                  m.TestID
+	TestInstanceID          m.TestInstanceID
+	Frequency               uint64
+	Duration                uint64
+	HTTPMethod              string
+	HTTPUrl                 string
+	HTTPBody                string
+	PersistResponseSampling m.SamplingRate
 }
 
 // Stop message
@@ -102,7 +106,7 @@ type Stop struct {
 }
 
 func (m Start) getJobID() m.JobID {
-	return m.ID
+	return m.JobID
 }
 
 // ToProto convert Outgoing to protobuf messages
@@ -110,12 +114,18 @@ func (m Start) ToProto() *worker.Message {
 	return &worker.Message{
 		Payload: &worker.Message_Start{
 			Start: &worker.Start{
-				JobId:     string(m.getJobID()),
-				Frequency: m.Frequency,
-				Duration:  m.Duration,
+				JobId:          string(m.getJobID()),
+				TestId:         string(m.TestID),
+				TestInstanceId: string(m.TestInstanceID),
+				Frequency:      m.Frequency,
+				Duration:       m.Duration,
 				Request: &worker.HTTPRequest{
 					Method: m.HTTPMethod,
 					Url:    m.HTTPUrl,
+					Body:   &m.HTTPBody,
+				},
+				PersistResponseSamplingRate: &worker.SamplingRate{
+					Period: m.PersistResponseSampling.Period,
 				},
 			},
 		},

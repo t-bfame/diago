@@ -15,6 +15,12 @@ import (
 
 const hashSize = 6
 
+type JobInstance struct {
+	job            m.Job
+	TestID         m.TestID
+	TestInstanceID m.TestInstanceID
+}
+
 // PodGroup indicates kind of pod
 type PodGroup struct {
 	group     string
@@ -28,7 +34,7 @@ type PodGroup struct {
 	workloadCount  map[m.JobID]uint32
 
 	qmux     sync.Mutex
-	jobQueue *[]m.Job
+	jobQueue *[]JobInstance
 
 	capmgr *CapacityManager
 
@@ -133,14 +139,14 @@ func (pg *PodGroup) removeInstance(instance InstanceID) (err error) {
 * @param  j        the given job
 * @param  events   the corresponding channel of the job
  */
-func (pg *PodGroup) addJob(j m.Job, events chan Event) (err error) {
+func (pg *PodGroup) addJob(j m.Job, testInstanceID m.TestInstanceID, testID m.TestID, events chan Event) (err error) {
 	pg.qmux.Lock()
 	defer pg.qmux.Unlock()
 
 	pg.outputChannels[j.ID] = events
 
 	// Queue job
-	*pg.jobQueue = append(*pg.jobQueue, j)
+	*pg.jobQueue = append(*pg.jobQueue, JobInstance{job: j, TestInstanceID: testInstanceID, TestID: testID})
 	go pg.addInstances(j.Frequency)
 
 	pg.distribute()
@@ -232,7 +238,8 @@ func (pg *PodGroup) distribute() {
 		return
 	}
 
-	j := (*pg.jobQueue)[0]
+	jInstance := (*pg.jobQueue)[0]
+	j := jInstance.job
 	frequency := j.Frequency
 	var workload uint64
 	var err error
@@ -258,14 +265,18 @@ func (pg *PodGroup) distribute() {
 			continue
 		}
 
-		// Increment the worload count
+		// Increment the workload count
 		pg.workloadCount[j.ID]++
 		out <- Start{
-			ID:         j.ID,
-			Frequency:  workload,
-			Duration:   j.Duration,
-			HTTPMethod: j.HTTPMethod,
-			HTTPUrl:    j.HTTPUrl,
+			JobID:                   j.ID,
+			TestID:                  jInstance.TestID,
+			TestInstanceID:          jInstance.TestInstanceID,
+			Frequency:               workload,
+			Duration:                j.Duration,
+			HTTPMethod:              j.HTTPMethod,
+			HTTPUrl:                 j.HTTPUrl,
+			HTTPBody:                j.HTTPBody,
+			PersistResponseSampling: j.PersistResponseSampling,
 		}
 
 		if frequency == 0 {
@@ -285,11 +296,15 @@ func (pg *PodGroup) distribute() {
 	}
 
 	output <- Start{
-		ID:         j.ID,
-		Frequency:  j.Frequency - frequency,
-		Duration:   j.Duration,
-		HTTPMethod: j.HTTPMethod,
-		HTTPUrl:    j.HTTPUrl,
+		JobID:                   j.ID,
+		TestID:                  jInstance.TestID,
+		TestInstanceID:          jInstance.TestInstanceID,
+		Frequency:               j.Frequency - frequency,
+		Duration:                j.Duration,
+		HTTPMethod:              j.HTTPMethod,
+		HTTPUrl:                 j.HTTPUrl,
+		HTTPBody:                j.HTTPBody,
+		PersistResponseSampling: j.PersistResponseSampling,
 	}
 }
 
@@ -311,7 +326,7 @@ func NewPodGroup(group string, clientset *kubernetes.Clientset, model *Scheduler
 	pg.outputChannels = make(map[m.JobID]chan Event)
 	pg.workloadCount = make(map[m.JobID]uint32)
 
-	pg.jobQueue = new([]m.Job)
+	pg.jobQueue = new([]JobInstance)
 	pg.capmgr = NewCapacityManager(group, model)
 
 	pg.cleanupChannel = cleanup

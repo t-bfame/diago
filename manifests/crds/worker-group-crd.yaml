@@ -33,6 +33,8 @@ spec:
             properties:
               image:
                 type: string
+              imagePullPolicy:
+                type: string
               capacity:
                 type: integer
               allowedInactivityPeriod:
