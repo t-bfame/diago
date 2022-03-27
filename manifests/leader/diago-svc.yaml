@@ -27,7 +27,14 @@ spec:
     protocol: TCP
     port: 5000
     targetPort: 5000
+<<<<<<< HEAD
   - name: aggregator
     protocol: TCP
     port: 6000
     targetPort: 6000
+=======
+  - name: mongod
+    protocol: TCP
+    port: 27017
+    targetPort: 27017
+>>>>>>> 65cb50453827fb5ab1e1b6e636baa65406e53f7d

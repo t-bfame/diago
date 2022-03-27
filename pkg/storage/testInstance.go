@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"encoding/gob"
 	"fmt"
 
@@ -98,7 +99,7 @@ func GetTestInstance(testInstanceID model.TestInstanceID) (*model.TestInstance, 
 }
 
 // Retrieve all "model/TestInstance" stored in the storage.
-func GetAllTestInstances() ([]*model.TestInstance, error) {
+func GetAllTestInstancesWithLogs() ([]*model.TestInstance, error) {
 	var instances = make([]*model.TestInstance, 0)
 	if err := db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(TestInstanceBucketName))
@@ -109,6 +110,14 @@ func GetAllTestInstances() ([]*model.TestInstance, error) {
 			if err := tools.GobDecode(&instance, v); err != nil {
 				return fmt.Errorf("failed to decode TestInstance due to: %s", err)
 			}
+
+			logs, err := GetTestLogs(context.Background(), instance.TestID, instance.ID)
+			if err != nil {
+				log.WithError(err)
+			} else {
+				instance.Logs = logs
+			}
+
 			instances = append(instances, instance)
 		}
 
@@ -162,6 +171,25 @@ func GetTestInstancesByTestID(testID model.TestID) ([]*model.TestInstance, error
 		log.WithError(err).Error("Failed to GetTestInstancesByTestID")
 		return nil, err
 	}
+	return result, nil
+}
+
+func GetTestInstancesByTestIDWithLogs(testID model.TestID) ([]*model.TestInstance, error) {
+	var result, err = GetTestInstancesByTestID(testID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, instance := range result {
+		logs, err := GetTestLogs(context.Background(), instance.TestID, instance.ID)
+		if err != nil {
+			log.WithError(err)
+		} else {
+			instance.Logs = logs
+		}
+	}
+
 	return result, nil
 }
 

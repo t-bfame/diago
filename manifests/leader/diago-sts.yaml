@@ -23,6 +23,13 @@ spec:
       containers:
       - name: leader
         image: tbfame/diago:latest
+        ports:
+        - name: api
+          containerPort: 80
+        - name: prom
+          containerPort: 2112
+        - name: grpc
+          containerPort: 5000
         volumeMounts:
         - name: diago-storage
           mountPath: "/storage"
@@ -31,10 +38,18 @@ spec:
           valueFrom:
               fieldRef:
                 fieldPath: status.podIP
+        - name: "DIAGO_GRPC_PORT"
+          value: "5000"
+        - name: "DIAGO_API_PORT"
+          value: "80"
         - name: "DIAGO_DEFAULT_NAMESPACE"
           value: "diago"
         - name: "DIAGO_STORAGE_PATH"
           value: "/storage/diago.db"
+        - name: "MONGO_DB_HOST"
+          value: "mongodb"
+        - name: "MONGO_DB_PORT"
+          value: "27017"
         envFrom:
         - configMapRef:
             name: diago-cm

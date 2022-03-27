@@ -1,0 +1,13 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: mongodb-pvc
+  labels:
+    app.kubernetes.io/name: mongodb
+    app.kubernetes.io/part-of: mongodb
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
