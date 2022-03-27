@@ -24,15 +24,8 @@ spec:
           valueFrom:
               fieldRef:
                 fieldPath: status.podIP
-        - name: "DIAGO_HOST"
-          value: ""
         - name: "DIAGO_LEADER_AGGREGATOR_PORT"
           value: "6000"
         - name: "REPORT_METRICS_FREQUENCY"
           value: 5
-        envFrom:
-        - configMapRef:
-            name: diago-cm
-        - secretRef:
-            name: diago-secret
       terminationGracePeriodSeconds: 0
