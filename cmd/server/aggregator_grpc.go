@@ -6,17 +6,17 @@ import (
 	"io"
 	"net"
 
-	"github.com/t-bfame/diago/pkg/aggregator"
-	agg "github.com/t-bfame/diago/pkg/aggregator"
-
 	log "github.com/sirupsen/logrus"
 
+	"github.com/t-bfame/diago/pkg/scheduler"
 	pb "github.com/t-bfame/diago/proto-gen/aggregator"
 	"google.golang.org/grpc"
 )
 
 type aggregatorServer struct {
 	pb.UnimplementedAggregatorServer
+
+	sched *scheduler.Scheduler
 }
 
 // client-side streaming to receive aggregated metrics
@@ -37,7 +37,7 @@ func (s *aggregatorServer) Coordinate(stream pb.Aggregator_CoordinateServer) err
 
 	log.Info("Received registration for aggregator pod")
 
-	incomingMsgs, err := agg.Register()
+	incomingMsgs, err := s.sched.RegisterAgg()
 
 	if err != nil {
 		log.WithError(err).Error("Encountered error during registration")
@@ -56,7 +56,7 @@ func (s *aggregatorServer) Coordinate(stream pb.Aggregator_CoordinateServer) err
 			break
 		}
 
-		inc, err := aggregator.ProtoToIncoming(msg)
+		inc, err := scheduler.ProtoToIncomingAgg(msg)
 		if err != nil {
 			log.Error("Encountered aggregator messsage with unexpected type, discarding message")
 			break
@@ -71,12 +71,12 @@ func (s *aggregatorServer) Coordinate(stream pb.Aggregator_CoordinateServer) err
 	return nil
 }
 
-func newAggServer() *aggregatorServer {
-	return &aggregatorServer{}
+func newAggServer(s *scheduler.Scheduler) *aggregatorServer {
+	return &aggregatorServer{sched: s}
 }
 
 // InitGRPCServer Initializes the gRPC server for diago
-func InitAggregatorGRPCServer(protocol string, host string, port uint64, opts []grpc.ServerOption) {
+func InitAggregatorGRPCServer(protocol string, host string, port uint64, opts []grpc.ServerOption, s *scheduler.Scheduler) {
 
 	lis, err := net.Listen(protocol, fmt.Sprintf("%s:%d", host, port))
 
@@ -86,7 +86,7 @@ func InitAggregatorGRPCServer(protocol string, host string, port uint64, opts []
 
 	grpcServer := grpc.NewServer(opts...)
 
-	pb.RegisterAggregatorServer(grpcServer, newAggServer())
+	pb.RegisterAggregatorServer(grpcServer, newAggServer(s))
 	defer grpcServer.Serve(lis)
 
 	log.WithField("host", host).WithField("port", port).Info("gRPC server listening")

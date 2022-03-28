@@ -204,9 +204,10 @@ func (pg *PodGroup) registerPod(group string, instance InstanceID, frequency uin
 			}
 
 			output <- msg
-			if msg.(type) == AggMetrics {
+			switch x := msg.(type) {
+			case AggMetrics:
 				// If get a message of job finished, then clean up the worker. If all workloads are finished, then close channel.
-				if AggMetrics.GetFinish() {
+				if x.Finished {
 					pg.workloadCount[jobID]--
 
 					pg.capmgr.reclaimCapacity(instance, jobID)

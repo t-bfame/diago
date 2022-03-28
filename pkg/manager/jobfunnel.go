@@ -171,7 +171,7 @@ func (jf *JobFunnelImpl) BeginTest(testID m.TestID, testType string) error {
 			defer jobGroup.Done()
 			for msg := range ch {
 				switch x := msg.(type) {
-				case s.Metrics:
+				case s.AggMetrics:
 					mAgg.Add(&x)
 				case s.Start:
 					log.WithField("Start event", msg).Info("Starting job")

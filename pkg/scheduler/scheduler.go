@@ -103,15 +103,15 @@ func (s *Scheduler) Register(group string, instance InstanceID, frequency uint64
 	return pg.registerPod(group, instance, frequency)
 }
 
-func (s *Scheduler) GetPgChan(group string, instance InstanceID, frequency uint64) (chan Incoming, chan Outgoing, error) {
+func (s *Scheduler) GetPgChan(group string, instance InstanceID) (chan Incoming, error) {
 	pg, ok := s.podGroups[group]
 
 	if !ok {
-		return errors.New("Could not find specified group")
+		return nil, errors.New("Could not find specified group")
 	}
 
 	// Add test channel for multiplexing
-	return pg.getInputChan(group, instance, frequency)
+	return pg.getInputChan(instance)
 }
 
 // NewScheduler creates a new scheduler using in cluster config.
@@ -139,4 +139,27 @@ func NewScheduler() *Scheduler {
 	}
 
 	return s
+}
+
+func (s *Scheduler) RegisterAgg() (incomingMsgs chan IncomingAgg, err error) {
+	incomingMsgs = make(chan IncomingAgg)
+
+	// consume received metrics
+	go func() {
+		for msg := range incomingMsgs {
+			group := msg.getGroup()
+			instance := msg.getInstanceID()
+
+			leaderMsgs, err := s.GetPgChan(group, instance)
+			if err != nil {
+				log.WithError(err).Info("Error getting input channel")
+				continue
+			}
+
+			leaderMsgs <- msg
+			// outputChannels[msg.TestId][msg.InstanceId][msg.JobId] <- msg
+		}
+	}()
+
+	return incomingMsgs, err
 }
