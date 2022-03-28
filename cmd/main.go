@@ -61,5 +61,5 @@ func main() {
 	}()
 
 	server.InitGRPCServer("tcp", config.Diago.Host, config.Diago.GRPCPort, opts, s)
-	server.InitAggregatorGRPCServer("tcp", config.Diago.Host, config.Diago.AggregatorReceiveGRPCPort, opts)
+	server.InitAggregatorGRPCServer("tcp", config.Diago.Host, config.Diago.AggregatorReceiveGRPCPort, opts, s)
 }
