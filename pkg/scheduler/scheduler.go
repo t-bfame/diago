@@ -103,6 +103,17 @@ func (s *Scheduler) Register(group string, instance InstanceID, frequency uint64
 	return pg.registerPod(group, instance, frequency)
 }
 
+func (s *Scheduler) GetPgChan(group string, instance InstanceID, frequency uint64) (chan Incoming, chan Outgoing, error) {
+	pg, ok := s.podGroups[group]
+
+	if !ok {
+		return errors.New("Could not find specified group")
+	}
+
+	// Add test channel for multiplexing
+	return pg.getInputChan(group, instance, frequency)
+}
+
 // NewScheduler creates a new scheduler using in cluster config.
 func NewScheduler() *Scheduler {
 	// creates the in-cluster config
