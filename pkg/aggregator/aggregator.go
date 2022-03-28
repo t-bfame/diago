@@ -1,15 +1,14 @@
 package aggregator
 
-import (
-	"errors"
-	"sync"
+import "fmt"
 
-	log "github.com/sirupsen/logrus"
-	m "github.com/t-bfame/diago/pkg/model"
-)
+// "errors"
+// "sync"
+
+// log "github.com/sirupsen/logrus"
+// m "github.com/t-bfame/diago/pkg/model"
 
 type Aggregator struct {
-	
 }
 
 func Register() (incomingMsgs chan Incoming, err error) {
@@ -18,9 +17,9 @@ func Register() (incomingMsgs chan Incoming, err error) {
 	// consume received metrics
 	go func() {
 		for msg := range incomingMsgs {
-			
+			fmt.Println(msg)
 		}
-	}
+	}()
 
-	return incomingMsgs
+	return incomingMsgs, nil
 }

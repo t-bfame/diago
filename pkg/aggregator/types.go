@@ -2,12 +2,11 @@ package aggregator
 
 import (
 	"errors"
-	"log"
 	"time"
 
-	pytypes "github.com/golang/protobuf/ptypes"
 	m "github.com/t-bfame/diago/pkg/model"
 	aggregator "github.com/t-bfame/diago/proto-gen/aggregator"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 // InstanceID Pod instance ID for identification
@@ -23,12 +22,11 @@ type Incoming interface {
 	getJobID() m.JobID
 }
 
-
 // AggMetrics message
 type AggMetrics struct {
-	TestId string
+	TestId     string
 	InstanceId string
-	JobId string
+	JobId      string
 	// Latencies holds computed request latency metrics.
 	Latencies []*durationpb.Duration `json:"latencies"`
 
@@ -60,14 +58,14 @@ type AggMetrics struct {
 	Errors []string `json:"errors"`
 
 	// Used for fast lookup of errors in Errors
-	errors  map[string]struct{}
+	errors map[string]struct{}
 
 	// Finish message has been received
-	Finished bool 
+	Finished bool
 }
 
 func (m AggMetrics) getJobID() m.JobID {
-	return m.ID
+	return m.getJobID()
 }
 
 // ProtoToIncoming Convert protobufs to Incoming type message
@@ -75,26 +73,22 @@ func ProtoToIncoming(msg *aggregator.Message) (Incoming, error) {
 	var inc Incoming
 
 	switch msg.Payload.(type) {
-	case *aggregator.Message_Metrics:
-		metrics := msg.GetMetrics()
-		timestamp, err := pytypes.Timestamp(metrics.GetTimestamp())
-		if err != nil {
-			log.Fatal(err)
-		}
+	case *aggregator.Message_AggMetrics:
+		metrics := msg.GetAggMetrics()
 		inc = AggMetrics{
-			TestId:		metrics.GetTestId(),
-			InstanceId:	metrics.GetInstanceId(),
-			JobId:      m.JobID(metrics.GetJobId()),
-			Requests:	metric.GetRequests(),
-			Code:		metrics.GetCode(),
-			BytesIn: 	metrics.GetBytesIn(),
-			BytesOut:	metrics.GetBytesOut(),
-			Latencies:	time.Duration(metrics.GetLatencies()),
-			Earliest:	metrics.GetEarliest(),
-			Latest:		metrics.GetLatest(),
-			End:		metrics.GetEnd(),
-			Errors:     metrics.GetErrors(),
-			Finish:		metrics.GetFinish()
+			TestId:      metrics.GetTestId(),
+			InstanceId:  metrics.GetInstanceId(),
+			JobId:       string(m.JobID(metrics.GetJobId())),
+			Requests:    metrics.GetRequests(),
+			StatusCodes: metrics.GetCodes(),
+			BytesIn:     metrics.GetBytesIn(),
+			BytesOut:    metrics.GetBytesOut(),
+			Latencies:   metrics.GetLatencies(),
+			Earliest:    metrics.GetEarliest().AsTime(),
+			Latest:      metrics.GetLatest().AsTime(),
+			End:         metrics.GetEnd().AsTime(),
+			Errors:      metrics.GetErrors(),
+			Finished:    metrics.GetFinish(),
 		}
 	default:
 		return nil, errors.New("Invalid Incoming aggregator message type")

@@ -2,10 +2,8 @@ package scheduler
 
 import (
 	"errors"
-	"log"
 	"time"
 
-	pytypes "github.com/golang/protobuf/ptypes"
 	m "github.com/t-bfame/diago/pkg/model"
 	worker "github.com/t-bfame/diago/proto-gen/worker"
 )
@@ -52,21 +50,21 @@ func ProtoToIncoming(msg *worker.Message) (Incoming, error) {
 	var inc Incoming
 
 	switch msg.Payload.(type) {
-	case *worker.Message_Metrics:
-		metrics := msg.GetMetrics()
-		timestamp, err := pytypes.Timestamp(metrics.GetTimestamp())
-		if err != nil {
-			log.Fatal(err)
-		}
-		inc = Metrics{
-			ID:        m.JobID(metrics.GetJobId()),
-			Code:      metrics.GetCode(),
-			BytesIn:   metrics.GetBytesIn(),
-			BytesOut:  metrics.GetBytesOut(),
-			Latency:   time.Duration(metrics.GetLatency()),
-			Error:     metrics.GetError(),
-			Timestamp: timestamp,
-		}
+	// case *worker.Message_Metrics:
+	// 	metrics := msg.GetMetrics()
+	// 	timestamp, err := pytypes.Timestamp(metrics.GetTimestamp())
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// 	inc = Metrics{
+	// 		ID:        m.JobID(metrics.GetJobId()),
+	// 		Code:      metrics.GetCode(),
+	// 		BytesIn:   metrics.GetBytesIn(),
+	// 		BytesOut:  metrics.GetBytesOut(),
+	// 		Latency:   time.Duration(metrics.GetLatency()),
+	// 		Error:     metrics.GetError(),
+	// 		Timestamp: timestamp,
+	// 	}
 
 	case *worker.Message_Finish:
 		finish := msg.GetFinish()
@@ -122,7 +120,7 @@ func (m Start) ToProto() *worker.Message {
 				Request: &worker.HTTPRequest{
 					Method: m.HTTPMethod,
 					Url:    m.HTTPUrl,
-					Body:   &m.HTTPBody,
+					Body:   m.HTTPBody,
 				},
 				PersistResponseSamplingRate: &worker.SamplingRate{
 					Period: m.PersistResponseSampling.Period,

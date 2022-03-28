@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 
+	"github.com/t-bfame/diago/pkg/aggregator"
 	agg "github.com/t-bfame/diago/pkg/aggregator"
 
 	log "github.com/sirupsen/logrus"
@@ -51,25 +52,26 @@ func (s *aggregatorServer) Coordinate(stream pb.Aggregator_CoordinateServer) err
 			break
 		}
 		if err != nil {
-			log.WithError(err).WithField("group", group).WithField("instance", instance).Error("Encountered aggregator receiver stream error")
+			log.Error("Encountered aggregator receiver stream error")
 			break
 		}
 
 		inc, err := aggregator.ProtoToIncoming(msg)
 		if err != nil {
-			log.WithField("recvdType", fmt.Sprintf("%T", msg.Payload)).Error("Encountered aggregator messsage with unexpected type, discarding message")
+			log.Error("Encountered aggregator messsage with unexpected type, discarding message")
+			break
 		}
 
 		incomingMsgs <- inc
 	}
 
-	log.WithField("group", group).WithField("instance", instance).Info("Closing aggregator pod")
+	log.Info("Closing aggregator pod")
 	close(incomingMsgs)
 
 	return nil
 }
 
-func newServer() *aggregatorServer {
+func newAggServer() *aggregatorServer {
 	return &aggregatorServer{}
 }
 
@@ -84,7 +86,7 @@ func InitAggregatorGRPCServer(protocol string, host string, port uint64, opts []
 
 	grpcServer := grpc.NewServer(opts...)
 
-	pb.RegisterWorkerServer(grpcServer, newServer())
+	pb.RegisterAggregatorServer(grpcServer, newAggServer())
 	defer grpcServer.Serve(lis)
 
 	log.WithField("host", host).WithField("port", port).Info("gRPC server listening")

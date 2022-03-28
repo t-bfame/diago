@@ -65,17 +65,17 @@ func (s *Scheduler) Submit(j m.Job) (events chan Event, testId string, instanceI
 	// call must fail
 	pg, err := s.createPodGroup(j.Group, true)
 
-	*pg.testId := testId
-	*pg.instanceId := instanceId
+	pg.testId = testId
+	pg.instanceId = instanceId
 
 	if err != nil {
-		return nil, err
+		return nil, "", "", err
 	}
 
 	// Add channel for receiving events
-	pg.addJob(j, testInstanceID, testID, events)
+	pg.addJob(j, m.TestInstanceID(pg.instanceId), m.TestID(pg.testId), events)
 
-	return events, err
+	return events, pg.testId, pg.instanceId, err
 }
 
 // Stop stops a job in a Scheduler
