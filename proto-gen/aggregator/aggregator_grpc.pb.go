@@ -34,7 +34,7 @@ func NewAggregatorClient(cc grpc.ClientConnInterface) AggregatorClient {
 }
 
 func (c *aggregatorClient) Coordinate(ctx context.Context, opts ...grpc.CallOption) (Aggregator_CoordinateClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Aggregator_ServiceDesc.Streams[0], "/Aggregator/Coordinate", opts...)
+	stream, err := c.cc.NewStream(ctx, &Aggregator_ServiceDesc.Streams[0], "/protogen.aggregator.Aggregator/Coordinate", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func (x *aggregatorCoordinateServer) Recv() (*Message, error) {
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Aggregator_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "Aggregator",
+	ServiceName: "protogen.aggregator.Aggregator",
 	HandlerType: (*AggregatorServer)(nil),
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
