@@ -14,108 +14,48 @@ import (
 	sync "sync"
 )
 
-const (
-	// Verify that this generated code is sufficiently up-to-date.
-	_ = protoimpl.EnforceVersion(20 - protoimpl.MinVersion)
-	// Verify that runtime/protoimpl is sufficiently up-to-date.
-	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
-)
+// Reference imports to suppress errors if they are not otherwise used.
+var _ = proto.Marshal
+var _ = fmt.Errorf
+var _ = math.Inf
 
 type Message struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// Types that are assignable to Payload:
+	// Types that are valid to be assigned to Payload:
 	//	*Message_Register
 	//	*Message_Start
-	//	*Message_Metrics
 	//	*Message_Finish
 	//	*Message_Stop
 	//	*Message_Ack
-	Payload isMessage_Payload `protobuf_oneof:"payload"`
+	Payload              isMessage_Payload `protobuf_oneof:"payload"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
 }
 
-func (x *Message) Reset() {
-	*x = Message{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_idl_proto_worker_proto_msgTypes[0]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *Message) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Message) ProtoMessage() {}
-
-func (x *Message) ProtoReflect() protoreflect.Message {
-	mi := &file_idl_proto_worker_proto_msgTypes[0]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Message.ProtoReflect.Descriptor instead.
+func (m *Message) Reset()         { *m = Message{} }
+func (m *Message) String() string { return proto.CompactTextString(m) }
+func (*Message) ProtoMessage()    {}
 func (*Message) Descriptor() ([]byte, []int) {
-	return file_idl_proto_worker_proto_rawDescGZIP(), []int{0}
+	return fileDescriptor_d11beac452b9addf, []int{0}
 }
 
-func (m *Message) GetPayload() isMessage_Payload {
-	if m != nil {
-		return m.Payload
-	}
-	return nil
+func (m *Message) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Message.Unmarshal(m, b)
+}
+func (m *Message) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Message.Marshal(b, m, deterministic)
+}
+func (m *Message) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Message.Merge(m, src)
+}
+func (m *Message) XXX_Size() int {
+	return xxx_messageInfo_Message.Size(m)
+}
+func (m *Message) XXX_DiscardUnknown() {
+	xxx_messageInfo_Message.DiscardUnknown(m)
 }
 
-func (x *Message) GetRegister() *Register {
-	if x, ok := x.GetPayload().(*Message_Register); ok {
-		return x.Register
-	}
-	return nil
-}
-
-func (x *Message) GetStart() *Start {
-	if x, ok := x.GetPayload().(*Message_Start); ok {
-		return x.Start
-	}
-	return nil
-}
-
-func (x *Message) GetMetrics() *Metrics {
-	if x, ok := x.GetPayload().(*Message_Metrics); ok {
-		return x.Metrics
-	}
-	return nil
-}
-
-func (x *Message) GetFinish() *Finish {
-	if x, ok := x.GetPayload().(*Message_Finish); ok {
-		return x.Finish
-	}
-	return nil
-}
-
-func (x *Message) GetStop() *Stop {
-	if x, ok := x.GetPayload().(*Message_Stop); ok {
-		return x.Stop
-	}
-	return nil
-}
-
-func (x *Message) GetAck() *Ack {
-	if x, ok := x.GetPayload().(*Message_Ack); ok {
-		return x.Ack
-	}
-	return nil
-}
+var xxx_messageInfo_Message proto.InternalMessageInfo
 
 type isMessage_Payload interface {
 	isMessage_Payload()
@@ -129,27 +69,21 @@ type Message_Start struct {
 	Start *Start `protobuf:"bytes,2,opt,name=start,proto3,oneof"`
 }
 
-type Message_Metrics struct {
-	Metrics *Metrics `protobuf:"bytes,3,opt,name=metrics,proto3,oneof"`
-}
-
 type Message_Finish struct {
-	Finish *Finish `protobuf:"bytes,4,opt,name=finish,proto3,oneof"`
+	Finish *Finish `protobuf:"bytes,3,opt,name=finish,proto3,oneof"`
 }
 
 type Message_Stop struct {
-	Stop *Stop `protobuf:"bytes,5,opt,name=stop,proto3,oneof"`
+	Stop *Stop `protobuf:"bytes,4,opt,name=stop,proto3,oneof"`
 }
 
 type Message_Ack struct {
-	Ack *Ack `protobuf:"bytes,6,opt,name=ack,proto3,oneof"`
+	Ack *Ack `protobuf:"bytes,5,opt,name=ack,proto3,oneof"`
 }
 
 func (*Message_Register) isMessage_Payload() {}
 
 func (*Message_Start) isMessage_Payload() {}
-
-func (*Message_Metrics) isMessage_Payload() {}
 
 func (*Message_Finish) isMessage_Payload() {}
 
@@ -157,65 +91,110 @@ func (*Message_Stop) isMessage_Payload() {}
 
 func (*Message_Ack) isMessage_Payload() {}
 
+func (m *Message) GetPayload() isMessage_Payload {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
+}
+
+func (m *Message) GetRegister() *Register {
+	if x, ok := m.GetPayload().(*Message_Register); ok {
+		return x.Register
+	}
+	return nil
+}
+
+func (m *Message) GetStart() *Start {
+	if x, ok := m.GetPayload().(*Message_Start); ok {
+		return x.Start
+	}
+	return nil
+}
+
+func (m *Message) GetFinish() *Finish {
+	if x, ok := m.GetPayload().(*Message_Finish); ok {
+		return x.Finish
+	}
+	return nil
+}
+
+func (m *Message) GetStop() *Stop {
+	if x, ok := m.GetPayload().(*Message_Stop); ok {
+		return x.Stop
+	}
+	return nil
+}
+
+func (m *Message) GetAck() *Ack {
+	if x, ok := m.GetPayload().(*Message_Ack); ok {
+		return x.Ack
+	}
+	return nil
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*Message) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*Message_Register)(nil),
+		(*Message_Start)(nil),
+		(*Message_Finish)(nil),
+		(*Message_Stop)(nil),
+		(*Message_Ack)(nil),
+	}
+}
+
 type Register struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Group     string `protobuf:"bytes,1,opt,name=group,proto3" json:"group,omitempty"`
-	Instance  string `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
-	Frequency uint64 `protobuf:"varint,3,opt,name=frequency,proto3" json:"frequency,omitempty"`
+	Group                string   `protobuf:"bytes,1,opt,name=group,proto3" json:"group,omitempty"`
+	Instance             string   `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
+	Frequency            uint64   `protobuf:"varint,3,opt,name=frequency,proto3" json:"frequency,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (x *Register) Reset() {
-	*x = Register{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_idl_proto_worker_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *Register) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Register) ProtoMessage() {}
-
-func (x *Register) ProtoReflect() protoreflect.Message {
-	mi := &file_idl_proto_worker_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Register.ProtoReflect.Descriptor instead.
+func (m *Register) Reset()         { *m = Register{} }
+func (m *Register) String() string { return proto.CompactTextString(m) }
+func (*Register) ProtoMessage()    {}
 func (*Register) Descriptor() ([]byte, []int) {
-	return file_idl_proto_worker_proto_rawDescGZIP(), []int{1}
+	return fileDescriptor_d11beac452b9addf, []int{1}
 }
 
-func (x *Register) GetGroup() string {
-	if x != nil {
-		return x.Group
+func (m *Register) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Register.Unmarshal(m, b)
+}
+func (m *Register) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Register.Marshal(b, m, deterministic)
+}
+func (m *Register) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Register.Merge(m, src)
+}
+func (m *Register) XXX_Size() int {
+	return xxx_messageInfo_Register.Size(m)
+}
+func (m *Register) XXX_DiscardUnknown() {
+	xxx_messageInfo_Register.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Register proto.InternalMessageInfo
+
+func (m *Register) GetGroup() string {
+	if m != nil {
+		return m.Group
 	}
 	return ""
 }
 
-func (x *Register) GetInstance() string {
-	if x != nil {
-		return x.Instance
+func (m *Register) GetInstance() string {
+	if m != nil {
+		return m.Instance
 	}
 	return ""
 }
 
-func (x *Register) GetFrequency() uint64 {
-	if x != nil {
-		return x.Frequency
+func (m *Register) GetFrequency() uint64 {
+	if m != nil {
+		return m.Frequency
 	}
 	return 0
 }
@@ -230,48 +209,48 @@ type HTTPRequest struct {
 	Body   *string `protobuf:"bytes,3,opt,name=body,proto3,oneof" json:"body,omitempty"`
 }
 
-func (x *HTTPRequest) Reset() {
-	*x = HTTPRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_idl_proto_worker_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *HTTPRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*HTTPRequest) ProtoMessage() {}
-
-func (x *HTTPRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_idl_proto_worker_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use HTTPRequest.ProtoReflect.Descriptor instead.
+func (m *HTTPRequest) Reset()         { *m = HTTPRequest{} }
+func (m *HTTPRequest) String() string { return proto.CompactTextString(m) }
+func (*HTTPRequest) ProtoMessage()    {}
 func (*HTTPRequest) Descriptor() ([]byte, []int) {
-	return file_idl_proto_worker_proto_rawDescGZIP(), []int{2}
+	return fileDescriptor_d11beac452b9addf, []int{2}
 }
 
-func (x *HTTPRequest) GetMethod() string {
-	if x != nil {
-		return x.Method
+func (m *HTTPRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_HTTPRequest.Unmarshal(m, b)
+}
+func (m *HTTPRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_HTTPRequest.Marshal(b, m, deterministic)
+}
+func (m *HTTPRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_HTTPRequest.Merge(m, src)
+}
+func (m *HTTPRequest) XXX_Size() int {
+	return xxx_messageInfo_HTTPRequest.Size(m)
+}
+func (m *HTTPRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_HTTPRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_HTTPRequest proto.InternalMessageInfo
+
+func (m *HTTPRequest) GetMethod() string {
+	if m != nil {
+		return m.Method
 	}
 	return ""
 }
 
-func (x *HTTPRequest) GetUrl() string {
-	if x != nil {
-		return x.Url
+func (m *HTTPRequest) GetUrl() string {
+	if m != nil {
+		return m.Url
+	}
+	return ""
+}
+
+func (m *HTTPRequest) GetBody() string {
+	if m != nil {
+		return m.Body
 	}
 	return ""
 }
@@ -284,10 +263,6 @@ func (x *HTTPRequest) GetBody() string {
 }
 
 type Start struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
 	// Each job is split into multiple workloads, each workload with the same job id
 	JobId string `protobuf:"bytes,1,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
 	// requests / second
@@ -302,62 +277,48 @@ type Start struct {
 	TestInstanceId string `protobuf:"bytes,11,opt,name=test_instance_id,json=testInstanceId,proto3" json:"test_instance_id,omitempty"`
 }
 
-func (x *Start) Reset() {
-	*x = Start{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_idl_proto_worker_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+func (m *Start) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Start.Unmarshal(m, b)
+}
+func (m *Start) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Start.Marshal(b, m, deterministic)
+}
+func (m *Start) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Start.Merge(m, src)
+}
+func (m *Start) XXX_Size() int {
+	return xxx_messageInfo_Start.Size(m)
+}
+func (m *Start) XXX_DiscardUnknown() {
+	xxx_messageInfo_Start.DiscardUnknown(m)
 }
 
-func (x *Start) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
+var xxx_messageInfo_Start proto.InternalMessageInfo
 
-func (*Start) ProtoMessage() {}
-
-func (x *Start) ProtoReflect() protoreflect.Message {
-	mi := &file_idl_proto_worker_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Start.ProtoReflect.Descriptor instead.
-func (*Start) Descriptor() ([]byte, []int) {
-	return file_idl_proto_worker_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *Start) GetJobId() string {
-	if x != nil {
-		return x.JobId
+func (m *Start) GetJobId() string {
+	if m != nil {
+		return m.JobId
 	}
 	return ""
 }
 
-func (x *Start) GetFrequency() uint64 {
-	if x != nil {
-		return x.Frequency
+func (m *Start) GetFrequency() uint64 {
+	if m != nil {
+		return m.Frequency
 	}
 	return 0
 }
 
-func (x *Start) GetDuration() uint64 {
-	if x != nil {
-		return x.Duration
+func (m *Start) GetDuration() uint64 {
+	if m != nil {
+		return m.Duration
 	}
 	return 0
 }
 
-func (x *Start) GetRequest() *HTTPRequest {
-	if x != nil {
-		return x.Request
+func (m *Start) GetRequest() *HTTPRequest {
+	if m != nil {
+		return m.Request
 	}
 	return nil
 }
@@ -391,43 +352,36 @@ type Finish struct {
 	JobId string `protobuf:"bytes,1,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
 }
 
-func (x *Finish) Reset() {
-	*x = Finish{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_idl_proto_worker_proto_msgTypes[4]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *Finish) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Finish) ProtoMessage() {}
-
-func (x *Finish) ProtoReflect() protoreflect.Message {
-	mi := &file_idl_proto_worker_proto_msgTypes[4]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Finish.ProtoReflect.Descriptor instead.
-func (*Finish) Descriptor() ([]byte, []int) {
-	return file_idl_proto_worker_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *Finish) GetJobId() string {
-	if x != nil {
-		return x.JobId
+func (m *Start) GetTestId() string {
+	if m != nil {
+		return m.TestId
 	}
 	return ""
+}
+
+func (m *Start) GetTestInstanceId() string {
+	if m != nil {
+		return m.TestInstanceId
+	}
+	return ""
+}
+
+type Finish struct {
+	JobId                string   `protobuf:"bytes,1,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *Finish) Reset()         { *m = Finish{} }
+func (m *Finish) String() string { return proto.CompactTextString(m) }
+func (*Finish) ProtoMessage()    {}
+func (*Finish) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d11beac452b9addf, []int{4}
+}
+
+func (m *Finish) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Finish.Unmarshal(m, b)
 }
 
 type Metrics struct {
@@ -454,68 +408,60 @@ func (x *Metrics) Reset() {
 		ms.StoreMessageInfo(mi)
 	}
 }
-
-func (x *Metrics) String() string {
-	return protoimpl.X.MessageStringOf(x)
+func (m *Finish) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Finish.Merge(m, src)
+}
+func (m *Finish) XXX_Size() int {
+	return xxx_messageInfo_Finish.Size(m)
+}
+func (m *Finish) XXX_DiscardUnknown() {
+	xxx_messageInfo_Finish.DiscardUnknown(m)
 }
 
-func (*Metrics) ProtoMessage() {}
+var xxx_messageInfo_Finish proto.InternalMessageInfo
 
-func (x *Metrics) ProtoReflect() protoreflect.Message {
-	mi := &file_idl_proto_worker_proto_msgTypes[5]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Metrics.ProtoReflect.Descriptor instead.
-func (*Metrics) Descriptor() ([]byte, []int) {
-	return file_idl_proto_worker_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *Metrics) GetJobId() string {
-	if x != nil {
-		return x.JobId
+func (m *Finish) GetJobId() string {
+	if m != nil {
+		return m.JobId
 	}
 	return ""
 }
 
-func (x *Metrics) GetCode() uint32 {
-	if x != nil {
-		return x.Code
-	}
-	return 0
+type Stop struct {
+	JobId                string   `protobuf:"bytes,1,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (x *Metrics) GetBytesIn() uint64 {
-	if x != nil {
-		return x.BytesIn
-	}
-	return 0
+func (m *Stop) Reset()         { *m = Stop{} }
+func (m *Stop) String() string { return proto.CompactTextString(m) }
+func (*Stop) ProtoMessage()    {}
+func (*Stop) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d11beac452b9addf, []int{5}
 }
 
-func (x *Metrics) GetBytesOut() uint64 {
-	if x != nil {
-		return x.BytesOut
-	}
-	return 0
+func (m *Stop) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Stop.Unmarshal(m, b)
+}
+func (m *Stop) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Stop.Marshal(b, m, deterministic)
+}
+func (m *Stop) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Stop.Merge(m, src)
+}
+func (m *Stop) XXX_Size() int {
+	return xxx_messageInfo_Stop.Size(m)
+}
+func (m *Stop) XXX_DiscardUnknown() {
+	xxx_messageInfo_Stop.DiscardUnknown(m)
 }
 
-func (x *Metrics) GetLatency() int64 {
-	if x != nil {
-		return x.Latency
-	}
-	return 0
-}
+var xxx_messageInfo_Stop proto.InternalMessageInfo
 
-func (x *Metrics) GetError() string {
-	if x != nil {
-		return x.Error
+func (m *Stop) GetJobId() string {
+	if m != nil {
+		return m.JobId
 	}
 	return ""
 }
@@ -527,84 +473,69 @@ func (x *Metrics) GetTimestamp() *timestamppb.Timestamp {
 	return nil
 }
 
-type Stop struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	JobId string `protobuf:"bytes,1,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
+func (m *Ack) Reset()         { *m = Ack{} }
+func (m *Ack) String() string { return proto.CompactTextString(m) }
+func (*Ack) ProtoMessage()    {}
+func (*Ack) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d11beac452b9addf, []int{6}
 }
 
-func (x *Stop) Reset() {
-	*x = Stop{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_idl_proto_worker_proto_msgTypes[6]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
+func (m *Ack) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Ack.Unmarshal(m, b)
+}
+func (m *Ack) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Ack.Marshal(b, m, deterministic)
+}
+func (m *Ack) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Ack.Merge(m, src)
+}
+func (m *Ack) XXX_Size() int {
+	return xxx_messageInfo_Ack.Size(m)
+}
+func (m *Ack) XXX_DiscardUnknown() {
+	xxx_messageInfo_Ack.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Ack proto.InternalMessageInfo
+
+type SamplingRate struct {
+	// 1 in "period" sampling. <=0 values indicate no sampling.
+	Period               int32    `protobuf:"varint,1,opt,name=period,proto3" json:"period,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SamplingRate) Reset()         { *m = SamplingRate{} }
+func (m *SamplingRate) String() string { return proto.CompactTextString(m) }
+func (*SamplingRate) ProtoMessage()    {}
+func (*SamplingRate) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d11beac452b9addf, []int{7}
+}
+
+func (m *SamplingRate) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SamplingRate.Unmarshal(m, b)
+}
+func (m *SamplingRate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SamplingRate.Marshal(b, m, deterministic)
+}
+func (m *SamplingRate) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SamplingRate.Merge(m, src)
+}
+func (m *SamplingRate) XXX_Size() int {
+	return xxx_messageInfo_SamplingRate.Size(m)
+}
+func (m *SamplingRate) XXX_DiscardUnknown() {
+	xxx_messageInfo_SamplingRate.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SamplingRate proto.InternalMessageInfo
+
+func (m *SamplingRate) GetPeriod() int32 {
+	if m != nil {
+		return m.Period
 	}
-}
-
-func (x *Stop) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Stop) ProtoMessage() {}
-
-func (x *Stop) ProtoReflect() protoreflect.Message {
-	mi := &file_idl_proto_worker_proto_msgTypes[6]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Stop.ProtoReflect.Descriptor instead.
-func (*Stop) Descriptor() ([]byte, []int) {
-	return file_idl_proto_worker_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *Stop) GetJobId() string {
-	if x != nil {
-		return x.JobId
-	}
-	return ""
-}
-
-type Ack struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *Ack) Reset() {
-	*x = Ack{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_idl_proto_worker_proto_msgTypes[7]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *Ack) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Ack) ProtoMessage() {}
-
-func (x *Ack) ProtoReflect() protoreflect.Message {
-	mi := &file_idl_proto_worker_proto_msgTypes[7]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
+	return 0
 }
 
 // Deprecated: Use Ack.ProtoReflect.Descriptor instead.

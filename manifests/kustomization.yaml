@@ -4,5 +4,6 @@ kind: Kustomization
 bases:
 - ./crds
 - ./leader
+- ./aggregator
 
 namespace: diago

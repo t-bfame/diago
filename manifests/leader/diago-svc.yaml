@@ -31,3 +31,7 @@ spec:
     protocol: TCP
     port: 27017
     targetPort: 27017
+  - name: aggregator
+    protocol: TCP
+    port: 6000
+    targetPort: 6000
