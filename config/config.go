@@ -7,12 +7,14 @@ import (
 )
 
 type Config struct {
-	Host           string `envconfig:"DIAGO_HOST" required:"true"`
-	GRPCPort       uint64 `envconfig:"DIAGO_GRPC_PORT" default:"5000"`
-	APIPort        uint64 `envconfig:"DIAGO_API_PORT" default:"80"`
-	MongoDBHost    string `envconfig:"MONGO_DB_HOST" required:"true"`
-	MongoDBPort    uint64 `envconfig:"MONGO_DB_PORT" default:"27017"`
-	PrometheusPort uint64 `envconfig:"DIAGO_PROMETHEUS_PORT" default:"2112"`
+	Host                      string `envconfig:"DIAGO_HOST" required:"true"`
+	GRPCPort                  uint64 `envconfig:"DIAGO_GRPC_PORT" default:"5000"`
+	APIPort                   uint64 `envconfig:"DIAGO_API_PORT" default:"80"`
+	MongoDBHost               string `envconfig:"MONGO_DB_HOST" required:"true"`
+	MongoDBPort               uint64 `envconfig:"MONGO_DB_PORT" default:"27017"`
+	PrometheusPort            uint64 `envconfig:"DIAGO_PROMETHEUS_PORT" default:"2112"`
+	AggregatorReceiveGRPCPort uint64 `envconfig:"DIAGO_AGGREGATOR_RECEIVE_GRPC_PORT default:"6000"`
+	AggregatorSendGRPCPort    uint64 `envconfig:"DIAGO_AGGREGATOR_SEND_GRPC_PORT default:"6000"`
 
 	DefaultGroupCapacity uint64 `envconfig:"DIAGO_DEFAULT_GROUP_CAPACITY" default:"200"`
 	DefaultNamespace     string `envconfig:"DIAGO_DEFAULT_NAMESPACE" default:"default"`

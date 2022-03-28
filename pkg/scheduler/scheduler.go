@@ -57,7 +57,7 @@ func (s *Scheduler) createPodGroup(groupName string, failNonExistentGroup bool) 
 }
 
 // Submit submits a job in a Scheduler
-func (s *Scheduler) Submit(j m.Job, testInstanceID m.TestInstanceID, testID m.TestID) (events chan Event, err error) {
+func (s *Scheduler) Submit(j m.Job) (events chan Event, testId string, instanceId string, err error) {
 	events = make(chan Event, 2)
 
 	// If WorkerGroup does not exist while submitting a Job
@@ -65,14 +65,17 @@ func (s *Scheduler) Submit(j m.Job, testInstanceID m.TestInstanceID, testID m.Te
 	// call must fail
 	pg, err := s.createPodGroup(j.Group, true)
 
+	pg.testId = testId
+	pg.instanceId = instanceId
+
 	if err != nil {
-		return nil, err
+		return nil, "", "", err
 	}
 
 	// Add channel for receiving events
-	pg.addJob(j, testInstanceID, testID, events)
+	pg.addJob(j, m.TestInstanceID(pg.instanceId), m.TestID(pg.testId), events)
 
-	return events, err
+	return events, pg.testId, pg.instanceId, err
 }
 
 // Stop stops a job in a Scheduler
@@ -100,6 +103,17 @@ func (s *Scheduler) Register(group string, instance InstanceID, frequency uint64
 	return pg.registerPod(group, instance, frequency)
 }
 
+func (s *Scheduler) GetPgChan(group string, instance InstanceID) (chan Incoming, error) {
+	pg, ok := s.podGroups[group]
+
+	if !ok {
+		return nil, errors.New("Could not find specified group")
+	}
+
+	// Add test channel for multiplexing
+	return pg.getInputChan(instance)
+}
+
 // NewScheduler creates a new scheduler using in cluster config.
 func NewScheduler() *Scheduler {
 	// creates the in-cluster config
@@ -125,4 +139,27 @@ func NewScheduler() *Scheduler {
 	}
 
 	return s
+}
+
+func (s *Scheduler) RegisterAgg() (incomingMsgs chan IncomingAgg, err error) {
+	incomingMsgs = make(chan IncomingAgg)
+
+	// consume received metrics
+	go func() {
+		for msg := range incomingMsgs {
+			group := msg.getGroup()
+			instance := msg.getInstanceID()
+
+			leaderMsgs, err := s.GetPgChan(group, instance)
+			if err != nil {
+				log.WithError(err).Info("Error getting input channel")
+				continue
+			}
+
+			leaderMsgs <- msg
+			// outputChannels[msg.TestId][msg.InstanceId][msg.JobId] <- msg
+		}
+	}()
+
+	return incomingMsgs, err
 }

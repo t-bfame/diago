@@ -23,13 +23,16 @@ type JobInstance struct {
 
 // PodGroup indicates kind of pod
 type PodGroup struct {
-	group     string
-	clientset *kubernetes.Clientset
-	model     *SchedulerModel
+	group      string
+	testId     string
+	instanceId string
+	clientset  *kubernetes.Clientset
+	model      *SchedulerModel
 
 	scheduledPods map[InstanceID]chan Outgoing
 	podmux        sync.Mutex
 
+	inputChannels  map[InstanceID]chan Incoming
 	outputChannels map[m.JobID]chan Event
 	workloadCount  map[m.JobID]uint32
 
@@ -183,6 +186,7 @@ func (pg *PodGroup) registerPod(group string, instance InstanceID, frequency uin
 	leader = make(chan Incoming)    // messages for leader
 	worker = make(chan Outgoing, 2) // messages for worker
 
+	pg.inputChannels[instance] = leader
 	pg.scheduledPods[instance] = worker
 	pg.capmgr.addInstance(instance, frequency)
 
@@ -199,24 +203,23 @@ func (pg *PodGroup) registerPod(group string, instance InstanceID, frequency uin
 				continue
 			}
 
-			switch msg.(type) {
-			// If get a message of job finished, then clean up the worker. If all workloads are finished, then close channel.
-			case Finish:
-				pg.workloadCount[jobID]--
+			output <- msg
+			switch x := msg.(type) {
+			case AggMetrics:
+				// If get a message of job finished, then clean up the worker. If all workloads are finished, then close channel.
+				if x.Finished {
+					pg.workloadCount[jobID]--
 
-				pg.capmgr.reclaimCapacity(instance, jobID)
-				pg.distribute()
+					pg.capmgr.reclaimCapacity(instance, jobID)
+					pg.distribute()
 
-				// Since no more remaining workloads, output channel can be closed
-				if pg.workloadCount[jobID] == 0 {
-					delete(pg.workloadCount, jobID)
-					delete(pg.outputChannels, jobID)
-					close(output)
+					// Since no more remaining workloads, output channel can be closed
+					if pg.workloadCount[jobID] == 0 {
+						delete(pg.workloadCount, jobID)
+						delete(pg.outputChannels, jobID)
+						close(output)
+					}
 				}
-
-			default:
-				// Send event to respective output channel
-				output <- msg
 			}
 		}
 
@@ -226,6 +229,16 @@ func (pg *PodGroup) registerPod(group string, instance InstanceID, frequency uin
 
 	pg.distribute()
 	return leader, worker, nil
+}
+
+func (pg *PodGroup) getInputChan(instance InstanceID) (input chan Incoming, err error) {
+	input, ok := pg.inputChannels[instance]
+
+	if ok {
+		return input, nil
+	}
+
+	return nil, errors.New("Could not find specified input channel")
 }
 
 /**

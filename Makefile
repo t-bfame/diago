@@ -32,5 +32,10 @@ proto:
 		--go-grpc_out=Mgrpc/service_config/service_config.proto=/proto-gen/api:. \
 		idl/proto/worker.proto
 
+	$(PROTOC) \
+		--go_out=Mgrpc/service_config/service_config.proto=/proto-gen/api:. \
+		--go-grpc_out=Mgrpc/service_config/service_config.proto=/proto-gen/api:. \
+		idl/proto/aggregator.proto
+
 test:
 	go test -v -coverprofile=coverage.out ./...

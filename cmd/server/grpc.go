@@ -20,6 +20,7 @@ type workerServer struct {
 	sched *scheduler.Scheduler
 }
 
+
 func (s *workerServer) Coordinate(stream pb.Worker_CoordinateServer) error {
 
 	// Expect Register message
