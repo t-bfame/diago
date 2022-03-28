@@ -22,7 +22,8 @@ spec:
       serviceAccountName: diago-sa
       containers:
       - name: leader
-        image: tbfame/diago:latest
+        image: leader:demo
+        imagePullPolicy: Never
         ports:
         - name: api
           containerPort: 80

@@ -4,6 +4,7 @@ metadata:
   name: default-worker
   namespace: diago
 spec:
-  image: tbfame/diago-worker:latest
+  image: worker:demo
+  imagePullPolicy: Never
   capacity: 1000
   allowedInactivityPeriod: 120
