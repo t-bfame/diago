@@ -3,14 +3,27 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/boltdb/bolt"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var (
-	db *bolt.DB
+	db          *bolt.DB
+	mongoClient *mongo.Client
 )
+
+func ConnectToMongoDB(ctx context.Context, dbString string) error {
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(dbString))
+	if err != nil {
+		return err
+	}
+	mongoClient = client
+	return nil
+}
 
 // Initializes storage file
 func InitDatabase(dbName string) error {
@@ -31,6 +44,9 @@ func InitDatabase(dbName string) error {
 		return err
 	}
 	if err := initStorageTestSchedule(db); err != nil {
+		return err
+	}
+	if err := initStorageUser(db); err != nil {
 		return err
 	}
 	return nil

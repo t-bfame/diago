@@ -68,34 +68,44 @@ type Metrics struct {
 // Add implements the Add method of the Report interface by adding the given
 // Result to Metrics.
 func (m *Metrics) Add(r *scheduler.Metrics) {
+	if r.NMetrics == 0 {
+		return
+	}
 	m.init()
-	m.Requests++
-	m.StatusCodes[strconv.Itoa(int(r.Code))]++
+	m.Requests += r.NMetrics
+	for code, nOccurences := range r.StatusCodes {
+		m.StatusCodes[code] += int(nOccurences)
+
+		codeInt, _ := strconv.Atoi(code)
+		if codeInt >= 200 && codeInt < 400 {
+			m.success += nOccurences
+		}
+	}
 	m.BytesOut.Total += r.BytesOut
 	m.BytesIn.Total += r.BytesIn
 
-	m.Latencies.Add(time.Duration(r.Latency))
-
-	if m.Earliest.IsZero() || m.Earliest.After(r.Timestamp) {
-		m.Earliest = r.Timestamp
+	for _, latency := range r.Latencies {
+		m.Latencies.Add(time.Duration(latency))
 	}
 
-	if r.Timestamp.After(m.Latest) {
-		m.Latest = r.Timestamp
+	if m.Earliest.IsZero() || m.Earliest.After(r.Earliest) {
+		m.Earliest = r.Earliest
 	}
 
-	if end := r.Timestamp.Add(r.Latency); end.After(m.End) {
-		m.End = end
+	if r.Latest.After(m.Latest) {
+		m.Latest = r.Latest
 	}
 
-	if r.Code >= 200 && r.Code < 400 {
-		m.success++
+	if r.End.After(m.End) {
+		m.End = r.End
 	}
 
-	if r.Error != "" {
-		if _, ok := m.errors[r.Error]; !ok {
-			m.errors[r.Error] = struct{}{}
-			m.Errors = append(m.Errors, r.Error)
+	if len(r.Errors) > 0 {
+		for _, e := range r.Errors {
+			if _, ok := m.errors[e]; !ok {
+				m.errors[e] = struct{}{}
+				m.Errors = append(m.Errors, e)
+			}
 		}
 	}
 	/*

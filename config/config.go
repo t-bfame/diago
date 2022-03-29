@@ -10,6 +10,8 @@ type Config struct {
 	Host           string `envconfig:"DIAGO_HOST" required:"true"`
 	GRPCPort       uint64 `envconfig:"DIAGO_GRPC_PORT" default:"5000"`
 	APIPort        uint64 `envconfig:"DIAGO_API_PORT" default:"80"`
+	MongoDBHost    string `envconfig:"MONGO_DB_HOST" required:"true"`
+	MongoDBPort    uint64 `envconfig:"MONGO_DB_PORT" default:"27017"`
 	PrometheusPort uint64 `envconfig:"DIAGO_PROMETHEUS_PORT" default:"2112"`
 
 	DefaultGroupCapacity uint64 `envconfig:"DIAGO_DEFAULT_GROUP_CAPACITY" default:"200"`
@@ -19,9 +21,9 @@ type Config struct {
 
 	Debug bool `envconfig:"DIAGO_DEBUG" default:"false"`
 
-	GrafanaBasePath     string `envconfig:"DIAGO_GRAFANA_BASE_PATH" default:""`
-	GrafanaAPIKey     string `envconfig:"DIAGO_GRAFANA_API_KEY" default:""`
-	GrafanaDashboardConfig     string `envconfig:"DIAGO_GRAFANA_DASHBOARD_CONFIG"`
+	GrafanaBasePath        string `envconfig:"DIAGO_GRAFANA_BASE_PATH" default:""`
+	GrafanaAPIKey          string `envconfig:"DIAGO_GRAFANA_API_KEY" default:""`
+	GrafanaDashboardConfig string `envconfig:"DIAGO_GRAFANA_DASHBOARD_CONFIG"`
 }
 
 var Diago *Config
