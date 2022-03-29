@@ -1,8 +1,8 @@
 [submodule "idl"]
-	branch = kram-main
+	branch = kram-demo
 	path = idl
 	url = https://github.com/t-bfame/diago-idl
 [submodule "ui"]
-	branch = kram-main
+	branch = kram-demo
 	path = ui
 	url = https://github.com/t-bfame/diago-ui
