@@ -68,6 +68,9 @@ type Metrics struct {
 // Add implements the Add method of the Report interface by adding the given
 // Result to Metrics.
 func (m *Metrics) Add(r *scheduler.Metrics) {
+	if r.NMetrics == 0 {
+		return
+	}
 	m.init()
 	m.Requests += r.NMetrics
 	for code, nOccurences := range r.StatusCodes {
@@ -81,7 +84,7 @@ func (m *Metrics) Add(r *scheduler.Metrics) {
 	m.BytesOut.Total += r.BytesOut
 	m.BytesIn.Total += r.BytesIn
 
-	for latency := range r.Latencies {
+	for _, latency := range r.Latencies {
 		m.Latencies.Add(time.Duration(latency))
 	}
 
